@@ -1,10 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../brand/app_icon_art.dart';
 
 /// The product mark: a rising shot arc closing on the ball.
 class AvLogoMark extends StatelessWidget {
@@ -47,58 +46,10 @@ class _MarkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final path = Path()
-      ..moveTo(w * 0.20, h * 0.76)
-      ..cubicTo(w * 0.24, h * 0.24, w * 0.66, h * 0.16, w * 0.80, h * 0.44);
-
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isNotEmpty) {
-      final metric = metrics.first;
-      final drawn = metric.extractPath(0, metric.length * progress);
-      canvas.drawPath(
-        drawn,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = w * 0.075
-          ..strokeCap = StrokeCap.round
-          ..shader = const LinearGradient(
-            colors: [Color(0xFFFFB27A), AvColors.flare],
-          ).createShader(Offset.zero & size),
-      );
-    }
-
-    final ballCentre = Offset(w * 0.735, h * 0.665);
-    final ballRadius = w * 0.135;
-    canvas.drawCircle(
-      ballCentre,
-      ballRadius,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFF8A4C), AvColors.flareDeep],
-        ).createShader(Rect.fromCircle(center: ballCentre, radius: ballRadius)),
-    );
-
-    final seam = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.024
-      ..color = Colors.white.withValues(alpha: 0.75);
-    canvas.drawLine(
-      ballCentre - Offset(ballRadius, 0),
-      ballCentre + Offset(ballRadius, 0),
-      seam,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: ballCentre, radius: ballRadius * 1.55),
-      -math.pi * 0.78,
-      math.pi * 0.56,
-      false,
-      seam,
-    );
+    // Shared with the launcher icon, so the badge in the app and the icon on
+    // the home screen are the same drawing rather than two that resemble
+    // each other until one of them is edited.
+    AvIconArt.paintMarkInset(canvas, size, 0.80, arcProgress: progress);
   }
 
   @override

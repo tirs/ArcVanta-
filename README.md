@@ -30,6 +30,30 @@ wherever numbers change in place. All spacing, radii, shadow and motion values
 come from `lib/core/theme/av_tokens.dart`; nothing in the feature layer defines
 its own.
 
+Splash, onboarding, auth, role, player setup and guardian consent all sit on the
+ink surface via `AvBrandScaffold`, so the product has one branded front door.
+The workspace behind it stays on the parchment canvas, which is what stands up
+to a bright gym.
+
+### The launcher icon
+
+![ArcVanta AI icon](docs/brand/app-icon.png)
+
+The mark is a painter, not artwork, and both the launcher icon and the in-app
+`AvLogoMark` draw it from `lib/design/brand/app_icon_art.dart`. Regenerate every
+platform asset after editing it:
+
+```bash
+flutter test tool/generate_app_icon.dart
+```
+
+That writes the iOS asset catalogue, the Android legacy bitmaps, the adaptive
+background and foreground layers, the themed-icon silhouette and the review
+image above. Each size is drawn at its own resolution rather than downsampled
+from one master. iOS icons are re-encoded without an alpha channel, which App
+Store Connect rejects, and the adaptive layers are checked to stay within
+Android's 66dp safe circle.
+
 ## Running it
 
 ```bash

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AvColors.ink. The window shows through before Flutter's first frame,
+         so anything lighter would flash white ahead of the splash. -->
+    <color name="ink">#FF17182F</color>
+</resources>
