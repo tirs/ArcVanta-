@@ -197,7 +197,8 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: AvSpace.md),
                 _SwitchRow(
                   title: 'Show analysis overlays',
-                  detail: 'Skeleton, arc trace and tracked boxes on the live '
+                  detail:
+                      'Skeleton, arc trace and tracked boxes on the live '
                       'preview.',
                   value: settings.showOverlays,
                   onChanged: (v) =>
@@ -217,9 +218,8 @@ class ProfileScreen extends ConsumerWidget {
                     detail: 'Ball path from release to the rim.',
                     inset: true,
                     value: settings.showTrajectory,
-                    onChanged: (v) => controller.update(
-                      (s) => s.copyWith(showTrajectory: v),
-                    ),
+                    onChanged: (v) =>
+                        controller.update((s) => s.copyWith(showTrajectory: v)),
                   ),
                   _SwitchRow(
                     title: 'Tracked boxes',
@@ -271,9 +271,8 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Left-handed layout',
                   detail: 'Moves live controls to the reachable side.',
                   value: settings.leftHandedLayout,
-                  onChanged: (v) => controller.update(
-                    (s) => s.copyWith(leftHandedLayout: v),
-                  ),
+                  onChanged: (v) =>
+                      controller.update((s) => s.copyWith(leftHandedLayout: v)),
                 ),
               ],
             ),
@@ -416,14 +415,16 @@ class _ProfileHeader extends StatelessWidget {
               children: [
                 Text(
                   profile.displayName,
-                  style:
-                      AvType.headingMedium.copyWith(color: AvColors.textOnInk),
+                  style: AvType.headingMedium.copyWith(
+                    color: AvColors.textOnInk,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   '${profile.position.label} \u00B7 ${profile.skillLevel.label}',
-                  style:
-                      AvType.caption.copyWith(color: AvColors.textOnInkMuted),
+                  style: AvType.caption.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
                 const SizedBox(height: AvSpace.sm),
                 Wrap(

@@ -129,23 +129,37 @@ class AvInkStat extends StatelessWidget {
       crossAxisAlignment: alignment,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label.toUpperCase(), style: AvType.overline.onInkMuted),
+        Text(
+          label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AvType.overline.onInkMuted,
+        ),
         const SizedBox(height: 6),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(value, style: AvType.metricLarge.copyWith(color: accent)),
-            if (unit != null) ...[
-              const SizedBox(width: 2),
-              Text(
-                unit!,
-                style: AvType.titleMedium
-                    .copyWith(color: accent.withValues(alpha: 0.6)),
-              ),
+        // The figure is the point of this component, so it scales rather than
+        // truncating when the row it sits in runs out of width.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: alignment == CrossAxisAlignment.end
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(value, style: AvType.metricLarge.copyWith(color: accent)),
+              if (unit != null) ...[
+                const SizedBox(width: 2),
+                Text(
+                  unit!,
+                  style: AvType.titleMedium.copyWith(
+                    color: accent.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ],
     );
@@ -210,7 +224,7 @@ class AvMetricRow extends StatelessWidget {
                 eligible
                     ? metric.confidence.explanation
                     : '${angle.label} placement cannot measure this. Use '
-                        '${metric.eligibleAngles.map((a) => a.label.toLowerCase()).join(' or ')} placement.',
+                          '${metric.eligibleAngles.map((a) => a.label.toLowerCase()).join(' or ')} placement.',
                 style: AvType.caption.faint,
               )
             else ...[
@@ -218,10 +232,7 @@ class AvMetricRow extends StatelessWidget {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  AvConfidenceBadge(
-                    level: metric.confidence,
-                    compact: true,
-                  ),
+                  AvConfidenceBadge(level: metric.confidence, compact: true),
                   const SizedBox(width: AvSpace.xs),
                   if (metric.deltaFromBaseline != null)
                     AvDelta(
@@ -295,8 +306,10 @@ class _TargetBand extends StatelessWidget {
               ),
               if (metric.personalBaseline != null)
                 Positioned(
-                  left: (width * pos(metric.personalBaseline!) - 1)
-                      .clamp(0.0, width - 2),
+                  left: (width * pos(metric.personalBaseline!) - 1).clamp(
+                    0.0,
+                    width - 2,
+                  ),
                   child: Container(
                     width: 2,
                     height: 12,

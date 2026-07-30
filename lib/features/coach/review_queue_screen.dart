@@ -40,7 +40,8 @@ class _ReviewQueueScreenState extends ConsumerState<ReviewQueueScreen> {
 
     return AvScaffold(
       title: 'Review queue',
-      subtitle: '${assignments.length} submissions \u00B7 '
+      subtitle:
+          '${assignments.length} submissions \u00B7 '
           '${sessions.length} sessions to comment on',
       leading: const AvBackButton(),
       slivers: [
@@ -50,7 +51,8 @@ class _ReviewQueueScreenState extends ConsumerState<ReviewQueueScreen> {
             child: AvEmptyState(
               icon: Icons.done_all_rounded,
               title: 'Queue is clear',
-              message: 'New submissions land here as athletes finish their '
+              message:
+                  'New submissions land here as athletes finish their '
                   'assigned work.',
             ),
           ),
@@ -116,8 +118,9 @@ class _ReviewCard extends StatefulWidget {
 }
 
 class _ReviewCardState extends State<_ReviewCard> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.session.coachComment ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.session.coachComment ?? '',
+  );
   bool _composing = false;
 
   @override

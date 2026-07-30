@@ -46,8 +46,10 @@ class AvConfidenceBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             compact ? level.shortLabel : level.label,
-            style: (compact ? AvType.overline : AvType.label)
-                .copyWith(color: foreground, letterSpacing: compact ? 0.6 : 0),
+            style: (compact ? AvType.overline : AvType.label).copyWith(
+              color: foreground,
+              letterSpacing: compact ? 0.6 : 0,
+            ),
           ),
         ],
       ),
@@ -66,11 +68,11 @@ class AvConfidenceBadge extends StatelessWidget {
   }
 
   static Color _onInkColor(ConfidenceLevel level) => switch (level) {
-        ConfidenceLevel.high => const Color(0xFF5FE3AE),
-        ConfidenceLevel.medium => const Color(0xFFFFC861),
-        ConfidenceLevel.low => const Color(0xFFFF8FA3),
-        ConfidenceLevel.unavailable => const Color(0xFFB8B6CC),
-      };
+    ConfidenceLevel.high => const Color(0xFF5FE3AE),
+    ConfidenceLevel.medium => const Color(0xFFFFC861),
+    ConfidenceLevel.low => const Color(0xFFFF8FA3),
+    ConfidenceLevel.unavailable => const Color(0xFFB8B6CC),
+  };
 }
 
 /// Small status label used for assignment state, plan tier and similar.
@@ -157,8 +159,8 @@ class AvDelta extends StatelessWidget {
     final icon = flat
         ? Icons.remove_rounded
         : (value > 0
-            ? Icons.arrow_upward_rounded
-            : Icons.arrow_downward_rounded);
+              ? Icons.arrow_upward_rounded
+              : Icons.arrow_downward_rounded);
     final text =
         '${value > 0 && !flat ? '+' : ''}${value.toStringAsFixed(1)}$unit';
 
@@ -310,9 +312,7 @@ class AvSegmented<T> extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: dense ? 7 : 10),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: values[i] == selected
-                        ? accent
-                        : Colors.transparent,
+                    color: values[i] == selected ? accent : Colors.transparent,
                     borderRadius: AvRadius.pill,
                   ),
                   child: Text(

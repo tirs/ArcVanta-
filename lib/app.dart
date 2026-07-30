@@ -26,7 +26,8 @@ class ArcVantaApp extends ConsumerWidget {
               (media.textScaler.scale(1) * (settings.largeText ? 1.15 : 1.0))
                   .clamp(0.85, 1.45),
             ),
-            disableAnimations: settings.reducedMotion || media.disableAnimations,
+            disableAnimations:
+                settings.reducedMotion || media.disableAnimations,
           ),
           child: child ?? const SizedBox.shrink(),
         );

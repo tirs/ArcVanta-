@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 import 'dart:ui' show Offset;
 
-import '../../data/models/pose.dart';
-import '../../state/live_session.dart';
+import '../models/pose.dart';
+import 'live_scene.dart';
+import 'shot_cycle.dart';
 
 /// Produces the landmark set the live overlay draws for a given point in the
 /// shot cycle.
@@ -172,7 +173,8 @@ abstract final class PoseAnimator {
           _ease(span(ShotCycle.load)),
         );
       case ShotPhaseKind.upward:
-        cursor = ShotCycle.approach +
+        cursor =
+            ShotCycle.approach +
             ShotCycle.ready +
             ShotCycle.dip +
             ShotCycle.load;
@@ -182,7 +184,8 @@ abstract final class PoseAnimator {
           _ease(span(ShotCycle.upward)),
         );
       case ShotPhaseKind.setPoint:
-        cursor = ShotCycle.approach +
+        cursor =
+            ShotCycle.approach +
             ShotCycle.ready +
             ShotCycle.dip +
             ShotCycle.load +
@@ -193,7 +196,8 @@ abstract final class PoseAnimator {
           _ease(span(ShotCycle.setPoint)) * 0.35,
         );
       case ShotPhaseKind.release:
-        cursor = ShotCycle.approach +
+        cursor =
+            ShotCycle.approach +
             ShotCycle.ready +
             ShotCycle.dip +
             ShotCycle.load +
@@ -206,7 +210,8 @@ abstract final class PoseAnimator {
         );
       case ShotPhaseKind.flight:
       case ShotPhaseKind.rimInteraction:
-        cursor = ShotCycle.approach +
+        cursor =
+            ShotCycle.approach +
             ShotCycle.ready +
             ShotCycle.dip +
             ShotCycle.load +
@@ -262,7 +267,8 @@ abstract final class PoseAnimator {
     final lateral = willMiss ? 0.018 : 0.0;
     final x = start.dx + (target.dx - start.dx) * flight + lateral * flight;
     final apex = 0.062;
-    final y = start.dy +
+    final y =
+        start.dy +
         (target.dy - start.dy) * flight -
         4 * apex * flight * (1 - flight);
     return Offset(x, y);
@@ -278,7 +284,8 @@ abstract final class PoseAnimator {
     var i = 0;
     for (final entry in frame.landmarks.entries) {
       final phase = ms / 90.0 + i * 1.7;
-      result[entry.key] = entry.value +
+      result[entry.key] =
+          entry.value +
           Offset(
             math.sin(phase) * amplitude,
             math.cos(phase * 1.3) * amplitude,

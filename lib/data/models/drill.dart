@@ -13,31 +13,31 @@ enum DrillCategory {
   conditioning;
 
   String get label => switch (this) {
-        DrillCategory.fundamentals => 'Fundamentals',
-        DrillCategory.accuracy => 'Accuracy',
-        DrillCategory.range => 'Range',
-        DrillCategory.movement => 'Movement',
-        DrillCategory.pressure => 'Pressure',
-        DrillCategory.conditioning => 'Conditioning',
-      };
+    DrillCategory.fundamentals => 'Fundamentals',
+    DrillCategory.accuracy => 'Accuracy',
+    DrillCategory.range => 'Range',
+    DrillCategory.movement => 'Movement',
+    DrillCategory.pressure => 'Pressure',
+    DrillCategory.conditioning => 'Conditioning',
+  };
 
   Color get color => switch (this) {
-        DrillCategory.fundamentals => AvColors.court,
-        DrillCategory.accuracy => AvColors.made,
-        DrillCategory.range => AvColors.insight,
-        DrillCategory.movement => AvColors.flare,
-        DrillCategory.pressure => AvColors.caution,
-        DrillCategory.conditioning => AvColors.miss,
-      };
+    DrillCategory.fundamentals => AvColors.court,
+    DrillCategory.accuracy => AvColors.made,
+    DrillCategory.range => AvColors.insight,
+    DrillCategory.movement => AvColors.flare,
+    DrillCategory.pressure => AvColors.caution,
+    DrillCategory.conditioning => AvColors.miss,
+  };
 
   IconData get icon => switch (this) {
-        DrillCategory.fundamentals => Icons.architecture_rounded,
-        DrillCategory.accuracy => Icons.center_focus_strong_rounded,
-        DrillCategory.range => Icons.open_in_full_rounded,
-        DrillCategory.movement => Icons.directions_run_rounded,
-        DrillCategory.pressure => Icons.bolt_rounded,
-        DrillCategory.conditioning => Icons.favorite_rounded,
-      };
+    DrillCategory.fundamentals => Icons.architecture_rounded,
+    DrillCategory.accuracy => Icons.center_focus_strong_rounded,
+    DrillCategory.range => Icons.open_in_full_rounded,
+    DrillCategory.movement => Icons.directions_run_rounded,
+    DrillCategory.pressure => Icons.bolt_rounded,
+    DrillCategory.conditioning => Icons.favorite_rounded,
+  };
 }
 
 enum DrillDifficulty {
@@ -47,11 +47,11 @@ enum DrillDifficulty {
   elite;
 
   String get label => switch (this) {
-        DrillDifficulty.foundation => 'Foundation',
-        DrillDifficulty.developing => 'Developing',
-        DrillDifficulty.advanced => 'Advanced',
-        DrillDifficulty.elite => 'Elite',
-      };
+    DrillDifficulty.foundation => 'Foundation',
+    DrillDifficulty.developing => 'Developing',
+    DrillDifficulty.advanced => 'Advanced',
+    DrillDifficulty.elite => 'Elite',
+  };
 
   int get level => index + 1;
 }

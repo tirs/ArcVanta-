@@ -47,7 +47,8 @@ class GoalsScreen extends ConsumerWidget {
             child: AvEmptyState(
               icon: Icons.flag_rounded,
               title: 'No goals set',
-              message: 'A goal gives the training plan something to aim at. '
+              message:
+                  'A goal gives the training plan something to aim at. '
                   'Pick one number and a date.',
             ),
           ),
@@ -186,8 +187,9 @@ class _GoalCard extends StatelessWidget {
                               ? 0
                               : 1,
                         ),
-                        style: AvType.tabular(AvType.metricLarge)
-                            .copyWith(fontSize: 28, color: goal.kind.color),
+                        style: AvType.tabular(
+                          AvType.metricLarge,
+                        ).copyWith(fontSize: 28, color: goal.kind.color),
                       ),
                       Text(goal.unit, style: AvType.caption.muted),
                     ],
@@ -217,13 +219,13 @@ class _GoalCard extends StatelessWidget {
                   goal.achieved
                       ? 'Hit on ${Fmt.fullDate(goal.dueAt)}.'
                       : daysLeft <= 0
-                          ? 'Past the target date. Set a new one or adjust '
-                              'the number.'
-                          : onPace
-                              ? '$daysLeft days left and on pace at the '
-                                  'current rate.'
-                              : '$daysLeft days left. This needs a step up in '
-                                  'volume to land.',
+                      ? 'Past the target date. Set a new one or adjust '
+                            'the number.'
+                      : onPace
+                      ? '$daysLeft days left and on pace at the '
+                            'current rate.'
+                      : '$daysLeft days left. This needs a step up in '
+                            'volume to land.',
                   style: AvType.caption.muted,
                 ),
               ),
@@ -250,30 +252,28 @@ class _GoalComposerState extends State<_GoalComposer> {
   int _weeks = 4;
 
   String get _unit => switch (_kind) {
-        GoalKind.percentage => '%',
-        GoalKind.volume => ' shots',
-        GoalKind.mechanics => '/100',
-        GoalKind.consistency => '/100',
-        GoalKind.streak => ' in a row',
-      };
+    GoalKind.percentage => '%',
+    GoalKind.volume => ' shots',
+    GoalKind.mechanics => '/100',
+    GoalKind.consistency => '/100',
+    GoalKind.streak => ' in a row',
+  };
 
   (double min, double max) get _bounds => switch (_kind) {
-        GoalKind.percentage => (25, 70),
-        GoalKind.volume => (200, 4000),
-        GoalKind.mechanics => (70, 98),
-        GoalKind.consistency => (60, 98),
-        GoalKind.streak => (3, 25),
-      };
+    GoalKind.percentage => (25, 70),
+    GoalKind.volume => (200, 4000),
+    GoalKind.mechanics => (70, 98),
+    GoalKind.consistency => (60, 98),
+    GoalKind.streak => (3, 25),
+  };
 
   String get _title => switch (_kind) {
-        GoalKind.percentage =>
-          'Shoot ${_target.round()} per cent from the field',
-        GoalKind.volume => 'Put up ${_target.round()} tracked attempts',
-        GoalKind.mechanics => 'Hold a mechanics score of ${_target.round()}',
-        GoalKind.consistency =>
-          'Reach ${_target.round()} on repeatability',
-        GoalKind.streak => 'Make ${_target.round()} in a row',
-      };
+    GoalKind.percentage => 'Shoot ${_target.round()} per cent from the field',
+    GoalKind.volume => 'Put up ${_target.round()} tracked attempts',
+    GoalKind.mechanics => 'Hold a mechanics score of ${_target.round()}',
+    GoalKind.consistency => 'Reach ${_target.round()} on repeatability',
+    GoalKind.streak => 'Make ${_target.round()} in a row',
+  };
 
   @override
   void didUpdateWidget(covariant _GoalComposer oldWidget) {
@@ -331,8 +331,9 @@ class _GoalComposerState extends State<_GoalComposer> {
                 const Spacer(),
                 Text(
                   '${_target.round()}$_unit',
-                  style: AvType.tabular(AvType.metricMedium)
-                      .copyWith(color: _kind.color),
+                  style: AvType.tabular(
+                    AvType.metricMedium,
+                  ).copyWith(color: _kind.color),
                 ),
               ],
             ),
@@ -378,7 +379,8 @@ class _GoalComposerState extends State<_GoalComposer> {
                   id: 'goal-${DateTime.now().millisecondsSinceEpoch}',
                   kind: _kind,
                   title: _title,
-                  detail: 'Tracked automatically from every session recorded '
+                  detail:
+                      'Tracked automatically from every session recorded '
                       'at medium confidence or better.',
                   current: 0,
                   target: _target,

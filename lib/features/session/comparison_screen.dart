@@ -108,10 +108,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         ),
         SliverGutter(
           top: AvSpace.md,
-          child: Text(
-            'Choose a reference',
-            style: AvType.headingSmall.primary,
-          ),
+          child: Text('Choose a reference', style: AvType.headingSmall.primary),
         ),
         SliverGutter(
           top: AvSpace.sm,
@@ -126,7 +123,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                   accent: AvColors.insight,
                   onTap: () => setState(() => _referenceId = null),
                 ),
-                for (final shot in session.shots.where((s) => s.id != subject.id))
+                for (final shot in session.shots.where(
+                  (s) => s.id != subject.id,
+                ))
                   Padding(
                     padding: const EdgeInsets.only(left: AvSpace.xs),
                     child: AvChip(
@@ -188,8 +187,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         if (shot.id == _referenceId) return shot;
       }
     }
-    final candidates =
-        session.attempts.where((s) => s.id != subject.id).toList(growable: false);
+    final candidates = session.attempts
+        .where((s) => s.id != subject.id)
+        .toList(growable: false);
     if (candidates.isEmpty) return subject;
     return candidates.reduce(
       (a, b) => a.mechanicsScore >= b.mechanicsScore ? a : b,
@@ -221,7 +221,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       rows.add(
         AvUnavailableNotice(
           metric: 'Comparison',
-          reason: '${angle.label} placement did not produce measurements at '
+          reason:
+              '${angle.label} placement did not produce measurements at '
               'high enough confidence on both attempts to compare them.',
         ),
       );
@@ -246,29 +247,41 @@ class _ShotHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment:
-              alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: alignEnd
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           children: [
             Container(width: 8, height: 8, color: color),
             const SizedBox(width: 6),
-            Text(
-              role.toUpperCase(),
-              style: AvType.overline.copyWith(color: AvColors.textOnInkMuted),
+            Flexible(
+              child: Text(
+                role.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AvType.overline.copyWith(color: AvColors.textOnInkMuted),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 6),
         Text(
           'Shot ${shot.index} \u00B7 ${shot.result.label}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
           style: AvType.titleMedium.copyWith(color: AvColors.textOnInk),
         ),
         Text(
           '${shot.zone.shortLabel} \u00B7 '
           '${Fmt.clock(shot.offsetFromStart)}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
           style: AvType.caption.copyWith(color: AvColors.textOnInkMuted),
         ),
       ],
@@ -285,9 +298,11 @@ class _DiffRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final delta = subject.value - reference.value;
-    final meaningful = delta.abs() > (subject.targetHigh == null
-        ? 0.01
-        : (subject.targetHigh! - (subject.targetLow ?? 0)) * 0.06);
+    final meaningful =
+        delta.abs() >
+        (subject.targetHigh == null
+            ? 0.01
+            : (subject.targetHigh! - (subject.targetLow ?? 0)) * 0.06);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AvSpace.sm),
@@ -303,7 +318,9 @@ class _DiffRow extends StatelessWidget {
               subject.formatted,
               textAlign: TextAlign.right,
               style: AvType.tabular(AvType.metricSmall).copyWith(
-                color: subject.inTarget ? AvColors.textPrimary : AvColors.caution,
+                color: subject.inTarget
+                    ? AvColors.textPrimary
+                    : AvColors.caution,
               ),
             ),
           ),
@@ -312,8 +329,9 @@ class _DiffRow extends StatelessWidget {
             child: Text(
               reference.formatted,
               textAlign: TextAlign.right,
-              style: AvType.tabular(AvType.metricSmall)
-                  .copyWith(color: AvColors.textMuted),
+              style: AvType.tabular(
+                AvType.metricSmall,
+              ).copyWith(color: AvColors.textMuted),
             ),
           ),
           const SizedBox(width: AvSpace.xs),
@@ -354,21 +372,21 @@ class _TakeawayCard extends StatelessWidget {
 
     final takeaway = kneeDelta.abs() >= 6
         ? 'Your legs were ${kneeDelta > 0 ? 'straighter' : 'deeper'} by '
-            '${kneeDelta.abs().toStringAsFixed(0)} degrees on this rep. Knee '
-            'depth is the strongest predictor of arc in your data.'
+              '${kneeDelta.abs().toStringAsFixed(0)} degrees on this rep. Knee '
+              'depth is the strongest predictor of arc in your data.'
         : holdDelta.abs() >= 80
-            ? 'You held the follow-through '
-                '${holdDelta > 0 ? 'longer' : 'shorter'} by '
-                '${holdDelta.abs()} milliseconds. Your makes cluster around '
-                'the longer hold.'
-            : entryDelta.abs() >= 3
-                ? 'Entry angle differed by '
-                    '${entryDelta.abs().toStringAsFixed(0)} degrees, which is '
-                    'the difference between catching the front rim and '
-                    'dropping through.'
-                : 'These two reps are mechanically close. The difference in '
-                    'outcome came from the finish at the rim rather than the '
-                    'motion.';
+        ? 'You held the follow-through '
+              '${holdDelta > 0 ? 'longer' : 'shorter'} by '
+              '${holdDelta.abs()} milliseconds. Your makes cluster around '
+              'the longer hold.'
+        : entryDelta.abs() >= 3
+        ? 'Entry angle differed by '
+              '${entryDelta.abs().toStringAsFixed(0)} degrees, which is '
+              'the difference between catching the front rim and '
+              'dropping through.'
+        : 'These two reps are mechanically close. The difference in '
+              'outcome came from the finish at the rim rather than the '
+              'motion.';
 
     return AvTintCard(
       tint: AvColors.flareTint,

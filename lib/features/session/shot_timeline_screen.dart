@@ -19,20 +19,20 @@ enum _TimelineFilter { all, makes, misses, uncertain, corrected }
 
 extension on _TimelineFilter {
   String get label => switch (this) {
-        _TimelineFilter.all => 'All',
-        _TimelineFilter.makes => 'Makes',
-        _TimelineFilter.misses => 'Misses',
-        _TimelineFilter.uncertain => 'Uncertain',
-        _TimelineFilter.corrected => 'Corrected',
-      };
+    _TimelineFilter.all => 'All',
+    _TimelineFilter.makes => 'Makes',
+    _TimelineFilter.misses => 'Misses',
+    _TimelineFilter.uncertain => 'Uncertain',
+    _TimelineFilter.corrected => 'Corrected',
+  };
 
   bool matches(Shot shot) => switch (this) {
-        _TimelineFilter.all => true,
-        _TimelineFilter.makes => shot.isMake,
-        _TimelineFilter.misses => shot.result == ShotResult.missed,
-        _TimelineFilter.uncertain => shot.result == ShotResult.uncertain,
-        _TimelineFilter.corrected => shot.correctedByUser,
-      };
+    _TimelineFilter.all => true,
+    _TimelineFilter.makes => shot.isMake,
+    _TimelineFilter.misses => shot.result == ShotResult.missed,
+    _TimelineFilter.uncertain => shot.result == ShotResult.uncertain,
+    _TimelineFilter.corrected => shot.correctedByUser,
+  };
 }
 
 /// Every attempt in the session, in order, with the correction path the scope
@@ -44,8 +44,7 @@ class ShotTimelineScreen extends ConsumerStatefulWidget {
   final String sessionId;
 
   @override
-  ConsumerState<ShotTimelineScreen> createState() =>
-      _ShotTimelineScreenState();
+  ConsumerState<ShotTimelineScreen> createState() => _ShotTimelineScreenState();
 }
 
 class _ShotTimelineScreenState extends ConsumerState<ShotTimelineScreen> {
@@ -157,9 +156,8 @@ class _ShotTimelineScreenState extends ConsumerState<ShotTimelineScreen> {
               itemBuilder: (context, index) => _ShotRow(
                 shot: shots[index],
                 session: session,
-                onOpen: () => context.push(
-                  AppRoute.shot(session.id, shots[index].id),
-                ),
+                onOpen: () =>
+                    context.push(AppRoute.shot(session.id, shots[index].id)),
                 onCorrect: (result) => ref
                     .read(sessionStoreProvider.notifier)
                     .correctShotResult(
@@ -238,9 +236,7 @@ class _CountChip extends StatelessWidget {
               style: AvType.overline.copyWith(
                 fontSize: 8,
                 letterSpacing: 0.5,
-                color: selected
-                    ? AvColors.textOnInkMuted
-                    : AvColors.textMuted,
+                color: selected ? AvColors.textOnInkMuted : AvColors.textMuted,
               ),
             ),
           ],
@@ -291,10 +287,9 @@ class _ShotRow extends StatelessWidget {
                     Icon(shot.result.icon, size: 15, color: shot.result.color),
                     Text(
                       '${shot.index}',
-                      style: AvType.tabular(AvType.overline).copyWith(
-                        fontSize: 8,
-                        color: shot.result.color,
-                      ),
+                      style: AvType.tabular(
+                        AvType.overline,
+                      ).copyWith(fontSize: 8, color: shot.result.color),
                     ),
                   ],
                 ),
@@ -334,18 +329,31 @@ class _ShotRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AvSpace.xs),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    shot.confidence.isAuthoritative
-                        ? '${shot.entryAngle.toStringAsFixed(0)}\u00B0'
-                        : '\u2014',
-                    style: AvType.tabular(AvType.metricMedium)
-                        .copyWith(fontSize: 17),
-                  ),
-                  Text('entry', style: AvType.caption.faint),
-                ],
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        shot.confidence.isAuthoritative
+                            ? '${shot.entryAngle.toStringAsFixed(0)}\u00B0'
+                            : '\u2014',
+                        maxLines: 1,
+                        style: AvType.tabular(
+                          AvType.metricMedium,
+                        ).copyWith(fontSize: 17),
+                      ),
+                    ),
+                    Text(
+                      'entry',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AvType.caption.faint,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: AvSpace.xs),
               AvConfidenceBadge(level: shot.confidence, compact: true),

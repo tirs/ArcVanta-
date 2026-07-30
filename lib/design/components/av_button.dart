@@ -34,23 +34,25 @@ class AvButton extends StatelessWidget {
   final bool busy;
 
   double get _height => switch (size) {
-        AvButtonSize.small => 38,
-        AvButtonSize.medium => 48,
-        AvButtonSize.large => 56,
-      };
+    AvButtonSize.small => 38,
+    AvButtonSize.medium => 48,
+    AvButtonSize.large => 56,
+  };
 
   double get _hPad => switch (size) {
-        AvButtonSize.small => 14,
-        AvButtonSize.medium => 20,
-        AvButtonSize.large => 26,
-      };
+    AvButtonSize.small => 14,
+    AvButtonSize.medium => 20,
+    AvButtonSize.large => 26,
+  };
 
   TextStyle get _textStyle => switch (size) {
-        AvButtonSize.small => AvType.titleSmall,
-        AvButtonSize.medium => AvType.titleMedium,
-        AvButtonSize.large =>
-          AvType.headingSmall.copyWith(fontSize: 16.5, letterSpacing: -0.1),
-      };
+    AvButtonSize.small => AvType.titleSmall,
+    AvButtonSize.medium => AvType.titleMedium,
+    AvButtonSize.large => AvType.headingSmall.copyWith(
+      fontSize: 16.5,
+      letterSpacing: -0.1,
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +74,11 @@ class AvButton extends StatelessWidget {
           ),
           const SizedBox(width: AvSpace.xs),
         ] else if (icon != null) ...[
-          Icon(icon, size: size == AvButtonSize.small ? 16 : 19,
-              color: spec.foreground),
+          Icon(
+            icon,
+            size: size == AvButtonSize.small ? 16 : 19,
+            color: spec.foreground,
+          ),
           const SizedBox(width: AvSpace.xs),
         ],
         Flexible(
@@ -120,39 +125,39 @@ class AvButton extends StatelessWidget {
   }
 
   static _ButtonSpec _spec(AvButtonVariant variant) => switch (variant) {
-        AvButtonVariant.primary => const _ButtonSpec(
-            gradient: AvGradients.flare,
-            foreground: Colors.white,
-            glow: AvColors.flare,
-          ),
-        AvButtonVariant.insight => const _ButtonSpec(
-            gradient: AvGradients.insight,
-            foreground: Colors.white,
-            glow: AvColors.insight,
-          ),
-        AvButtonVariant.court => const _ButtonSpec(
-            gradient: AvGradients.court,
-            foreground: Colors.white,
-            glow: AvColors.court,
-          ),
-        AvButtonVariant.tonal => const _ButtonSpec(
-            background: AvColors.ink,
-            foreground: AvColors.textOnInk,
-          ),
-        AvButtonVariant.outline => const _ButtonSpec(
-            background: Colors.transparent,
-            foreground: AvColors.textPrimary,
-            borderColor: AvColors.hairlineStrong,
-          ),
-        AvButtonVariant.ghost => const _ButtonSpec(
-            background: Colors.transparent,
-            foreground: AvColors.insight,
-          ),
-        AvButtonVariant.danger => const _ButtonSpec(
-            background: AvColors.criticalSoft,
-            foreground: AvColors.critical,
-          ),
-      };
+    AvButtonVariant.primary => const _ButtonSpec(
+      gradient: AvGradients.flare,
+      foreground: Colors.white,
+      glow: AvColors.flare,
+    ),
+    AvButtonVariant.insight => const _ButtonSpec(
+      gradient: AvGradients.insight,
+      foreground: Colors.white,
+      glow: AvColors.insight,
+    ),
+    AvButtonVariant.court => const _ButtonSpec(
+      gradient: AvGradients.court,
+      foreground: Colors.white,
+      glow: AvColors.court,
+    ),
+    AvButtonVariant.tonal => const _ButtonSpec(
+      background: AvColors.ink,
+      foreground: AvColors.textOnInk,
+    ),
+    AvButtonVariant.outline => const _ButtonSpec(
+      background: Colors.transparent,
+      foreground: AvColors.textPrimary,
+      borderColor: AvColors.hairlineStrong,
+    ),
+    AvButtonVariant.ghost => const _ButtonSpec(
+      background: Colors.transparent,
+      foreground: AvColors.insight,
+    ),
+    AvButtonVariant.danger => const _ButtonSpec(
+      background: AvColors.criticalSoft,
+      foreground: AvColors.critical,
+    ),
+  };
 }
 
 class _ButtonSpec {
@@ -207,8 +212,7 @@ class AvIconButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           borderRadius: AvRadius.allSm,
-          border:
-              borderColor == null ? null : Border.all(color: borderColor!),
+          border: borderColor == null ? null : Border.all(color: borderColor!),
         ),
         child: Icon(icon, size: size * 0.48, color: color),
       ),

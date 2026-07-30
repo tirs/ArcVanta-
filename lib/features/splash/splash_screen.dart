@@ -86,8 +86,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         animation: _controller,
                         builder: (context, _) => AvLogoMark(
                           size: 76,
-                          progress: Curves.easeOutCubic
-                              .transform(_controller.value),
+                          progress: Curves.easeOutCubic.transform(
+                            _controller.value,
+                          ),
                         ),
                       ),
                       const SizedBox(height: AvSpace.xl),

@@ -55,8 +55,7 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
     'Better landing balance',
   ];
 
-  bool get _isMinor =>
-      _ageBand != '18 to 22' && _ageBand != '23 and over';
+  bool get _isMinor => _ageBand != '18 to 22' && _ageBand != '23 and over';
 
   @override
   void dispose() {
@@ -75,7 +74,8 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
           children: [
             AvPageHeader(
               title: 'Player profile',
-              subtitle: 'Used to set fair targets and age-appropriate defaults.',
+              subtitle:
+                  'Used to set fair targets and age-appropriate defaults.',
               leading: AvBackButton(onPressed: () => context.go(AppRoute.role)),
             ),
             Expanded(
@@ -167,8 +167,9 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                             child: Text(
                               'A guardian will need to approve this account before '
                               'coach access, cloud review or any sharing is enabled.',
-                              style: AvType.bodySmall
-                                  .copyWith(color: AvColors.cautionDeep),
+                              style: AvType.bodySmall.copyWith(
+                                color: AvColors.cautionDeep,
+                              ),
                             ),
                           ),
                         ],
@@ -210,8 +211,7 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                     title: 'Experience level',
                     child: AvSegmented<SkillLevel>(
                       values: SkillLevel.values,
-                      labels:
-                          SkillLevel.values.map((s) => s.label).toList(),
+                      labels: SkillLevel.values.map((s) => s.label).toList(),
                       selected: _skill,
                       accent: AvColors.made,
                       dense: true,
@@ -230,8 +230,7 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                           max: 225,
                           suffix: 'cm',
                           color: AvColors.court,
-                          onChanged: (value) =>
-                              setState(() => _height = value),
+                          onChanged: (value) => setState(() => _height = value),
                         ),
                         const SizedBox(height: AvSpace.sm),
                         _SliderRow(
@@ -315,7 +314,9 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                 AvSpace.lg,
               ),
               child: AvButton(
-                label: _isMinor ? 'Continue to guardian consent' : 'Finish setup',
+                label: _isMinor
+                    ? 'Continue to guardian consent'
+                    : 'Finish setup',
                 size: AvButtonSize.large,
                 expand: true,
                 trailingIcon: Icons.arrow_forward_rounded,

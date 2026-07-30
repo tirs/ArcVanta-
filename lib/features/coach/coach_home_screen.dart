@@ -20,11 +20,11 @@ enum _RosterSort { attention, name, accuracy, volume }
 
 extension on _RosterSort {
   String get label => switch (this) {
-        _RosterSort.attention => 'Attention',
-        _RosterSort.name => 'Name',
-        _RosterSort.accuracy => 'Accuracy',
-        _RosterSort.volume => 'Volume',
-      };
+    _RosterSort.attention => 'Attention',
+    _RosterSort.name => 'Name',
+    _RosterSort.accuracy => 'Accuracy',
+    _RosterSort.volume => 'Volume',
+  };
 }
 
 /// The coach's roster. Sorted by who needs attention first, because a coach
@@ -46,20 +46,26 @@ class _CoachHomeScreenState extends ConsumerState<CoachHomeScreen> {
     final assignments = ref.watch(assignmentStoreProvider);
     final pending = roster.fold<int>(0, (sum, a) => sum + a.pendingReviews);
 
-    final visible = roster
-        .where(
-          (a) => _query.isEmpty ||
-              a.name.toLowerCase().contains(_query.toLowerCase()),
-        )
-        .toList()
-      ..sort((a, b) => switch (_sort) {
-            _RosterSort.attention => _attentionScore(b)
-                .compareTo(_attentionScore(a)),
-            _RosterSort.name => a.name.compareTo(b.name),
-            _RosterSort.accuracy => b.percentage.compareTo(a.percentage),
-            _RosterSort.volume =>
-              b.sessionsThisWeek.compareTo(a.sessionsThisWeek),
-          });
+    final visible =
+        roster
+            .where(
+              (a) =>
+                  _query.isEmpty ||
+                  a.name.toLowerCase().contains(_query.toLowerCase()),
+            )
+            .toList()
+          ..sort(
+            (a, b) => switch (_sort) {
+              _RosterSort.attention => _attentionScore(
+                b,
+              ).compareTo(_attentionScore(a)),
+              _RosterSort.name => a.name.compareTo(b.name),
+              _RosterSort.accuracy => b.percentage.compareTo(a.percentage),
+              _RosterSort.volume => b.sessionsThisWeek.compareTo(
+                a.sessionsThisWeek,
+              ),
+            },
+          );
 
     return AvScaffold(
       title: 'Roster',
@@ -243,8 +249,9 @@ class _AthleteRow extends StatelessWidget {
                 children: [
                   Text(
                     '${athlete.percentage.toStringAsFixed(0)}%',
-                    style: AvType.tabular(AvType.metricMedium)
-                        .copyWith(fontSize: 19),
+                    style: AvType.tabular(
+                      AvType.metricMedium,
+                    ).copyWith(fontSize: 19),
                   ),
                   AvDelta(value: athlete.percentageDelta, unit: '%'),
                 ],

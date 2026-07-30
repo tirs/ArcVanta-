@@ -69,10 +69,7 @@ class HomeScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            _greeting(),
-                            style: AvType.caption.muted,
-                          ),
+                          Text(_greeting(), style: AvType.caption.muted),
                           Text(
                             profile.displayName,
                             style: AvType.headingMedium.primary,
@@ -150,7 +147,8 @@ class HomeScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: AvSectionHeader(
                 title: 'Goals',
-                subtitle: '${goals.where((g) => g.achieved).length} of ${goals.length} reached',
+                subtitle:
+                    '${goals.where((g) => g.achieved).length} of ${goals.length} reached',
                 accent: AvColors.insight,
                 action: AvTextAction(
                   label: 'Manage',
@@ -280,8 +278,10 @@ class _StartCard extends ConsumerWidget {
             children: [
               Flexible(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: AvColors.flare.withValues(alpha: 0.18),
                     borderRadius: AvRadius.pill,
@@ -392,8 +392,7 @@ class _WeekStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final attempts =
-        points.fold<int>(0, (sum, p) => sum + p.attempts);
+    final attempts = points.fold<int>(0, (sum, p) => sum + p.attempts);
     final makes = points.fold<int>(0, (sum, p) => sum + p.makes);
     final sessions = points.where((p) => p.trained).length;
     final percentage = attempts == 0 ? 0.0 : makes / attempts * 100;
@@ -401,7 +400,7 @@ class _WeekStrip extends StatelessWidget {
     final mechanicsAvg = mechanics.isEmpty
         ? 0.0
         : mechanics.map((p) => p.mechanicsScore).reduce((a, b) => a + b) /
-            mechanics.length;
+              mechanics.length;
 
     return AvCard(
       child: Column(
@@ -578,8 +577,7 @@ class _GoalCard extends StatelessWidget {
                 children: [
                   Text(
                     '${goal.current.toStringAsFixed(goal.current % 1 == 0 ? 0 : 1)}${goal.unit}',
-                    style:
-                        AvType.metricMedium.copyWith(color: goal.kind.color),
+                    style: AvType.metricMedium.copyWith(color: goal.kind.color),
                   ),
                   Text(
                     '  of ${goal.target.toStringAsFixed(goal.target % 1 == 0 ? 0 : 1)}${goal.unit}',
@@ -650,10 +648,7 @@ class _AssignmentCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: AvColors.textFaint,
-          ),
+          const Icon(Icons.chevron_right_rounded, color: AvColors.textFaint),
         ],
       ),
     );

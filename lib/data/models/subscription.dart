@@ -9,18 +9,18 @@ enum PlanTier {
   academy;
 
   String get label => switch (this) {
-        PlanTier.free => 'Free',
-        PlanTier.playerPro => 'Player Pro',
-        PlanTier.coachPro => 'Coach Pro',
-        PlanTier.academy => 'Team & Academy',
-      };
+    PlanTier.free => 'Free',
+    PlanTier.playerPro => 'Player Pro',
+    PlanTier.coachPro => 'Coach Pro',
+    PlanTier.academy => 'Team & Academy',
+  };
 
   Color get accent => switch (this) {
-        PlanTier.free => AvColors.court,
-        PlanTier.playerPro => AvColors.flare,
-        PlanTier.coachPro => AvColors.insight,
-        PlanTier.academy => AvColors.made,
-      };
+    PlanTier.free => AvColors.court,
+    PlanTier.playerPro => AvColors.flare,
+    PlanTier.coachPro => AvColors.insight,
+    PlanTier.academy => AvColors.made,
+  };
 }
 
 enum BillingPeriod {
@@ -71,18 +71,18 @@ enum EntitlementState {
   expired;
 
   String get label => switch (this) {
-        EntitlementState.active => 'Active',
-        EntitlementState.trial => 'Trial',
-        EntitlementState.gracePeriod => 'Billing retry',
-        EntitlementState.expired => 'Expired',
-      };
+    EntitlementState.active => 'Active',
+    EntitlementState.trial => 'Trial',
+    EntitlementState.gracePeriod => 'Billing retry',
+    EntitlementState.expired => 'Expired',
+  };
 
   Color get color => switch (this) {
-        EntitlementState.active => AvColors.made,
-        EntitlementState.trial => AvColors.court,
-        EntitlementState.gracePeriod => AvColors.caution,
-        EntitlementState.expired => AvColors.miss,
-      };
+    EntitlementState.active => AvColors.made,
+    EntitlementState.trial => AvColors.court,
+    EntitlementState.gracePeriod => AvColors.caution,
+    EntitlementState.expired => AvColors.miss,
+  };
 }
 
 class Entitlement {

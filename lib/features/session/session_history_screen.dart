@@ -20,10 +20,10 @@ enum _HistorySort { newest, accuracy, volume }
 
 extension on _HistorySort {
   String get label => switch (this) {
-        _HistorySort.newest => 'Newest',
-        _HistorySort.accuracy => 'Accuracy',
-        _HistorySort.volume => 'Volume',
-      };
+    _HistorySort.newest => 'Newest',
+    _HistorySort.accuracy => 'Accuracy',
+    _HistorySort.volume => 'Volume',
+  };
 }
 
 /// Every stored session, grouped by month, with the totals a player actually
@@ -45,15 +45,17 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
     final all = ref.watch(sessionStoreProvider);
     final drills = {for (final s in all) s.drillId: s.drillName};
 
-    final filtered = all
-        .where((s) => _drillFilter == null || s.drillId == _drillFilter)
-        .toList()
-      ..sort((a, b) => switch (_sort) {
-            _HistorySort.newest => b.startedAt.compareTo(a.startedAt),
-            _HistorySort.accuracy => b.percentage.compareTo(a.percentage),
-            _HistorySort.volume =>
-              b.attemptCount.compareTo(a.attemptCount),
-          });
+    final filtered =
+        all
+            .where((s) => _drillFilter == null || s.drillId == _drillFilter)
+            .toList()
+          ..sort(
+            (a, b) => switch (_sort) {
+              _HistorySort.newest => b.startedAt.compareTo(a.startedAt),
+              _HistorySort.accuracy => b.percentage.compareTo(a.percentage),
+              _HistorySort.volume => b.attemptCount.compareTo(a.attemptCount),
+            },
+          );
 
     final grouped = <String, List<TrainingSession>>{};
     for (final session in filtered) {
@@ -61,8 +63,7 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
       grouped.putIfAbsent(key, () => []).add(session);
     }
 
-    final totalShots =
-        all.fold<int>(0, (sum, s) => sum + s.attemptCount);
+    final totalShots = all.fold<int>(0, (sum, s) => sum + s.attemptCount);
     final totalMakes = all.fold<int>(0, (sum, s) => sum + s.makeCount);
     final totalTime = all.fold<Duration>(
       Duration.zero,
@@ -122,9 +123,7 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
               Expanded(
                 child: AvSegmented<_HistorySort>(
                   values: _HistorySort.values,
-                  labels: [
-                    for (final sort in _HistorySort.values) sort.label,
-                  ],
+                  labels: [for (final sort in _HistorySort.values) sort.label],
                   selected: _sort,
                   onChanged: (value) => setState(() => _sort = value),
                   dense: true,
@@ -154,8 +153,9 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
                         selected: _drillFilter == entry.key,
                         accent: AvColors.court,
                         onTap: () => setState(
-                          () => _drillFilter =
-                              _drillFilter == entry.key ? null : entry.key,
+                          () => _drillFilter = _drillFilter == entry.key
+                              ? null
+                              : entry.key,
                         ),
                       ),
                     ),
@@ -169,7 +169,8 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
             child: AvEmptyState(
               icon: Icons.history_rounded,
               title: 'No sessions yet',
-              message: 'Sessions you record are stored here, on the device, '
+              message:
+                  'Sessions you record are stored here, on the device, '
                   'until you choose to back them up.',
               action: AvButton(
                 label: 'Browse drills',
@@ -185,7 +186,9 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
                 children: [
                   AvOverline(entry.key),
                   const SizedBox(width: AvSpace.sm),
-                  Expanded(child: Container(height: 1, color: AvColors.hairline)),
+                  Expanded(
+                    child: Container(height: 1, color: AvColors.hairline),
+                  ),
                   const SizedBox(width: AvSpace.sm),
                   Text(
                     '${entry.value.length}',

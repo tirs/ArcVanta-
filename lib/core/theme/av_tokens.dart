@@ -36,24 +36,12 @@ abstract final class AvRadius {
 /// feel lit rather than cut out.
 abstract final class AvShadow {
   static const List<BoxShadow> level1 = [
-    BoxShadow(
-      color: Color(0x0D2B2416),
-      blurRadius: 2,
-      offset: Offset(0, 1),
-    ),
-    BoxShadow(
-      color: Color(0x0A2B2416),
-      blurRadius: 10,
-      offset: Offset(0, 4),
-    ),
+    BoxShadow(color: Color(0x0D2B2416), blurRadius: 2, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x0A2B2416), blurRadius: 10, offset: Offset(0, 4)),
   ];
 
   static const List<BoxShadow> level2 = [
-    BoxShadow(
-      color: Color(0x0F2B2416),
-      blurRadius: 3,
-      offset: Offset(0, 1),
-    ),
+    BoxShadow(color: Color(0x0F2B2416), blurRadius: 3, offset: Offset(0, 1)),
     BoxShadow(
       color: Color(0x142B2416),
       blurRadius: 24,
@@ -72,13 +60,13 @@ abstract final class AvShadow {
   ];
 
   static List<BoxShadow> glow(Color color) => [
-        BoxShadow(
-          color: color.withValues(alpha: 0.28),
-          blurRadius: 22,
-          offset: const Offset(0, 10),
-          spreadRadius: -8,
-        ),
-      ];
+    BoxShadow(
+      color: color.withValues(alpha: 0.28),
+      blurRadius: 22,
+      offset: const Offset(0, 10),
+      spreadRadius: -8,
+    ),
+  ];
 
   static const List<BoxShadow> onInk = [
     BoxShadow(
@@ -91,12 +79,18 @@ abstract final class AvShadow {
 }
 
 abstract final class AvBorders {
-  static const BorderSide hairline =
-      BorderSide(color: AvColors.hairline, width: 1);
-  static const BorderSide hairlineStrong =
-      BorderSide(color: AvColors.hairlineStrong, width: 1);
-  static const BorderSide onInk =
-      BorderSide(color: AvColors.hairlineOnInk, width: 1);
+  static const BorderSide hairline = BorderSide(
+    color: AvColors.hairline,
+    width: 1,
+  );
+  static const BorderSide hairlineStrong = BorderSide(
+    color: AvColors.hairlineStrong,
+    width: 1,
+  );
+  static const BorderSide onInk = BorderSide(
+    color: AvColors.hairlineOnInk,
+    width: 1,
+  );
 
   static Border all(Color color, [double width = 1]) =>
       Border.all(color: color, width: width);

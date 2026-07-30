@@ -115,12 +115,7 @@ class _ArcPainter extends CustomPainter {
       );
     }
 
-    _drawPath(
-      canvas,
-      size,
-      shot,
-      shot.isMake ? AvColors.made : AvColors.flare,
-    );
+    _drawPath(canvas, size, shot, shot.isMake ? AvColors.made : AvColors.flare);
 
     if (!showAnnotations) return;
 
@@ -173,12 +168,7 @@ class _ArcPainter extends CustomPainter {
   List<Offset> _points(Size size, Shot source) {
     final floorY = size.height - 18;
     return source.trajectory
-        .map(
-          (p) => Offset(
-            p.dx * size.width,
-            p.dy * (floorY - 8) + 4,
-          ),
-        )
+        .map((p) => Offset(p.dx * size.width, p.dy * (floorY - 8) + 4))
         .toList(growable: false);
   }
 
@@ -272,8 +262,10 @@ class AvPhaseTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (phases.isEmpty) return const SizedBox.shrink();
-    final total =
-        phases.map((p) => p.durationMs).reduce((a, b) => a + b).toDouble();
+    final total = phases
+        .map((p) => p.durationMs)
+        .reduce((a, b) => a + b)
+        .toDouble();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,8 +282,8 @@ class AvPhaseTimeline extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: _palette[i % _palette.length].withValues(
-                          alpha: highlight == null ||
-                                  highlight == phases[i].name
+                          alpha:
+                              highlight == null || highlight == phases[i].name
                               ? 1
                               : 0.3,
                         ),
@@ -433,19 +425,12 @@ class _RimPlotPainter extends CustomPainter {
     final axis = Paint()
       ..strokeWidth = 1
       ..color = AvColors.hairlineStrong;
-    canvas.drawLine(
-      Offset(0, centre.dy),
-      Offset(size.width, centre.dy),
-      axis,
-    );
-    canvas.drawLine(
-      Offset(centre.dx, 0),
-      Offset(centre.dx, size.height),
-      axis,
-    );
+    canvas.drawLine(Offset(0, centre.dy), Offset(size.width, centre.dy), axis);
+    canvas.drawLine(Offset(centre.dx, 0), Offset(centre.dx, size.height), axis);
 
     for (final shot in shots) {
-      final point = centre +
+      final point =
+          centre +
           Offset(
             shot.lateralDeviationCm.clamp(-_rangeCm, _rangeCm) * scale,
             -shot.depthCm.clamp(-_rangeCm, _rangeCm) * scale,
@@ -470,11 +455,7 @@ class _RimPlotPainter extends CustomPainter {
     }
 
     _axisLabel(canvas, 'Left', Offset(6, centre.dy - 16));
-    _axisLabel(
-      canvas,
-      'Right',
-      Offset(size.width - 34, centre.dy - 16),
-    );
+    _axisLabel(canvas, 'Right', Offset(size.width - 34, centre.dy - 16));
     _axisLabel(canvas, 'Long', Offset(centre.dx + 8, 4));
     _axisLabel(canvas, 'Short', Offset(centre.dx + 8, size.height - 16));
   }

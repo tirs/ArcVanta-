@@ -50,9 +50,9 @@ class CourtPainter extends CustomPainter {
   final bool showRestricted;
 
   Offset _p(Size size, double xFt, double yFt) => Offset(
-        (xFt + CourtGeometry.widthFt / 2) / CourtGeometry.widthFt * size.width,
-        size.height - yFt / CourtGeometry.depthFt * size.height,
-      );
+    (xFt + CourtGeometry.widthFt / 2) / CourtGeometry.widthFt * size.width,
+    size.height - yFt / CourtGeometry.depthFt * size.height,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -106,10 +106,16 @@ class CourtPainter extends CustomPainter {
 
     // Backboard and rim.
     canvas.drawLine(
-      _p(size, -CourtGeometry.backboardHalfWidthFt,
-          CourtGeometry.backboardFromBaselineFt),
-      _p(size, CourtGeometry.backboardHalfWidthFt,
-          CourtGeometry.backboardFromBaselineFt),
+      _p(
+        size,
+        -CourtGeometry.backboardHalfWidthFt,
+        CourtGeometry.backboardFromBaselineFt,
+      ),
+      _p(
+        size,
+        CourtGeometry.backboardHalfWidthFt,
+        CourtGeometry.backboardFromBaselineFt,
+      ),
       Paint()
         ..strokeWidth = lineWidth * 1.8
         ..strokeCap = StrokeCap.round
@@ -201,8 +207,7 @@ class AvCourtMap extends StatelessWidget {
       aspectRatio: CourtGeometry.aspect,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final size =
-              Size(constraints.maxWidth, constraints.maxHeight);
+          final size = Size(constraints.maxWidth, constraints.maxHeight);
           return GestureDetector(
             onTapUp: onZoneTap == null
                 ? null
@@ -225,9 +230,7 @@ class AvCourtMap extends StatelessWidget {
                             colors: [Color(0xFFFFFDF8), Color(0xFFF6F1E6)],
                           ),
                     border: Border.all(
-                      color: onInk
-                          ? AvColors.hairlineOnInk
-                          : AvColors.hairline,
+                      color: onInk ? AvColors.hairlineOnInk : AvColors.hairline,
                     ),
                   ),
                 ),
@@ -311,16 +314,17 @@ class _CourtMapPainter extends CustomPainter {
   }
 
   Offset _zonePoint(CourtZone zone, Size size) => Offset(
-        zone.position.dx * size.width,
-        size.height - zone.position.dy * size.height,
-      );
+    zone.position.dx * size.width,
+    size.height - zone.position.dy * size.height,
+  );
 
   void _paintHeat(Canvas canvas, Size size) {
     for (final entry in zones.entries) {
       final record = entry.value;
       if (record.attempts == 0) continue;
       final centre = _zonePoint(entry.key, size);
-      final radius = size.width * (0.10 + math.min(record.attempts, 24) * 0.004);
+      final radius =
+          size.width * (0.10 + math.min(record.attempts, 24) * 0.004);
       final lowSample = record.attempts < minimumSample;
       final color = lowSample
           ? AvColors.unavailable
@@ -359,10 +363,9 @@ class _CourtMapPainter extends CustomPainter {
       final painter = TextPainter(
         text: TextSpan(
           text: label,
-          style: AvType.tabular(AvType.label).copyWith(
-            color: Colors.white,
-            fontSize: 11.5,
-          ),
+          style: AvType.tabular(
+            AvType.label,
+          ).copyWith(color: Colors.white, fontSize: 11.5),
         ),
         textDirection: textDirection,
       )..layout();
@@ -378,8 +381,7 @@ class _CourtMapPainter extends CustomPainter {
 
       canvas.drawRRect(
         chipRect,
-        Paint()
-          ..color = chipColor.withValues(alpha: selected ? 1 : 0.92),
+        Paint()..color = chipColor.withValues(alpha: selected ? 1 : 0.92),
       );
       if (selected) {
         canvas.drawRRect(

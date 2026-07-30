@@ -49,18 +49,20 @@ class PrivacyScreen extends ConsumerWidget {
                         settings.localProcessingOnly
                             ? 'Everything is processed on this device'
                             : 'Some analysis runs in the cloud',
-                        style: AvType.headingSmall
-                            .copyWith(color: AvColors.textOnInk),
+                        style: AvType.headingSmall.copyWith(
+                          color: AvColors.textOnInk,
+                        ),
                       ),
                       const SizedBox(height: AvSpace.xs),
                       Text(
                         settings.localProcessingOnly
                             ? 'Video never leaves the phone. Detection, pose '
-                                'and shot events all run locally.'
+                                  'and shot events all run locally.'
                             : 'Selected clips are uploaded for deeper '
-                                'analysis and deleted after processing.',
-                        style: AvType.bodySmall
-                            .copyWith(color: AvColors.textOnInkMuted),
+                                  'analysis and deleted after processing.',
+                        style: AvType.bodySmall.copyWith(
+                          color: AvColors.textOnInkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -83,7 +85,8 @@ class PrivacyScreen extends ConsumerWidget {
               children: [
                 _ConsentRow(
                   title: 'Process on device only',
-                  detail: 'Turning this off allows selected clips to be sent '
+                  detail:
+                      'Turning this off allows selected clips to be sent '
                       'for cloud analysis, one clip at a time, with a prompt '
                       'each time.',
                   value: settings.localProcessingOnly,
@@ -93,7 +96,8 @@ class PrivacyScreen extends ConsumerWidget {
                 ),
                 _ConsentRow(
                   title: 'Back up sessions',
-                  detail: 'Encrypted copies of measurements and summaries. '
+                  detail:
+                      'Encrypted copies of measurements and summaries. '
                       'Video is never included in backups.',
                   value: settings.cloudBackup,
                   onChanged: (v) =>
@@ -101,7 +105,8 @@ class PrivacyScreen extends ConsumerWidget {
                 ),
                 _ConsentRow(
                   title: 'Help improve detection',
-                  detail: 'Shares corrected results, never video and never '
+                  detail:
+                      'Shares corrected results, never video and never '
                       'anything that identifies you. Off by default.',
                   value: settings.modelTrainingConsent,
                   onChanged: (v) => controller.update(
@@ -140,10 +145,10 @@ class PrivacyScreen extends ConsumerWidget {
                 Text(
                   settings.retention == RetentionWindow.untilDeleted
                       ? 'Video stays on the device until you delete it. '
-                          'Measurements are always kept.'
+                            'Measurements are always kept.'
                       : 'Video is deleted automatically after '
-                          '${settings.retention.label.toLowerCase()}. '
-                          'Measurements and summaries are kept.',
+                            '${settings.retention.label.toLowerCase()}. '
+                            'Measurements and summaries are kept.',
                   style: AvType.caption.muted,
                 ),
               ],
@@ -265,7 +270,8 @@ class PrivacyScreen extends ConsumerWidget {
                   onPressed: () => _confirm(
                     context,
                     title: 'Delete all video',
-                    body: 'Clips on this device are removed permanently. '
+                    body:
+                        'Clips on this device are removed permanently. '
                         'Measurements, sessions and trends are kept.',
                     action: 'Delete video',
                   ),
@@ -279,7 +285,8 @@ class PrivacyScreen extends ConsumerWidget {
                   onPressed: () => _confirm(
                     context,
                     title: 'Delete your account',
-                    body: 'Every session, measurement, clip and setting is '
+                    body:
+                        'Every session, measurement, clip and setting is '
                         'erased from this device and from backup within '
                         'thirty days. This cannot be undone.',
                     action: 'Delete account',

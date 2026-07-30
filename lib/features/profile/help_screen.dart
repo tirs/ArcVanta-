@@ -44,7 +44,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'Getting an accurate setup',
       icon: Icons.videocam_rounded,
       accent: AvColors.court,
-      body: 'Put the phone on a tripod or a stable prop at waist to chest '
+      body:
+          'Put the phone on a tripod or a stable prop at waist to chest '
           'height, five to seven metres from the shooting spot, with the lens '
           'level rather than tilted. Both feet and the whole rim must stay in '
           'frame through the jump. Keep bright windows behind the camera. '
@@ -55,7 +56,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'Why a measurement says "not available"',
       icon: Icons.visibility_off_rounded,
       accent: AvColors.unavailable,
-      body: 'Every metric depends on camera placement. A side view cannot see '
+      body:
+          'Every metric depends on camera placement. A side view cannot see '
           'left and right error; a front view cannot separate arc height from '
           'distance; a rear view cannot see the lower body through the load. '
           'Rather than estimate a number it cannot support, the app marks the '
@@ -65,7 +67,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'What the confidence levels mean',
       icon: Icons.verified_rounded,
       accent: AvColors.made,
-      body: 'High means detection, tracking and calibration all met their '
+      body:
+          'High means detection, tracking and calibration all met their '
           'thresholds. Medium means the value is usable but one input was '
           'weaker than target, so small changes should be treated with care. '
           'Low means the measurement is shown for reference only: it never '
@@ -75,7 +78,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'Why my percentage moved without me changing anything',
       icon: Icons.query_stats_rounded,
       accent: AvColors.insight,
-      body: 'Small samples move a lot. Twenty attempts is enough to notice a '
+      body:
+          'Small samples move a lot. Twenty attempts is enough to notice a '
           'pattern and not enough to prove one. The progress screen states how '
           'much of any movement is explained by camera setup rather than '
           'performance, and how many attempts the number is based on.',
@@ -84,7 +88,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'Correcting a result the system got wrong',
       icon: Icons.edit_note_rounded,
       accent: AvColors.flare,
-      body: 'Open the shot from the timeline and choose the correct outcome, '
+      body:
+          'Open the shot from the timeline and choose the correct outcome, '
           'or fix the last attempt from the live controls without stopping. '
           'Corrections update your totals immediately and are stored as '
           'corrections, separate from the model output, so the record of what '
@@ -94,7 +99,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'What the app cannot measure',
       icon: Icons.help_outline_rounded,
       accent: AvColors.caution,
-      body: 'It measures shooting from video. It does not measure force, '
+      body:
+          'It measures shooting from video. It does not measure force, '
           'fatigue, injury risk or anything inside the body, and it is not a '
           'medical device. Defensive pressure, game context and decision '
           'making are outside what a fixed camera can see.',
@@ -103,7 +109,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'Battery, heat and long sessions',
       icon: Icons.local_fire_department_rounded,
       accent: AvColors.miss,
-      body: 'Continuous vision processing is demanding. With the thermal guard '
+      body:
+          'Continuous vision processing is demanding. With the thermal guard '
           'on, the app simplifies the overlay before it lowers measurement '
           'quality. Expect roughly ninety minutes of continuous capture on a '
           'full charge at 60 fps, longer at 30.',
@@ -112,7 +119,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
       title: 'Sharing with a coach or guardian',
       icon: Icons.shield_rounded,
       accent: AvColors.court,
-      body: 'Nothing is shared until you send it. Coaches see summaries and '
+      body:
+          'Nothing is shared until you send it. Coaches see summaries and '
           'the clips you send them. On accounts under sixteen, a guardian '
           'approves coach access before any shot-level data or video is '
           'visible, and public sharing is never available.',
@@ -324,10 +332,10 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                         expand: true,
                         onPressed: () =>
                             ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Opening a support conversation'),
-                          ),
-                        ),
+                              const SnackBar(
+                                content: Text('Opening a support conversation'),
+                              ),
+                            ),
                       ),
                     ),
                     const SizedBox(width: AvSpace.xs),
@@ -339,10 +347,10 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                         expand: true,
                         onPressed: () =>
                             ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Diagnostic report prepared'),
-                          ),
-                        ),
+                              const SnackBar(
+                                content: Text('Diagnostic report prepared'),
+                              ),
+                            ),
                       ),
                     ),
                   ],

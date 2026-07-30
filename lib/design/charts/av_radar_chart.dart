@@ -112,7 +112,9 @@ class _RadarPainter extends CustomPainter {
     final path = Path();
     for (var i = 0; i < axes.length; i++) {
       final point = _point(centre, radius * axes[i].value.clamp(0, 1), i);
-      i == 0 ? path.moveTo(point.dx, point.dy) : path.lineTo(point.dx, point.dy);
+      i == 0
+          ? path.moveTo(point.dx, point.dy)
+          : path.lineTo(point.dx, point.dy);
     }
     path.close();
 

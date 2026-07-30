@@ -60,7 +60,8 @@ class SessionSummaryScreen extends ConsumerWidget {
 
     return AvScaffold(
       title: session.drillName,
-      subtitle: '${Fmt.fullDate(session.startedAt)} at '
+      subtitle:
+          '${Fmt.fullDate(session.startedAt)} at '
           '${Fmt.time(session.startedAt)}',
       leading: const AvBackButton(),
       actions: [
@@ -141,9 +142,7 @@ class SessionSummaryScreen extends ConsumerWidget {
               padding: EdgeInsets.only(bottom: AvSpace.sm),
             ),
           ),
-          SliverGutter(
-            child: CoachingCueCard(cue: session.primaryCue!),
-          ),
+          SliverGutter(child: CoachingCueCard(cue: session.primaryCue!)),
           for (final cue in session.cues.where(
             (c) => c.id != session.primaryCue!.id,
           ))
@@ -218,10 +217,7 @@ class SessionSummaryScreen extends ConsumerWidget {
                   MetricGroup.timing,
                 ]) ...[
                   Padding(
-                    padding: const EdgeInsets.only(
-                      top: AvSpace.sm,
-                      bottom: 2,
-                    ),
+                    padding: const EdgeInsets.only(top: AvSpace.sm, bottom: 2),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: AvOverline(group.label),
@@ -311,11 +307,11 @@ class SessionSummaryScreen extends ConsumerWidget {
                   onPressed: session.bestMechanicsShot == null
                       ? null
                       : () => context.push(
-                            AppRoute.compare(
-                              session.id,
-                              session.bestMechanicsShot!.id,
-                            ),
+                          AppRoute.compare(
+                            session.id,
+                            session.bestMechanicsShot!.id,
                           ),
+                        ),
                 ),
               ),
             ],
@@ -388,7 +384,9 @@ class SessionSummaryScreen extends ConsumerWidget {
     WidgetRef ref,
     TrainingSession session,
   ) {
-    ref.read(highlightStoreProvider.notifier).add(
+    ref
+        .read(highlightStoreProvider.notifier)
+        .add(
           Highlight(
             id: 'highlight-${session.id}',
             title: '${session.bestStreak} straight \u00B7 ${session.drillName}',
@@ -511,7 +509,10 @@ class _ProvenanceCard extends StatelessWidget {
           AvKeyValue(
             label: 'Capture quality',
             value: '${(calibration.qualityScore * 100).round()} of 100',
-            trailing: AvConfidenceBadge(level: calibration.level, compact: true),
+            trailing: AvConfidenceBadge(
+              level: calibration.level,
+              compact: true,
+            ),
           ),
           AvKeyValue(label: 'Court profile', value: calibration.courtProfile),
           AvKeyValue(
@@ -532,7 +533,8 @@ class _ProvenanceCard extends StatelessWidget {
             const SizedBox(height: AvSpace.sm),
             AvUnavailableNotice(
               metric: '${session.uncertainCount} attempts were not classified',
-              reason: 'The ball left the tracked area or was blocked from the '
+              reason:
+                  'The ball left the tracked area or was blocked from the '
                   'camera. These attempts are counted but excluded from '
                   'accuracy and from your trends.',
             ),
@@ -589,7 +591,8 @@ class _ShareSheetState extends State<_ShareSheet> {
             ),
             _ShareToggle(
               label: 'Video clips',
-              detail: 'Raw footage of each attempt. Largest file, most '
+              detail:
+                  'Raw footage of each attempt. Largest file, most '
                   'sensitive.',
               value: _includeVideo,
               onChanged: (v) => setState(() => _includeVideo = v),

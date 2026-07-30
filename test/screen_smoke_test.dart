@@ -1,4 +1,6 @@
 import 'package:arcvanta/core/theme/av_theme.dart';
+import 'package:arcvanta/core/utils/formatters.dart';
+import 'package:arcvanta/data/capture/simulated_capture_source.dart';
 import 'package:arcvanta/data/models/confidence.dart';
 import 'package:arcvanta/data/seed/drill_catalog.dart';
 import 'package:arcvanta/data/seed/seed_data.dart';
@@ -35,6 +37,7 @@ import 'package:arcvanta/features/session/session_summary_screen.dart';
 import 'package:arcvanta/features/session/shot_detail_screen.dart';
 import 'package:arcvanta/features/session/shot_timeline_screen.dart';
 import 'package:arcvanta/features/subscription/subscription_screen.dart';
+import 'package:arcvanta/state/live_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +66,10 @@ void main() {
       drillId: drill.id,
       angle: CameraAngle.side,
     ),
+    'live session': LiveSessionScreen(
+      drillId: drill.id,
+      angle: CameraAngle.side,
+    ),
     'session summary': SessionSummaryScreen(sessionId: session.id),
     'shot timeline': ShotTimelineScreen(sessionId: session.id),
     'shot detail': ShotDetailScreen(sessionId: session.id, shotId: shot.id),
@@ -86,38 +93,18 @@ void main() {
     'help': const HelpScreen(),
   };
 
+  // The smallest and largest phones still sold, plus the text scales the
+  // platform accessibility settings actually reach. Anything that overflows in
+  // one of these overflows on somebody's device.
   const viewports = <String, ({Size size, double textScale})>{
+    'small phone': (size: Size(320, 568), textScale: 1),
     'compact phone': (size: Size(360, 640), textScale: 1),
     'standard phone': (size: Size(393, 852), textScale: 1),
     'large phone': (size: Size(430, 932), textScale: 1),
     'large text': (size: Size(393, 852), textScale: 1.3),
+    'largest text': (size: Size(360, 800), textScale: 1.6),
     'landscape': (size: Size(852, 393), textScale: 1),
   };
-
-  // The live screen drives a frame clock, so it is mounted and torn down on
-  // its own rather than in the viewport sweep.
-  for (final angle in CameraAngle.values) {
-    testWidgets('live session renders on the ${angle.label}', (tester) async {
-      tester.view
-        ..physicalSize = const Size(393, 852) * 3
-        ..devicePixelRatio = 3;
-      addTearDown(tester.view.reset);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            theme: AvTheme.build(),
-            home: LiveSessionScreen(drillId: drill.id, angle: angle),
-          ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 16));
-      await tester.pump(const Duration(seconds: 2));
-      await tester.pump(const Duration(seconds: 5));
-
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
-  }
 
   for (final viewport in viewports.entries) {
     group(viewport.key, () {
@@ -128,8 +115,18 @@ void main() {
             ..devicePixelRatio = 3;
           addTearDown(tester.view.reset);
 
+          // Every screen is mounted against a pipeline the test owns, so none
+          // of them depend on a running clock.
+          final capture = ScriptedCaptureSource();
+          Fmt.currentTime = () => SeedData.today.add(const Duration(hours: 8));
+          addTearDown(() {
+            Fmt.currentTime = DateTime.now;
+            return capture.dispose();
+          });
+
           await tester.pumpWidget(
             ProviderScope(
+              overrides: [captureSourceProvider.overrideWithValue(capture)],
               child: MaterialApp(
                 theme: AvTheme.build(),
                 builder: (context, child) => MediaQuery.withClampedTextScaling(
@@ -142,6 +139,22 @@ void main() {
             ),
           );
           await tester.pump(const Duration(milliseconds: 500));
+
+          // Push the capture screens through a full shot so their live states
+          // are laid out too, not just their empty ones.
+          await tester.pump(const Duration(seconds: 4));
+          for (final ms in const [600, 1800, 2600, 2900, 3600, 4400]) {
+            capture.emitFrame(ScriptedCaptureSource.frameAt(ms));
+            await tester.pump(const Duration(milliseconds: 16));
+          }
+          capture.emitShot(session.shots.first);
+          await tester.pump(const Duration(milliseconds: 16));
+          await tester.pump(const Duration(seconds: 2));
+
+          // Tearing the tree down before the frame is reported would strip the
+          // widget creator from any layout error, so settle first.
+          await tester.pump();
+          addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
         });
       }
     });

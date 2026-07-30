@@ -10,20 +10,20 @@ enum AssignmentStatus {
   overdue;
 
   String get label => switch (this) {
-        AssignmentStatus.assigned => 'Assigned',
-        AssignmentStatus.inProgress => 'In progress',
-        AssignmentStatus.submitted => 'Awaiting review',
-        AssignmentStatus.reviewed => 'Reviewed',
-        AssignmentStatus.overdue => 'Overdue',
-      };
+    AssignmentStatus.assigned => 'Assigned',
+    AssignmentStatus.inProgress => 'In progress',
+    AssignmentStatus.submitted => 'Awaiting review',
+    AssignmentStatus.reviewed => 'Reviewed',
+    AssignmentStatus.overdue => 'Overdue',
+  };
 
   Color get color => switch (this) {
-        AssignmentStatus.assigned => AvColors.court,
-        AssignmentStatus.inProgress => AvColors.insight,
-        AssignmentStatus.submitted => AvColors.caution,
-        AssignmentStatus.reviewed => AvColors.made,
-        AssignmentStatus.overdue => AvColors.miss,
-      };
+    AssignmentStatus.assigned => AvColors.court,
+    AssignmentStatus.inProgress => AvColors.insight,
+    AssignmentStatus.submitted => AvColors.caution,
+    AssignmentStatus.reviewed => AvColors.made,
+    AssignmentStatus.overdue => AvColors.miss,
+  };
 }
 
 class Assignment {
@@ -63,10 +63,10 @@ enum PlanDayKind {
   rest;
 
   String get label => switch (this) {
-        PlanDayKind.session => 'Training',
-        PlanDayKind.recovery => 'Light recovery',
-        PlanDayKind.rest => 'Rest',
-      };
+    PlanDayKind.session => 'Training',
+    PlanDayKind.recovery => 'Light recovery',
+    PlanDayKind.rest => 'Rest',
+  };
 }
 
 class PlanDay {
@@ -113,7 +113,8 @@ class TrainingPlan {
   final double currentValue;
 
   int get completedDays => days.where((d) => d.completed).length;
-  int get sessionDays => days.where((d) => d.kind == PlanDayKind.session).length;
+  int get sessionDays =>
+      days.where((d) => d.kind == PlanDayKind.session).length;
   double get progress =>
       sessionDays == 0 ? 0 : completedDays / sessionDays.toDouble();
 }
@@ -126,28 +127,28 @@ enum GoalKind {
   streak;
 
   String get label => switch (this) {
-        GoalKind.percentage => 'Accuracy',
-        GoalKind.volume => 'Volume',
-        GoalKind.mechanics => 'Mechanics',
-        GoalKind.consistency => 'Consistency',
-        GoalKind.streak => 'Streak',
-      };
+    GoalKind.percentage => 'Accuracy',
+    GoalKind.volume => 'Volume',
+    GoalKind.mechanics => 'Mechanics',
+    GoalKind.consistency => 'Consistency',
+    GoalKind.streak => 'Streak',
+  };
 
   IconData get icon => switch (this) {
-        GoalKind.percentage => Icons.percent_rounded,
-        GoalKind.volume => Icons.equalizer_rounded,
-        GoalKind.mechanics => Icons.accessibility_new_rounded,
-        GoalKind.consistency => Icons.show_chart_rounded,
-        GoalKind.streak => Icons.local_fire_department_rounded,
-      };
+    GoalKind.percentage => Icons.percent_rounded,
+    GoalKind.volume => Icons.equalizer_rounded,
+    GoalKind.mechanics => Icons.accessibility_new_rounded,
+    GoalKind.consistency => Icons.show_chart_rounded,
+    GoalKind.streak => Icons.local_fire_department_rounded,
+  };
 
   Color get color => switch (this) {
-        GoalKind.percentage => AvColors.made,
-        GoalKind.volume => AvColors.court,
-        GoalKind.mechanics => AvColors.insight,
-        GoalKind.consistency => AvColors.flare,
-        GoalKind.streak => AvColors.caution,
-      };
+    GoalKind.percentage => AvColors.made,
+    GoalKind.volume => AvColors.court,
+    GoalKind.mechanics => AvColors.insight,
+    GoalKind.consistency => AvColors.flare,
+    GoalKind.streak => AvColors.caution,
+  };
 }
 
 class Goal {
@@ -184,18 +185,18 @@ enum HighlightKind {
   sessionRecap;
 
   String get label => switch (this) {
-        HighlightKind.bestMakes => 'Best makes',
-        HighlightKind.progressComparison => 'Progress comparison',
-        HighlightKind.coachReview => 'Coach review reel',
-        HighlightKind.sessionRecap => 'Session recap',
-      };
+    HighlightKind.bestMakes => 'Best makes',
+    HighlightKind.progressComparison => 'Progress comparison',
+    HighlightKind.coachReview => 'Coach review reel',
+    HighlightKind.sessionRecap => 'Session recap',
+  };
 
   IconData get icon => switch (this) {
-        HighlightKind.bestMakes => Icons.auto_awesome_motion_rounded,
-        HighlightKind.progressComparison => Icons.compare_arrows_rounded,
-        HighlightKind.coachReview => Icons.rate_review_rounded,
-        HighlightKind.sessionRecap => Icons.movie_creation_rounded,
-      };
+    HighlightKind.bestMakes => Icons.auto_awesome_motion_rounded,
+    HighlightKind.progressComparison => Icons.compare_arrows_rounded,
+    HighlightKind.coachReview => Icons.rate_review_rounded,
+    HighlightKind.sessionRecap => Icons.movie_creation_rounded,
+  };
 }
 
 enum HighlightVisibility {
@@ -204,16 +205,16 @@ enum HighlightVisibility {
   team;
 
   String get label => switch (this) {
-        HighlightVisibility.privateOnly => 'Private',
-        HighlightVisibility.coachAndGuardian => 'Coach and guardian',
-        HighlightVisibility.team => 'Team',
-      };
+    HighlightVisibility.privateOnly => 'Private',
+    HighlightVisibility.coachAndGuardian => 'Coach and guardian',
+    HighlightVisibility.team => 'Team',
+  };
 
   IconData get icon => switch (this) {
-        HighlightVisibility.privateOnly => Icons.lock_rounded,
-        HighlightVisibility.coachAndGuardian => Icons.shield_rounded,
-        HighlightVisibility.team => Icons.groups_2_rounded,
-      };
+    HighlightVisibility.privateOnly => Icons.lock_rounded,
+    HighlightVisibility.coachAndGuardian => Icons.shield_rounded,
+    HighlightVisibility.team => Icons.groups_2_rounded,
+  };
 }
 
 class Highlight {
@@ -251,31 +252,31 @@ enum NotificationKind {
   safety;
 
   String get label => switch (this) {
-        NotificationKind.training => 'Training reminder',
-        NotificationKind.assignment => 'Coach assignment',
-        NotificationKind.progress => 'Goal and streak',
-        NotificationKind.analysis => 'Cloud analysis',
-        NotificationKind.account => 'Account and billing',
-        NotificationKind.safety => 'Guardian and safety',
-      };
+    NotificationKind.training => 'Training reminder',
+    NotificationKind.assignment => 'Coach assignment',
+    NotificationKind.progress => 'Goal and streak',
+    NotificationKind.analysis => 'Cloud analysis',
+    NotificationKind.account => 'Account and billing',
+    NotificationKind.safety => 'Guardian and safety',
+  };
 
   IconData get icon => switch (this) {
-        NotificationKind.training => Icons.alarm_rounded,
-        NotificationKind.assignment => Icons.assignment_rounded,
-        NotificationKind.progress => Icons.trending_up_rounded,
-        NotificationKind.analysis => Icons.cloud_done_rounded,
-        NotificationKind.account => Icons.credit_card_rounded,
-        NotificationKind.safety => Icons.shield_moon_rounded,
-      };
+    NotificationKind.training => Icons.alarm_rounded,
+    NotificationKind.assignment => Icons.assignment_rounded,
+    NotificationKind.progress => Icons.trending_up_rounded,
+    NotificationKind.analysis => Icons.cloud_done_rounded,
+    NotificationKind.account => Icons.credit_card_rounded,
+    NotificationKind.safety => Icons.shield_moon_rounded,
+  };
 
   Color get color => switch (this) {
-        NotificationKind.training => AvColors.flare,
-        NotificationKind.assignment => AvColors.insight,
-        NotificationKind.progress => AvColors.made,
-        NotificationKind.analysis => AvColors.court,
-        NotificationKind.account => AvColors.caution,
-        NotificationKind.safety => AvColors.miss,
-      };
+    NotificationKind.training => AvColors.flare,
+    NotificationKind.assignment => AvColors.insight,
+    NotificationKind.progress => AvColors.made,
+    NotificationKind.analysis => AvColors.court,
+    NotificationKind.account => AvColors.caution,
+    NotificationKind.safety => AvColors.miss,
+  };
 }
 
 class AppNotification {

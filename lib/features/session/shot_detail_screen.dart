@@ -61,8 +61,9 @@ class ShotDetailScreen extends ConsumerWidget {
     );
     final index = session.shots.indexOf(shot);
     final previous = index > 0 ? session.shots[index - 1] : null;
-    final next =
-        index < session.shots.length - 1 ? session.shots[index + 1] : null;
+    final next = index < session.shots.length - 1
+        ? session.shots[index + 1]
+        : null;
 
     return AvScaffold(
       title: 'Shot ${shot.index}',
@@ -86,8 +87,8 @@ class ShotDetailScreen extends ConsumerWidget {
               onPressed: previous == null
                   ? null
                   : () => context.pushReplacement(
-                        AppRoute.shot(session.id, previous.id),
-                      ),
+                      AppRoute.shot(session.id, previous.id),
+                    ),
             ),
           ),
           Expanded(
@@ -99,14 +100,16 @@ class ShotDetailScreen extends ConsumerWidget {
               onPressed: next == null
                   ? null
                   : () => context.pushReplacement(
-                        AppRoute.shot(session.id, next.id),
-                      ),
+                      AppRoute.shot(session.id, next.id),
+                    ),
             ),
           ),
         ],
       ),
       slivers: [
-        SliverGutter(child: _OutcomePanel(shot: shot, session: session)),
+        SliverGutter(
+          child: _OutcomePanel(shot: shot, session: session),
+        ),
         SliverGutter(
           top: AvSpace.sm,
           child: AvCard(
@@ -189,17 +192,20 @@ class ShotDetailScreen extends ConsumerWidget {
             padding: EdgeInsets.only(bottom: AvSpace.sm),
           ),
         ),
-        SliverGutter(child: _EvidenceCard(shot: shot, session: session)),
+        SliverGutter(
+          child: _EvidenceCard(shot: shot, session: session),
+        ),
         SliverGutter(
           top: AvSpace.sm,
           child: _CorrectionCard(
             shot: shot,
-            onCorrect: (result) =>
-                ref.read(sessionStoreProvider.notifier).correctShotResult(
-                      sessionId: session.id,
-                      shotId: shot.id,
-                      result: result,
-                    ),
+            onCorrect: (result) => ref
+                .read(sessionStoreProvider.notifier)
+                .correctShotResult(
+                  sessionId: session.id,
+                  shotId: shot.id,
+                  result: result,
+                ),
           ),
         ),
       ],
@@ -230,7 +236,8 @@ class ShotDetailScreen extends ConsumerWidget {
               if (metric.targetLow != null && metric.targetHigh != null)
                 AvKeyValue(
                   label: 'Target range',
-                  value: '${metric.targetLow!.toStringAsFixed(1)}'
+                  value:
+                      '${metric.targetLow!.toStringAsFixed(1)}'
                       '\u2013${metric.targetHigh!.toStringAsFixed(1)}'
                       '${metric.unit}',
                 ),
@@ -304,15 +311,17 @@ class _OutcomePanel extends StatelessWidget {
                   children: [
                     Text(
                       shot.outcomeDetail.label,
-                      style: AvType.headingMedium
-                          .copyWith(color: AvColors.textOnInk),
+                      style: AvType.headingMedium.copyWith(
+                        color: AvColors.textOnInk,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${shot.type.label} \u00B7 '
                       '${Fmt.clock(shot.offsetFromStart)} into the session',
-                      style: AvType.caption
-                          .copyWith(color: AvColors.textOnInkMuted),
+                      style: AvType.caption.copyWith(
+                        color: AvColors.textOnInkMuted,
+                      ),
                     ),
                   ],
                 ),

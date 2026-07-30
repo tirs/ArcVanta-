@@ -18,8 +18,7 @@ class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
 
   @override
-  ConsumerState<SubscriptionScreen> createState() =>
-      _SubscriptionScreenState();
+  ConsumerState<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
 class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
@@ -58,9 +57,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   content: Text(
                     selected == entitlement.tier
                         ? 'Opening ${entitlement.store} to manage '
-                            '${selected.label}'
+                              '${selected.label}'
                         : 'Opening ${entitlement.store} to confirm the '
-                            'change to ${selected.label}',
+                              'change to ${selected.label}',
                   ),
                 ),
               ),
@@ -105,28 +104,32 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 _GuaranteeRow(
                   icon: Icons.download_rounded,
                   title: 'Your data stays exportable',
-                  detail: 'Sessions, measurements and clips can be exported '
+                  detail:
+                      'Sessions, measurements and clips can be exported '
                       'in full at any time, including after a plan lapses.',
                 ),
                 AvSeparator(inset: 34),
                 _GuaranteeRow(
                   icon: Icons.lock_clock_rounded,
                   title: 'Recorded work is never deleted by billing',
-                  detail: 'If a subscription ends, historical sessions stay '
+                  detail:
+                      'If a subscription ends, historical sessions stay '
                       'readable. Only new premium analysis stops.',
                 ),
                 AvSeparator(inset: 34),
                 _GuaranteeRow(
                   icon: Icons.child_care_rounded,
                   title: 'Minor accounts are never upsold',
-                  detail: 'Purchase flows are hidden on accounts under '
+                  detail:
+                      'Purchase flows are hidden on accounts under '
                       'sixteen and routed to the guardian instead.',
                 ),
                 AvSeparator(inset: 34),
                 _GuaranteeRow(
                   icon: Icons.receipt_long_rounded,
                   title: 'No usage-based surprises',
-                  detail: 'Cloud analysis credits are shown before each run '
+                  detail:
+                      'Cloud analysis credits are shown before each run '
                       'and never billed automatically.',
                 ),
               ],
@@ -158,9 +161,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   size: AvButtonSize.small,
                   expand: true,
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Opening ${entitlement.store}'),
-                    ),
+                    SnackBar(content: Text('Opening ${entitlement.store}')),
                   ),
                 ),
               ),
@@ -185,13 +186,16 @@ class _EntitlementCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: AvSpace.sm,
+            runSpacing: AvSpace.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               Text(
                 'CURRENT PLAN',
                 style: AvType.overline.copyWith(color: AvColors.textOnInkMuted),
               ),
-              const Spacer(),
               AvPill(
                 label: entitlement.state.label,
                 color: entitlement.state.color,
@@ -232,9 +236,10 @@ class _EntitlementCard extends StatelessWidget {
                   entitlement.verifiedServerSide
                       ? 'Receipt verified with ${entitlement.store}.'
                       : 'Waiting on receipt verification from '
-                          '${entitlement.store}.',
-                  style:
-                      AvType.caption.copyWith(color: AvColors.textOnInkMuted),
+                            '${entitlement.store}.',
+                  style: AvType.caption.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
               ),
             ],
@@ -354,8 +359,9 @@ class _PlanCard extends StatelessWidget {
                       children: [
                         Text(
                           Fmt.money(price),
-                          style: AvType.tabular(AvType.metricLarge)
-                              .copyWith(fontSize: 28, color: plan.tier.accent),
+                          style: AvType.tabular(
+                            AvType.metricLarge,
+                          ).copyWith(fontSize: 28, color: plan.tier.accent),
                         ),
                         if (price > 0) ...[
                           const SizedBox(width: 4),

@@ -11,25 +11,24 @@ enum MetricGroup {
   timing;
 
   String get label => switch (this) {
-        MetricGroup.outcome => 'Outcome',
-        MetricGroup.arc => 'Arc and flight',
-        MetricGroup.accuracy => 'Accuracy at the rim',
-        MetricGroup.mechanics => 'Body mechanics',
-        MetricGroup.timing => 'Timing and balance',
-      };
+    MetricGroup.outcome => 'Outcome',
+    MetricGroup.arc => 'Arc and flight',
+    MetricGroup.accuracy => 'Accuracy at the rim',
+    MetricGroup.mechanics => 'Body mechanics',
+    MetricGroup.timing => 'Timing and balance',
+  };
 
   String get description => switch (this) {
-        MetricGroup.outcome =>
-          'What happened to the ball and how certain the system is about it.',
-        MetricGroup.arc =>
-          'The shape of the shot from release to the rim.',
-        MetricGroup.accuracy =>
-          'Where the ball arrived relative to the centre of the rim.',
-        MetricGroup.mechanics =>
-          'Joint angles measured through the shooting motion.',
-        MetricGroup.timing =>
-          'How long each part of the motion took and how you landed.',
-      };
+    MetricGroup.outcome =>
+      'What happened to the ball and how certain the system is about it.',
+    MetricGroup.arc => 'The shape of the shot from release to the rim.',
+    MetricGroup.accuracy =>
+      'Where the ball arrived relative to the centre of the rim.',
+    MetricGroup.mechanics =>
+      'Joint angles measured through the shooting motion.',
+    MetricGroup.timing =>
+      'How long each part of the motion took and how you landed.',
+  };
 }
 
 /// A measurement together with the group it belongs to.
@@ -62,8 +61,9 @@ abstract final class MetricCatalog {
     required CameraAngle angle,
     Map<String, double> baselines = const {},
   }) {
-    ConfidenceLevel grade(Set<CameraAngle> eligible) =>
-        eligible.contains(angle) ? shot.confidence : ConfidenceLevel.unavailable;
+    ConfidenceLevel grade(Set<CameraAngle> eligible) => eligible.contains(angle)
+        ? shot.confidence
+        : ConfidenceLevel.unavailable;
 
     return [
       GroupedMetric(
@@ -78,7 +78,8 @@ abstract final class MetricCatalog {
           targetLow: 48,
           targetHigh: 55,
           personalBaseline: baselines['releaseAngle'],
-          description: 'Angle of the ball leaving the hand, measured against '
+          description:
+              'Angle of the ball leaving the hand, measured against '
               'the floor plane.',
         ),
       ),
@@ -94,7 +95,8 @@ abstract final class MetricCatalog {
           targetLow: 43,
           targetHigh: 50,
           personalBaseline: baselines['entryAngle'],
-          description: 'Angle the ball makes with the rim plane on arrival. '
+          description:
+              'Angle the ball makes with the rim plane on arrival. '
               'Forty-five degrees maximises the effective opening.',
         ),
       ),
@@ -135,7 +137,8 @@ abstract final class MetricCatalog {
           unit: ' m/s',
           confidence: grade(_sideish),
           eligibleAngles: _sideish,
-          description: 'Speed of the ball measured over the first metre of '
+          description:
+              'Speed of the ball measured over the first metre of '
               'flight.',
         ),
       ),
@@ -151,7 +154,8 @@ abstract final class MetricCatalog {
           targetLow: -5,
           targetHigh: 5,
           personalBaseline: baselines['lateral'],
-          description: 'Horizontal distance from the centre of the rim. '
+          description:
+              'Horizontal distance from the centre of the rim. '
               'Negative values are left.',
         ),
       ),
@@ -167,7 +171,8 @@ abstract final class MetricCatalog {
           targetLow: 0,
           targetHigh: 11,
           personalBaseline: baselines['depth'],
-          description: 'Distance past the centre of the rim. A shade long is '
+          description:
+              'Distance past the centre of the rim. A shade long is '
               'the most forgiving miss.',
         ),
       ),
@@ -183,7 +188,8 @@ abstract final class MetricCatalog {
           targetLow: 84,
           targetHigh: 96,
           personalBaseline: baselines['elbow'],
-          description: 'Angle between upper arm and forearm when the ball '
+          description:
+              'Angle between upper arm and forearm when the ball '
               'reaches the set point.',
         ),
       ),
@@ -199,7 +205,8 @@ abstract final class MetricCatalog {
           targetLow: 118,
           targetHigh: 138,
           personalBaseline: baselines['knee'],
-          description: 'Deepest knee angle in the load phase. Smaller numbers '
+          description:
+              'Deepest knee angle in the load phase. Smaller numbers '
               'mean a deeper bend.',
         ),
       ),
@@ -215,7 +222,8 @@ abstract final class MetricCatalog {
           targetLow: 0,
           targetHigh: 6,
           personalBaseline: baselines['guideHand'],
-          description: 'Distance the guide hand travels away from the ball at '
+          description:
+              'Distance the guide hand travels away from the ball at '
               'release. Late contact pushes the shot sideways.',
         ),
       ),
@@ -231,7 +239,8 @@ abstract final class MetricCatalog {
           targetLow: 0.42,
           targetHigh: 0.68,
           personalBaseline: baselines['releaseTime'],
-          description: 'Time from the start of the dip to the ball leaving '
+          description:
+              'Time from the start of the dip to the ball leaving '
               'the hand.',
         ),
       ),
@@ -247,7 +256,8 @@ abstract final class MetricCatalog {
           targetLow: 0.6,
           targetHigh: 1.2,
           personalBaseline: baselines['followThrough'],
-          description: 'How long the shooting hand stays extended after '
+          description:
+              'How long the shooting hand stays extended after '
               'release.',
         ),
       ),
@@ -263,7 +273,8 @@ abstract final class MetricCatalog {
           targetLow: -8,
           targetHigh: 8,
           personalBaseline: baselines['landingDrift'],
-          description: 'Distance between take-off and landing point. Drift '
+          description:
+              'Distance between take-off and landing point. Drift '
               'costs repeatability more than it costs any single shot.',
         ),
       ),
@@ -279,7 +290,8 @@ abstract final class MetricCatalog {
           targetLow: 82,
           targetHigh: 100,
           personalBaseline: baselines['balance'],
-          description: 'Composite of landing drift, trunk lean and shoulder '
+          description:
+              'Composite of landing drift, trunk lean and shoulder '
               'level through the motion.',
         ),
       ),
@@ -352,6 +364,5 @@ abstract final class MetricCatalog {
   static List<GroupedMetric> inGroup(
     List<GroupedMetric> metrics,
     MetricGroup group,
-  ) =>
-      metrics.where((m) => m.group == group).toList(growable: false);
+  ) => metrics.where((m) => m.group == group).toList(growable: false);
 }

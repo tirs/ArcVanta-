@@ -10,11 +10,11 @@ enum FeedbackFrequency {
   detailed;
 
   String get label => switch (this) {
-        FeedbackFrequency.off => 'Off',
-        FeedbackFrequency.sparse => 'Only between sets',
-        FeedbackFrequency.balanced => 'Every few attempts',
-        FeedbackFrequency.detailed => 'Every attempt',
-      };
+    FeedbackFrequency.off => 'Off',
+    FeedbackFrequency.sparse => 'Only between sets',
+    FeedbackFrequency.balanced => 'Every few attempts',
+    FeedbackFrequency.detailed => 'Every attempt',
+  };
 }
 
 enum RetentionWindow {
@@ -24,11 +24,11 @@ enum RetentionWindow {
   untilDeleted;
 
   String get label => switch (this) {
-        RetentionWindow.sevenDays => '7 days',
-        RetentionWindow.thirtyDays => '30 days',
-        RetentionWindow.ninetyDays => '90 days',
-        RetentionWindow.untilDeleted => 'Until I delete it',
-      };
+    RetentionWindow.sevenDays => '7 days',
+    RetentionWindow.thirtyDays => '30 days',
+    RetentionWindow.ninetyDays => '90 days',
+    RetentionWindow.untilDeleted => 'Until I delete it',
+  };
 }
 
 class AppSettings {
@@ -174,8 +174,7 @@ class AppSettingsController extends Notifier<AppSettings> {
   @override
   AppSettings build() => const AppSettings();
 
-  void completeOnboarding() =>
-      state = state.copyWith(onboardingComplete: true);
+  void completeOnboarding() => state = state.copyWith(onboardingComplete: true);
 
   void setRole(AccountRole role) => state = state.copyWith(role: role);
 
@@ -198,5 +197,5 @@ class AppSettingsController extends Notifier<AppSettings> {
 
 final appSettingsProvider =
     NotifierProvider<AppSettingsController, AppSettings>(
-  AppSettingsController.new,
-);
+      AppSettingsController.new,
+    );

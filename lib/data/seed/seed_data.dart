@@ -212,12 +212,11 @@ abstract final class SeedData {
   }
 
   static List<CoachingCue> _cuesFor(_SessionSpec spec, List<Shot> shots) {
-    final misses =
-        shots.where((s) => s.result == ShotResult.missed).toList();
+    final misses = shots.where((s) => s.result == ShotResult.missed).toList();
     final avgLateral = misses.isEmpty
         ? 0.0
         : misses.map((s) => s.lateralDeviationCm).reduce((a, b) => a + b) /
-            misses.length;
+              misses.length;
     final drift = avgLateral.abs().toStringAsFixed(0);
     final side = avgLateral < 0 ? 'left' : 'right';
 
@@ -303,8 +302,11 @@ abstract final class SeedData {
 
       final maturity = (179 - i) / 179;
       final attempts = 28 + random.nextInt(34);
-      final rate = (0.372 + maturity * 0.098 + (random.nextDouble() - 0.5) * 0.09)
-          .clamp(0.24, 0.68);
+      final rate =
+          (0.372 + maturity * 0.098 + (random.nextDouble() - 0.5) * 0.09).clamp(
+            0.24,
+            0.68,
+          );
       final makes = (attempts * rate).round();
 
       points.add(
@@ -313,8 +315,10 @@ abstract final class SeedData {
           attempts: attempts,
           makes: makes,
           mechanicsScore:
-              (76.5 + maturity * 9.4 + (random.nextDouble() - 0.5) * 4.2)
-                  .clamp(60, 96),
+              (76.5 + maturity * 9.4 + (random.nextDouble() - 0.5) * 4.2).clamp(
+                60,
+                96,
+              ),
           consistencyScore:
               (68.0 + maturity * 14.5 + (random.nextDouble() - 0.5) * 6.0)
                   .clamp(50, 97),

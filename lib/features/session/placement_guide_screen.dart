@@ -67,15 +67,10 @@ class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
         ],
       ),
       slivers: [
-        SliverGutter(
-          child: _PlacementDiagram(angle: _angle),
-        ),
+        SliverGutter(child: _PlacementDiagram(angle: _angle)),
         SliverGutter(
           top: AvSpace.lg,
-          child: Text(
-            'Camera angle',
-            style: AvType.headingSmall.primary,
-          ),
+          child: Text('Camera angle', style: AvType.headingSmall.primary),
         ),
         SliverGutter(
           top: AvSpace.sm,
@@ -108,28 +103,32 @@ class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
                 _CheckRow(
                   icon: Icons.straighten_rounded,
                   title: 'Distance',
-                  detail: 'Five to seven metres from the shooting spot so the '
+                  detail:
+                      'Five to seven metres from the shooting spot so the '
                       'whole motion stays in frame.',
                 ),
                 AvSeparator(inset: 34),
                 _CheckRow(
                   icon: Icons.height_rounded,
                   title: 'Height',
-                  detail: 'Waist to chest height, about one metre, with the '
+                  detail:
+                      'Waist to chest height, about one metre, with the '
                       'lens level rather than tilted up.',
                 ),
                 AvSeparator(inset: 34),
                 _CheckRow(
                   icon: Icons.crop_free_rounded,
                   title: 'Framing',
-                  detail: 'Both feet and the full rim visible through the '
+                  detail:
+                      'Both feet and the full rim visible through the '
                       'jump, with headroom above the release.',
                 ),
                 AvSeparator(inset: 34),
                 _CheckRow(
                   icon: Icons.wb_sunny_rounded,
                   title: 'Light',
-                  detail: 'Keep bright windows behind the camera. Backlight '
+                  detail:
+                      'Keep bright windows behind the camera. Backlight '
                       'behind the shooter costs tracking confidence.',
                 ),
               ],
@@ -177,7 +176,8 @@ class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
             top: AvSpace.sm,
             child: AvUnavailableNotice(
               metric: 'Release height, apex and entry angle',
-              reason: 'Handheld capture cannot hold the court plane steady '
+              reason:
+                  'Handheld capture cannot hold the court plane steady '
                   'enough to solve height. These metrics will be recorded at '
                   'low confidence and left out of your trends.',
             ),
@@ -200,14 +200,16 @@ class _PlacementDiagram extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: AvSpace.sm,
+            runSpacing: AvSpace.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               Text(
                 'TOP-DOWN VIEW',
-                style: AvType.overline
-                    .copyWith(color: AvColors.textOnInkMuted),
+                style: AvType.overline.copyWith(color: AvColors.textOnInkMuted),
               ),
-              const Spacer(),
               AvPill(label: angle.label, color: AvColors.flare, filled: true),
             ],
           ),
@@ -219,8 +221,7 @@ class _PlacementDiagram extends StatelessWidget {
           const SizedBox(height: AvSpace.md),
           Text(
             angle.description,
-            style:
-                AvType.bodySmall.copyWith(color: AvColors.textOnInkMuted),
+            style: AvType.bodySmall.copyWith(color: AvColors.textOnInkMuted),
           ),
         ],
       ),
@@ -289,16 +290,22 @@ class _PlacementPainter extends CustomPainter {
     );
 
     final camera = switch (angle) {
-      CameraAngle.side =>
-        Offset(court.left + court.width * 0.07, shooter.dy - court.height * 0.02),
-      CameraAngle.front =>
-        Offset(court.center.dx + court.width * 0.04, hoop.dy + court.height * 0.05),
-      CameraAngle.rear =>
-        Offset(shooter.dx - court.width * 0.02, court.bottom - court.height * 0.08),
+      CameraAngle.side => Offset(
+        court.left + court.width * 0.07,
+        shooter.dy - court.height * 0.02,
+      ),
+      CameraAngle.front => Offset(
+        court.center.dx + court.width * 0.04,
+        hoop.dy + court.height * 0.05,
+      ),
+      CameraAngle.rear => Offset(
+        shooter.dx - court.width * 0.02,
+        court.bottom - court.height * 0.08,
+      ),
       CameraAngle.diagonal => Offset(
-          court.left + court.width * 0.14,
-          court.bottom - court.height * 0.12,
-        ),
+        court.left + court.width * 0.14,
+        court.bottom - court.height * 0.12,
+      ),
     };
 
     final direction = shooter - camera;
@@ -332,7 +339,12 @@ class _PlacementPainter extends CustomPainter {
     );
 
     // Shooting line from athlete to rim.
-    _dashed(canvas, shooter, hoop, AvColors.overlayTrace.withValues(alpha: 0.6));
+    _dashed(
+      canvas,
+      shooter,
+      hoop,
+      AvColors.overlayTrace.withValues(alpha: 0.6),
+    );
 
     canvas.drawCircle(shooter, 6.5, Paint()..color = AvColors.textOnInk);
     canvas.drawCircle(

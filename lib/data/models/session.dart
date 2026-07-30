@@ -14,22 +14,22 @@ enum CueSource {
   humanCoach;
 
   String get label => switch (this) {
-        CueSource.measurement => 'Measured this session',
-        CueSource.trend => 'Trend across sessions',
-        CueSource.humanCoach => 'From your coach',
-      };
+    CueSource.measurement => 'Measured this session',
+    CueSource.trend => 'Trend across sessions',
+    CueSource.humanCoach => 'From your coach',
+  };
 
   IconData get icon => switch (this) {
-        CueSource.measurement => Icons.straighten_rounded,
-        CueSource.trend => Icons.timeline_rounded,
-        CueSource.humanCoach => Icons.record_voice_over_rounded,
-      };
+    CueSource.measurement => Icons.straighten_rounded,
+    CueSource.trend => Icons.timeline_rounded,
+    CueSource.humanCoach => Icons.record_voice_over_rounded,
+  };
 
   Color get color => switch (this) {
-        CueSource.measurement => AvColors.court,
-        CueSource.trend => AvColors.insight,
-        CueSource.humanCoach => AvColors.flare,
-      };
+    CueSource.measurement => AvColors.court,
+    CueSource.trend => AvColors.insight,
+    CueSource.humanCoach => AvColors.flare,
+  };
 }
 
 enum CuePriority { primary, supporting, reinforcement }
@@ -124,8 +124,7 @@ class TrainingSession {
 
   int get attemptCount => attempts.length;
   int get makeCount => shots.where((s) => s.isMake).length;
-  int get missCount =>
-      shots.where((s) => s.result == ShotResult.missed).length;
+  int get missCount => shots.where((s) => s.result == ShotResult.missed).length;
   int get uncertainCount =>
       shots.where((s) => s.result == ShotResult.uncertain).length;
   int get swishCount => shots.where((s) => s.isSwish).length;
@@ -152,7 +151,8 @@ class TrainingSession {
   Duration get averageInterval => attemptCount < 2
       ? Duration.zero
       : Duration(
-          milliseconds: (attempts.last.offsetFromStart.inMilliseconds -
+          milliseconds:
+              (attempts.last.offsetFromStart.inMilliseconds -
                   attempts.first.offsetFromStart.inMilliseconds) ~/
               (attemptCount - 1),
         );
@@ -160,23 +160,24 @@ class TrainingSession {
   double get averageMechanics => attempts.isEmpty
       ? 0
       : attempts.map((s) => s.mechanicsScore).reduce((a, b) => a + b) /
-          attempts.length;
+            attempts.length;
 
   double get averageReleaseAngle => attempts.isEmpty
       ? 0
       : attempts.map((s) => s.releaseAngle).reduce((a, b) => a + b) /
-          attempts.length;
+            attempts.length;
 
   double get averageEntryAngle => attempts.isEmpty
       ? 0
       : attempts.map((s) => s.entryAngle).reduce((a, b) => a + b) /
-          attempts.length;
+            attempts.length;
 
   /// Shot-to-shot mechanical variance. Lower is more repeatable.
   double get consistencyScore {
     if (attempts.length < 2) return 0;
     final mean = averageMechanics;
-    final variance = attempts
+    final variance =
+        attempts
             .map((s) => (s.mechanicsScore - mean) * (s.mechanicsScore - mean))
             .reduce((a, b) => a + b) /
         attempts.length;
@@ -205,16 +206,17 @@ class TrainingSession {
 
   /// The miss that best represents the session's dominant error pattern.
   Shot? get representativeMiss {
-    final misses =
-        attempts.where((s) => s.result == ShotResult.missed).toList();
+    final misses = attempts
+        .where((s) => s.result == ShotResult.missed)
+        .toList();
     if (misses.isEmpty) return null;
     final meanDeviation =
         misses.map((s) => s.lateralDeviationCm).reduce((a, b) => a + b) /
-            misses.length;
+        misses.length;
     misses.sort(
-      (a, b) => (a.lateralDeviationCm - meanDeviation)
-          .abs()
-          .compareTo((b.lateralDeviationCm - meanDeviation).abs()),
+      (a, b) => (a.lateralDeviationCm - meanDeviation).abs().compareTo(
+        (b.lateralDeviationCm - meanDeviation).abs(),
+      ),
     );
     return misses.first;
   }

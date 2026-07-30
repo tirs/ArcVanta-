@@ -49,8 +49,9 @@ abstract final class AvTheme {
       surfaceContainer: AvColors.canvas,
       surfaceContainerHigh: AvColors.canvasSunken,
       surfaceContainerHighest: AvColors.canvasSunken,
-      onSurfaceVariant:
-          highContrast ? AvColors.textSecondary : AvColors.textMuted,
+      onSurfaceVariant: highContrast
+          ? AvColors.textSecondary
+          : AvColors.textMuted,
       outline: highContrast ? AvColors.hairlineStrong : AvColors.hairline,
       outlineVariant: AvColors.hairline,
       inverseSurface: AvColors.ink,
@@ -151,8 +152,10 @@ abstract final class AvTheme {
           borderRadius: AvRadius.allXs,
         ),
         textStyle: AvType.caption.copyWith(color: AvColors.textOnInk),
-        padding:
-            const EdgeInsets.symmetric(horizontal: AvSpace.sm, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AvSpace.sm,
+          vertical: 6,
+        ),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: AvColors.flare,

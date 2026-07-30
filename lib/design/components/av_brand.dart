@@ -35,9 +35,7 @@ class AvLogoMark extends StatelessWidget {
             : null,
         boxShadow: onInk ? null : AvShadow.level2,
       ),
-      child: CustomPaint(
-        painter: _MarkPainter(progress: progress.clamp(0, 1)),
-      ),
+      child: CustomPaint(painter: _MarkPainter(progress: progress.clamp(0, 1))),
     );
   }
 }
@@ -82,9 +80,7 @@ class _MarkPainter extends CustomPainter {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFFFF8A4C), AvColors.flareDeep],
-        ).createShader(
-          Rect.fromCircle(center: ballCentre, radius: ballRadius),
-        ),
+        ).createShader(Rect.fromCircle(center: ballCentre, radius: ballRadius)),
     );
 
     final seam = Paint()
@@ -112,11 +108,7 @@ class _MarkPainter extends CustomPainter {
 
 /// Wordmark used in headers and the launch screen.
 class AvWordmark extends StatelessWidget {
-  const AvWordmark({
-    super.key,
-    this.fontSize = 20,
-    this.onInk = false,
-  });
+  const AvWordmark({super.key, this.fontSize = 20, this.onInk = false});
 
   final double fontSize;
   final bool onInk;
@@ -164,19 +156,29 @@ class AvBrandLockup extends StatelessWidget {
       children: [
         AvLogoMark(size: markSize, onInk: onInk),
         const SizedBox(width: AvSpace.sm),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AvWordmark(fontSize: fontSize, onInk: onInk),
-            if (tagline != null)
-              Text(
-                tagline!,
-                style: AvType.overline.copyWith(
-                  color: onInk ? AvColors.textOnInkMuted : AvColors.textFaint,
-                ),
+        // The mark keeps its size; the name gives way, because a squeezed
+        // wordmark still reads and a clipped one does not.
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: AvWordmark(fontSize: fontSize, onInk: onInk),
               ),
-          ],
+              if (tagline != null)
+                Text(
+                  tagline!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AvType.overline.copyWith(
+                    color: onInk ? AvColors.textOnInkMuted : AvColors.textFaint,
+                  ),
+                ),
+            ],
+          ),
         ),
       ],
     );
@@ -216,9 +218,7 @@ class AvAvatar extends StatelessWidget {
           ],
         ),
         shape: BoxShape.circle,
-        border: ring
-            ? Border.all(color: Colors.white, width: 2.4)
-            : null,
+        border: ring ? Border.all(color: Colors.white, width: 2.4) : null,
         boxShadow: ring ? AvShadow.glow(color) : null,
       ),
       child: Text(

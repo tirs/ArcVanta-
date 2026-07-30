@@ -31,7 +31,8 @@ class _RoleScreenState extends ConsumerState<RoleScreen> {
           children: [
             const AvPageHeader(
               title: 'How will you use ArcVanta?',
-              subtitle: 'This sets your default workspace. You can change it later.',
+              subtitle:
+                  'This sets your default workspace. You can change it later.',
             ),
             Expanded(
               child: ListView.separated(
@@ -145,8 +146,11 @@ class _RoleCard extends StatelessWidget {
                 ),
               ),
               child: selected
-                  ? const Icon(Icons.check_rounded,
-                      size: 14, color: Colors.white)
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: Colors.white,
+                    )
                   : null,
             ),
           ],

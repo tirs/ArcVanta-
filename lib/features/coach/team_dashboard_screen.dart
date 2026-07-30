@@ -36,15 +36,17 @@ class _TeamDashboardScreenState extends ConsumerState<TeamDashboardScreen> {
     final averageAccuracy = roster.isEmpty
         ? 0.0
         : roster.map((a) => a.percentage).reduce((a, b) => a + b) /
-            roster.length;
+              roster.length;
     final averageMechanics = roster.isEmpty
         ? 0.0
         : roster.map((a) => a.mechanicsScore).reduce((a, b) => a + b) /
-            roster.length;
-    final consentGaps =
-        roster.where((a) => !a.guardianApproved).toList(growable: false);
-    final inactive =
-        roster.where((a) => a.sessionsThisWeek == 0).toList(growable: false);
+              roster.length;
+    final consentGaps = roster
+        .where((a) => !a.guardianApproved)
+        .toList(growable: false);
+    final inactive = roster
+        .where((a) => a.sessionsThisWeek == 0)
+        .toList(growable: false);
 
     final ranked = [...roster]
       ..sort((a, b) => b.percentage.compareTo(a.percentage));
@@ -62,8 +64,9 @@ class _TeamDashboardScreenState extends ConsumerState<TeamDashboardScreen> {
               children: [
                 Text(
                   'THIS WEEK',
-                  style:
-                      AvType.overline.copyWith(color: AvColors.textOnInkMuted),
+                  style: AvType.overline.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
                 const SizedBox(height: AvSpace.md),
                 Wrap(
@@ -245,12 +248,12 @@ class _TeamDashboardScreenState extends ConsumerState<TeamDashboardScreen> {
                             size: AvButtonSize.small,
                             onPressed: () =>
                                 ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Consent request resent for ${athlete.name}',
+                                  SnackBar(
+                                    content: Text(
+                                      'Consent request resent for ${athlete.name}',
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
                           ),
                         ],
                       ),

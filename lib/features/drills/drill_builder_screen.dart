@@ -21,8 +21,7 @@ class DrillBuilderScreen extends ConsumerStatefulWidget {
   const DrillBuilderScreen({super.key});
 
   @override
-  ConsumerState<DrillBuilderScreen> createState() =>
-      _DrillBuilderScreenState();
+  ConsumerState<DrillBuilderScreen> createState() => _DrillBuilderScreenState();
 }
 
 class _DrillBuilderScreenState extends ConsumerState<DrillBuilderScreen> {
@@ -200,10 +199,7 @@ class _DrillBuilderScreenState extends ConsumerState<DrillBuilderScreen> {
           ),
         ),
         SliverToBoxAdapter(
-          child: AvSectionHeader(
-            title: 'Targets',
-            accent: AvColors.flare,
-          ),
+          child: AvSectionHeader(title: 'Targets', accent: AvColors.flare),
         ),
         SliverGutter(
           child: AvCard(
@@ -231,15 +227,16 @@ class _DrillBuilderScreenState extends ConsumerState<DrillBuilderScreen> {
                   max: 300,
                   step: 5,
                   color: AvColors.court,
-                  onChanged: (value) =>
-                      setState(() => _targetAttempts = value),
+                  onChanged: (value) => setState(() => _targetAttempts = value),
                 ),
                 const Divider(height: AvSpace.lg),
                 Row(
                   children: [
                     Expanded(
-                      child: Text('Pass mark',
-                          style: AvType.bodySmall.secondary),
+                      child: Text(
+                        'Pass mark',
+                        style: AvType.bodySmall.secondary,
+                      ),
                     ),
                     Text(
                       '${_successThreshold.toStringAsFixed(0)}%',
@@ -260,10 +257,7 @@ class _DrillBuilderScreenState extends ConsumerState<DrillBuilderScreen> {
           ),
         ),
         SliverToBoxAdapter(
-          child: AvSectionHeader(
-            title: 'Pacing',
-            accent: AvColors.caution,
-          ),
+          child: AvSectionHeader(title: 'Pacing', accent: AvColors.caution),
         ),
         SliverGutter(
           child: AvCard(
@@ -356,8 +350,7 @@ class _DrillBuilderScreenState extends ConsumerState<DrillBuilderScreen> {
                 const SizedBox(height: AvSpace.xs),
                 AvSegmented<DrillDifficulty>(
                   values: DrillDifficulty.values,
-                  labels:
-                      DrillDifficulty.values.map((d) => d.label).toList(),
+                  labels: DrillDifficulty.values.map((d) => d.label).toList(),
                   selected: _difficulty,
                   accent: AvColors.insight,
                   dense: true,
@@ -397,10 +390,7 @@ class _DrillBuilderScreenState extends ConsumerState<DrillBuilderScreen> {
           ),
         ),
         SliverToBoxAdapter(
-          child: AvSectionHeader(
-            title: 'Audio prompts',
-            accent: AvColors.made,
-          ),
+          child: AvSectionHeader(title: 'Audio prompts', accent: AvColors.made),
         ),
         SliverGutter(
           child: AvCard(

@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:arcvanta/core/theme/av_theme.dart';
+import 'package:arcvanta/core/utils/formatters.dart';
+import 'package:arcvanta/data/capture/simulated_capture_source.dart';
 import 'package:arcvanta/data/models/confidence.dart';
 import 'package:arcvanta/data/seed/drill_catalog.dart';
 import 'package:arcvanta/data/seed/seed_data.dart';
+import 'package:arcvanta/state/live_session.dart';
 import 'package:arcvanta/features/coach/coach_home_screen.dart';
 import 'package:arcvanta/features/drills/drill_library_screen.dart';
 import 'package:arcvanta/features/highlights/highlights_screen.dart';
@@ -44,15 +47,21 @@ File? _findMaterialIcons() {
 }
 
 void main() {
+  // Relative dates would otherwise redraw as the wall clock moves, so every
+  // preview is rendered against the same instant the seed data is built around.
+  setUp(
+    () => Fmt.currentTime = () => SeedData.today.add(const Duration(hours: 8)),
+  );
+  tearDown(() => Fmt.currentTime = DateTime.now);
+
   setUpAll(() async {
     final iconFont = _findMaterialIcons();
     if (iconFont == null) {
       fail('Could not locate MaterialIcons-Regular.otf in the Flutter cache.');
     }
-    await (FontLoader('MaterialIcons')
-          ..addFont(
-            Future.value(iconFont.readAsBytesSync().buffer.asByteData()),
-          ))
+    await (FontLoader('MaterialIcons')..addFont(
+          Future.value(iconFont.readAsBytesSync().buffer.asByteData()),
+        ))
         .load();
 
     for (final family in const ['Archivo', 'Inter']) {
@@ -101,8 +110,13 @@ void main() {
         ..devicePixelRatio = 3;
       addTearDown(tester.view.reset);
 
+      // The capture screens run off the pipeline, so drive them from a source
+      // the test controls rather than from a clock.
+      final capture = ScriptedCaptureSource();
+
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [captureSourceProvider.overrideWithValue(capture)],
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: AvTheme.build(),
@@ -111,7 +125,12 @@ void main() {
         ),
       );
       await tester.pump(const Duration(milliseconds: 16));
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 4));
+
+      // Show the live screen mid-flight, which is the state worth reviewing.
+      capture.emitFrame(ScriptedCaptureSource.frameAt(2900));
+      await tester.pump();
+      await tester.pump();
 
       await expectLater(
         find.byType(MaterialApp),
@@ -119,6 +138,7 @@ void main() {
       );
 
       await tester.pumpWidget(const SizedBox.shrink());
+      await capture.dispose();
     });
   }
 }

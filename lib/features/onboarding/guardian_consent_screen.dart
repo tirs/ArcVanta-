@@ -19,8 +19,7 @@ class GuardianConsentScreen extends ConsumerStatefulWidget {
       _GuardianConsentScreenState();
 }
 
-class _GuardianConsentScreenState
-    extends ConsumerState<GuardianConsentScreen> {
+class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
   final _guardianName = TextEditingController();
   final _guardianEmail = TextEditingController();
 
@@ -83,8 +82,7 @@ class _GuardianConsentScreenState
   }
 
   bool get _canContinue =>
-      _guardianName.text.trim().length > 1 &&
-      _guardianEmail.text.contains('@');
+      _guardianName.text.trim().length > 1 && _guardianEmail.text.contains('@');
 
   @override
   Widget build(BuildContext context) {
@@ -190,8 +188,9 @@ class _GuardianConsentScreenState
                           _PermissionRow(
                             permission: _permissions[i],
                             onChanged: (value) => setState(
-                              () => _permissions[i] =
-                                  _permissions[i].copyWith(granted: value),
+                              () => _permissions[i] = _permissions[i].copyWith(
+                                granted: value,
+                              ),
                             ),
                           ),
                         ],
@@ -257,12 +256,12 @@ class _Permission {
   final bool required;
 
   _Permission copyWith({bool? granted}) => _Permission(
-        key: key,
-        title: title,
-        detail: detail,
-        granted: granted ?? this.granted,
-        required: required,
-      );
+    key: key,
+    title: title,
+    detail: detail,
+    granted: granted ?? this.granted,
+    required: required,
+  );
 }
 
 class _PermissionRow extends StatelessWidget {
@@ -303,8 +302,9 @@ class _PermissionRow extends StatelessWidget {
                         ),
                         child: Text(
                           'REQUIRED',
-                          style: AvType.overline
-                              .copyWith(color: AvColors.courtDeep),
+                          style: AvType.overline.copyWith(
+                            color: AvColors.courtDeep,
+                          ),
                         ),
                       ),
                     ],

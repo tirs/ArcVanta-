@@ -17,6 +17,7 @@ import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
+import '../../data/capture/live_scene.dart';
 import '../../state/live_session.dart';
 import 'camera_stage.dart';
 
@@ -216,11 +217,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
                     state: switch (_stage) {
                       _CalibrationStage.idle => _StepState.waiting,
                       _CalibrationStage.complete => _StepState.done,
-                      _CalibrationStage.scanning => i < _step
-                          ? _StepState.done
-                          : i == _step
-                              ? _StepState.active
-                              : _StepState.waiting,
+                      _CalibrationStage.scanning =>
+                        i < _step
+                            ? _StepState.done
+                            : i == _step
+                            ? _StepState.active
+                            : _StepState.waiting,
                     },
                   ),
                 ],
@@ -250,8 +252,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
                         color: ConfidenceLevel.fromScore(_overall).color,
                         child: Text(
                           '${(_overall * 100).round()}',
-                          style: AvType.tabular(AvType.metricMedium)
-                              .copyWith(fontSize: 19),
+                          style: AvType.tabular(
+                            AvType.metricMedium,
+                          ).copyWith(fontSize: 19),
                         ),
                       ),
                       const SizedBox(width: AvSpace.md),
@@ -333,29 +336,29 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
   }
 
   String get _unavailableMetric => switch (widget.angle) {
-        CameraAngle.side => 'Left and right deviation',
-        CameraAngle.front => 'Release angle and arc apex',
-        CameraAngle.rear => 'Knee flexion and set point height',
-        CameraAngle.diagonal => 'Guide-hand separation',
-      };
+    CameraAngle.side => 'Left and right deviation',
+    CameraAngle.front => 'Release angle and arc apex',
+    CameraAngle.rear => 'Knee flexion and set point height',
+    CameraAngle.diagonal => 'Guide-hand separation',
+  };
 
   String get _unavailableReason => switch (widget.angle) {
-        CameraAngle.side =>
-          'A side view compresses left-right error to almost nothing. Shots '
-              'will be graded on depth, and horizontal accuracy is left out '
-              'rather than guessed.',
-        CameraAngle.front =>
-          'From the front the ball travels toward the lens, so arc height '
-              'cannot be separated from distance. Alignment metrics stay '
-              'available at high confidence.',
-        CameraAngle.rear =>
-          'From behind, the lower body is occluded through the load phase. '
-              'Depth and entry angle stay available at high confidence.',
-        CameraAngle.diagonal =>
-          'At forty-five degrees the guide hand is partially hidden behind '
-              'the ball. Every other mechanic is graded at medium confidence '
-              'or better.',
-      };
+    CameraAngle.side =>
+      'A side view compresses left-right error to almost nothing. Shots '
+          'will be graded on depth, and horizontal accuracy is left out '
+          'rather than guessed.',
+    CameraAngle.front =>
+      'From the front the ball travels toward the lens, so arc height '
+          'cannot be separated from distance. Alignment metrics stay '
+          'available at high confidence.',
+    CameraAngle.rear =>
+      'From behind, the lower body is occluded through the load phase. '
+          'Depth and entry angle stay available at high confidence.',
+    CameraAngle.diagonal =>
+      'At forty-five degrees the guide hand is partially hidden behind '
+          'the ball. Every other mechanic is graded at medium confidence '
+          'or better.',
+  };
 }
 
 class _QualityRow extends StatelessWidget {
@@ -371,10 +374,7 @@ class _QualityRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          SizedBox(
-            width: 104,
-            child: Text(label, style: AvType.caption.muted),
-          ),
+          SizedBox(width: 104, child: Text(label, style: AvType.caption.muted)),
           Expanded(
             child: AvMeter(value: value, color: level.color),
           ),
@@ -384,8 +384,9 @@ class _QualityRow extends StatelessWidget {
             child: Text(
               '${(value * 100).round()}',
               textAlign: TextAlign.right,
-              style: AvType.tabular(AvType.metricSmall)
-                  .copyWith(color: AvColors.textPrimary),
+              style: AvType.tabular(
+                AvType.metricSmall,
+              ).copyWith(color: AvColors.textPrimary),
             ),
           ),
         ],
@@ -429,10 +430,7 @@ class _StepRow extends StatelessWidget {
           duration: AvMotion.normal,
           width: 30,
           height: 30,
-          decoration: BoxDecoration(
-            color: background,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
           child: Center(
             child: state == _StepState.active
                 ? SizedBox(
@@ -444,9 +442,7 @@ class _StepRow extends StatelessWidget {
                     ),
                   )
                 : Icon(
-                    state == _StepState.done
-                        ? Icons.check_rounded
-                        : step.icon,
+                    state == _StepState.done ? Icons.check_rounded : step.icon,
                     size: 15,
                     color: color,
                   ),
@@ -495,8 +491,9 @@ class _CalibrationOverlayPainter extends CustomPainter {
     final mesh = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = (complete ? AvColors.overlayHoop : AvColors.court)
-          .withValues(alpha: complete ? 0.5 : 0.34);
+      ..color = (complete ? AvColors.overlayHoop : AvColors.court).withValues(
+        alpha: complete ? 0.5 : 0.34,
+      );
 
     final vanishing = Offset(size.width * 0.5, size.height * 0.42);
     for (var i = -6; i <= 6; i++) {
@@ -508,7 +505,8 @@ class _CalibrationOverlayPainter extends CustomPainter {
     }
     for (var i = 1; i <= 5; i++) {
       final t = i / 6;
-      final y = size.height * 0.42 + math.pow(t, 1.8).toDouble() * size.height * 0.58;
+      final y =
+          size.height * 0.42 + math.pow(t, 1.8).toDouble() * size.height * 0.58;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), mesh);
     }
 
@@ -542,7 +540,9 @@ class _CalibrationOverlayPainter extends CustomPainter {
       LiveScene.hoop.width * size.width,
       LiveScene.hoop.height * size.height,
     );
-    final rimColor = complete || step >= 1 ? AvColors.overlayHoop : Colors.white;
+    final rimColor = complete || step >= 1
+        ? AvColors.overlayHoop
+        : Colors.white;
     canvas.drawOval(
       rim.inflate(6),
       Paint()

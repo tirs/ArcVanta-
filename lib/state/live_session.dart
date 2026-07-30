@@ -4,17 +4,29 @@ import 'dart:ui' show Offset, Rect;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/capture/capture_source.dart';
+import '../data/capture/simulated_capture_source.dart';
 import '../data/models/confidence.dart';
 import '../data/models/drill.dart';
 import '../data/models/pose.dart';
 import '../data/models/session.dart';
 import '../data/models/shot.dart';
 import '../data/seed/drill_catalog.dart';
-import '../data/seed/shot_factory.dart';
 
 enum LiveStatus { setup, countdown, running, paused, ended }
 
-/// Everything the live interface needs for one processed frame.
+/// The analysis pipeline attached to the live session.
+///
+/// The simulated source is the default so the app is complete without a camera.
+/// The inference bridge replaces it by overriding this provider at the root,
+/// and nothing else in the app changes.
+final captureSourceProvider = Provider<CaptureSource>((ref) {
+  final source = SimulatedCaptureSource();
+  ref.onDispose(source.dispose);
+  return source;
+});
+
+/// Everything the live interface needs, folded from the capture stream.
 class LiveSessionState {
   const LiveSessionState({
     required this.status,
@@ -25,6 +37,11 @@ class LiveSessionState {
     required this.shots,
     required this.phase,
     required this.cycleProgress,
+    required this.pose,
+    required this.ball,
+    required this.ballTrail,
+    required this.rim,
+    required this.backboard,
     required this.calibrationQuality,
     required this.trackingConfidence,
     required this.processedFps,
@@ -44,6 +61,11 @@ class LiveSessionState {
       shots: const [],
       phase: ShotPhaseKind.idle,
       cycleProgress: 0,
+      pose: null,
+      ball: null,
+      ballTrail: const [],
+      rim: null,
+      backboard: null,
       calibrationQuality: 0.91,
       trackingConfidence: 0.94,
       processedFps: 28,
@@ -64,6 +86,13 @@ class LiveSessionState {
 
   /// Position inside the current shot cycle, 0 to 1. Drives the overlay.
   final double cycleProgress;
+
+  /// Latest tracked geometry, straight from the pipeline.
+  final PoseFrame? pose;
+  final Offset? ball;
+  final List<Offset> ballTrail;
+  final Rect? rim;
+  final Rect? backboard;
 
   final double calibrationQuality;
   final double trackingConfidence;
@@ -109,8 +138,7 @@ class LiveSessionState {
     return best;
   }
 
-  CourtZone get activeZone =>
-      drill.zones[shots.length % drill.zones.length];
+  CourtZone get activeZone => drill.zones[shots.length % drill.zones.length];
 
   double get targetProgress =>
       drill.targetMakes == 0 ? 0 : (makes / drill.targetMakes).clamp(0, 1);
@@ -127,6 +155,12 @@ class LiveSessionState {
     List<Shot>? shots,
     ShotPhaseKind? phase,
     double? cycleProgress,
+    PoseFrame? pose,
+    Offset? ball,
+    bool clearBall = false,
+    List<Offset>? ballTrail,
+    Rect? rim,
+    Rect? backboard,
     double? calibrationQuality,
     double? trackingConfidence,
     int? processedFps,
@@ -147,13 +181,19 @@ class LiveSessionState {
       shots: shots ?? this.shots,
       phase: phase ?? this.phase,
       cycleProgress: cycleProgress ?? this.cycleProgress,
+      pose: pose ?? this.pose,
+      ball: clearBall ? null : (ball ?? this.ball),
+      ballTrail: ballTrail ?? this.ballTrail,
+      rim: rim ?? this.rim,
+      backboard: backboard ?? this.backboard,
       calibrationQuality: calibrationQuality ?? this.calibrationQuality,
       trackingConfidence: trackingConfidence ?? this.trackingConfidence,
       processedFps: processedFps ?? this.processedFps,
       thermalHeadroom: thermalHeadroom ?? this.thermalHeadroom,
       activeCue: clearCue ? null : (activeCue ?? this.activeCue),
-      lastResultFlash:
-          clearFlash ? null : (lastResultFlash ?? this.lastResultFlash),
+      lastResultFlash: clearFlash
+          ? null
+          : (lastResultFlash ?? this.lastResultFlash),
       pendingConfirmation: clearPending
           ? null
           : (pendingConfirmation ?? this.pendingConfirmation),
@@ -161,195 +201,123 @@ class LiveSessionState {
   }
 }
 
-/// Timings of one shot cycle in milliseconds. The overlay derives the skeleton,
-/// ball position and phase label from a single clock so graphics stay
-/// synchronised with the event stream.
-abstract final class ShotCycle {
-  static const int approach = 900;
-  static const int ready = 620;
-  static const int dip = 300;
-  static const int load = 260;
-  static const int upward = 220;
-  static const int setPoint = 180;
-  static const int release = 90;
-  static const int flight = 900;
-  static const int rim = 260;
-  static const int landing = 380;
-  static const int recovery = 1100;
-
-  static const int total = approach +
-      ready +
-      dip +
-      load +
-      upward +
-      setPoint +
-      release +
-      flight +
-      rim +
-      landing +
-      recovery;
-
-  /// Point in the cycle at which the result becomes known.
-  static const int resultAt =
-      approach + ready + dip + load + upward + setPoint + release + flight;
-
-  static ShotPhaseKind phaseAt(int ms) {
-    var cursor = 0;
-    if (ms < (cursor += approach)) return ShotPhaseKind.possession;
-    if (ms < (cursor += ready)) return ShotPhaseKind.ready;
-    if (ms < (cursor += dip)) return ShotPhaseKind.dip;
-    if (ms < (cursor += load)) return ShotPhaseKind.load;
-    if (ms < (cursor += upward)) return ShotPhaseKind.upward;
-    if (ms < (cursor += setPoint)) return ShotPhaseKind.setPoint;
-    if (ms < (cursor += release)) return ShotPhaseKind.release;
-    if (ms < (cursor += flight)) return ShotPhaseKind.flight;
-    if (ms < (cursor += rim)) return ShotPhaseKind.rimInteraction;
-    if (ms < (cursor += landing)) return ShotPhaseKind.landing;
-    return ShotPhaseKind.recovery;
-  }
-
-  /// Progress inside the flight phase, or null when the ball is in hand.
-  static double? flightProgress(int ms) {
-    const start =
-        approach + ready + dip + load + upward + setPoint + release;
-    const end = start + flight + rim;
-    if (ms < start || ms > end) return null;
-    return ((ms - start) / (flight + rim)).clamp(0.0, 1.0);
-  }
-}
-
-/// Drives a live session. In production the shot events arrive from the native
-/// inference bridge; the controller's contract is the same either way — it
-/// receives completed shot records and owns nothing about frame processing.
+/// Drives a live session by folding the capture stream into interface state.
+///
+/// It owns nothing about frame processing. Shots arrive as completed records
+/// and geometry arrives per frame, so the same controller serves the simulated
+/// pipeline and the on-device one.
 class LiveSessionController extends Notifier<LiveSessionState> {
-  Timer? _ticker;
-  DateTime? _startedAt;
-  DateTime? _cycleStartedAt;
-  int _shotSeed = 0;
-  late ShotFactory _factory;
+  /// Longest ball trail the overlay draws, in frames.
+  static const _trailLength = 90;
+
+  StreamSubscription<CaptureFrame>? _frameSub;
+  StreamSubscription<Shot>? _shotSub;
+  Timer? _countdown;
+  final Stopwatch _elapsed = Stopwatch();
+
+  CaptureSource get _source => ref.read(captureSourceProvider);
 
   @override
   LiveSessionState build() {
-    ref.onDispose(() => _ticker?.cancel());
+    ref.onDispose(_teardown);
     return LiveSessionState.initial(
       DrillCatalog.byId('quick-shooting'),
       CameraAngle.side,
     );
   }
 
+  void _teardown() {
+    _countdown?.cancel();
+    _frameSub?.cancel();
+    _shotSub?.cancel();
+    _elapsed.stop();
+  }
+
   void configure(Drill drill, CameraAngle angle) {
-    _ticker?.cancel();
-    _shotSeed = drill.id.hashCode & 0xFFFF;
-    _factory = ShotFactory(
-      seed: _shotSeed,
-      baseAccuracy: 0.48,
-      mechanicsCentre: 84.2,
-      lateralBias: -4.6,
-      releaseAngleCentre: 51.2,
-    );
+    _teardown();
+    _elapsed.reset();
     state = LiveSessionState.initial(drill, angle);
   }
 
   void startCountdown() {
     if (state.status == LiveStatus.running) return;
     state = state.copyWith(status: LiveStatus.countdown, countdownRemaining: 3);
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _countdown?.cancel();
+    _countdown = Timer.periodic(const Duration(seconds: 1), (timer) {
       final next = state.countdownRemaining - 1;
       if (next <= 0) {
         timer.cancel();
-        _begin();
+        _countdown = null;
+        unawaited(_begin());
       } else {
         state = state.copyWith(countdownRemaining: next);
       }
     });
   }
 
-  void _begin() {
-    _startedAt = DateTime.now();
-    _cycleStartedAt = DateTime.now();
+  Future<void> _begin() async {
+    final source = _source;
+    _frameSub = source.frames.listen(_onFrame);
+    _shotSub = source.shots.listen(_onShot);
+
+    _elapsed
+      ..reset()
+      ..start();
+
     state = state.copyWith(
       status: LiveStatus.running,
       countdownRemaining: 0,
       elapsed: Duration.zero,
     );
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(milliseconds: 60), (_) => _tick());
+
+    await source.start(
+      CaptureRequest(
+        drill: state.drill,
+        angle: state.angle,
+        calibrationQuality: state.calibrationQuality,
+      ),
+    );
   }
 
-  void _tick() {
+  void _onFrame(CaptureFrame frame) {
     if (state.status != LiveStatus.running) return;
-    final now = DateTime.now();
-    final elapsed = now.difference(_startedAt!);
-    final cycleMs = now.difference(_cycleStartedAt!).inMilliseconds;
 
-    if (cycleMs >= ShotCycle.total) {
-      _cycleStartedAt = now;
-      _recordShot();
-      return;
+    // A new cycle restarts the trail; otherwise it grows while the ball flies.
+    final restarted = frame.cycleProgress < state.cycleProgress;
+    final trail = restarted ? <Offset>[] : [...state.ballTrail];
+    if (frame.ball != null) {
+      trail.add(frame.ball!);
+      if (trail.length > _trailLength) trail.removeAt(0);
     }
 
     state = state.copyWith(
-      elapsed: elapsed,
-      phase: ShotCycle.phaseAt(cycleMs),
-      cycleProgress: cycleMs / ShotCycle.total,
-      processedFps: 26 + (cycleMs ~/ 400) % 5,
-      thermalHeadroom:
-          (1.0 - elapsed.inSeconds / 5400).clamp(0.35, 1.0).toDouble(),
+      elapsed: _elapsed.elapsed,
+      phase: frame.phase,
+      cycleProgress: frame.cycleProgress,
+      pose: frame.pose,
+      ball: frame.ball,
+      clearBall: frame.ball == null,
+      ballTrail: trail,
+      rim: frame.rim,
+      backboard: frame.backboard,
+      trackingConfidence: frame.trackingConfidence,
+      processedFps: frame.processedFps,
+      thermalHeadroom: frame.thermalHeadroom,
     );
   }
 
-  void _recordShot() {
-    final drill = state.drill;
-    final generated = _factory.build(
-      sessionId: 'live',
-      zones: [state.activeZone],
-      type: drill.shotType,
-      count: 1,
-      calibrationQuality: state.calibrationQuality,
-    ).first;
-
-    final shot = Shot(
-      id: 'live-${state.shots.length + 1}',
-      index: state.shots.length + 1,
-      offsetFromStart: state.elapsed,
-      result: generated.result,
-      outcomeDetail: generated.outcomeDetail,
-      zone: generated.zone,
-      type: generated.type,
-      confidence: generated.confidence,
-      releaseAngle: generated.releaseAngle,
-      entryAngle: generated.entryAngle,
-      apexHeightM: generated.apexHeightM,
-      releaseHeightM: generated.releaseHeightM,
-      ballSpeedMs: generated.ballSpeedMs,
-      flightTimeMs: generated.flightTimeMs,
-      lateralDeviationCm: generated.lateralDeviationCm,
-      depthCm: generated.depthCm,
-      elbowAngle: generated.elbowAngle,
-      kneeFlexion: generated.kneeFlexion,
-      guideHandSeparationCm: generated.guideHandSeparationCm,
-      releaseTimeMs: generated.releaseTimeMs,
-      followThroughMs: generated.followThroughMs,
-      landingDriftCm: generated.landingDriftCm,
-      balanceScore: generated.balanceScore,
-      mechanicsScore: generated.mechanicsScore,
-      trajectory: generated.trajectory,
-      phases: generated.phases,
-    );
-
-    final shots = [...state.shots, shot];
+  void _onShot(Shot shot) {
+    final placed = shot.copyWith(offsetFromStart: _elapsed.elapsed);
+    final shots = [...state.shots, placed];
 
     state = state.copyWith(
       shots: shots,
-      lastResultFlash: shot,
-      pendingConfirmation:
-          shot.result == ShotResult.uncertain ? shot : null,
-      clearPending: shot.result != ShotResult.uncertain,
+      lastResultFlash: placed,
+      pendingConfirmation: placed.result == ShotResult.uncertain
+          ? placed
+          : null,
+      clearPending: placed.result != ShotResult.uncertain,
       activeCue: _cueFor(shots),
-      trackingConfidence:
-          (0.86 + (shot.confidence == ConfidenceLevel.high ? 0.1 : -0.06))
-              .clamp(0.4, 0.99),
     );
   }
 
@@ -367,12 +335,13 @@ class LiveSessionController extends Notifier<LiveSessionState> {
 
     final drift =
         recent.map((s) => s.lateralDeviationCm).reduce((a, b) => a + b) /
-            recent.length;
-    final knee = recent.map((s) => s.kneeFlexion).reduce((a, b) => a + b) /
+        recent.length;
+    final knee =
+        recent.map((s) => s.kneeFlexion).reduce((a, b) => a + b) /
         recent.length;
     final follow =
         recent.map((s) => s.followThroughMs).reduce((a, b) => a + b) /
-            recent.length;
+        recent.length;
     final madeRate = recent.where((s) => s.isMake).length / recent.length;
 
     if (drift.abs() > 5.5) {
@@ -453,21 +422,20 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   void dismissFlash() => state = state.copyWith(clearFlash: true);
 
   void pause() {
-    _ticker?.cancel();
+    _elapsed.stop();
+    unawaited(_source.pause());
     state = state.copyWith(status: LiveStatus.paused);
   }
 
   void resume() {
     if (state.status != LiveStatus.paused) return;
-    _startedAt = DateTime.now().subtract(state.elapsed);
-    _cycleStartedAt = DateTime.now();
+    _elapsed.start();
     state = state.copyWith(status: LiveStatus.running);
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(milliseconds: 60), (_) => _tick());
+    unawaited(_source.resume());
   }
 
   void end() {
-    _ticker?.cancel();
+    _teardown();
     state = state.copyWith(status: LiveStatus.ended);
   }
 
@@ -478,7 +446,7 @@ class LiveSessionController extends Notifier<LiveSessionState> {
       id: 'session-live-${DateTime.now().millisecondsSinceEpoch}',
       drillId: drill.id,
       drillName: drill.name,
-      startedAt: _startedAt ?? DateTime.now(),
+      startedAt: DateTime.now().subtract(state.elapsed),
       duration: state.elapsed,
       shots: state.shots,
       calibration: CalibrationRecord(
@@ -492,9 +460,7 @@ class LiveSessionController extends Notifier<LiveSessionState> {
         frameRate: 60,
         notes: const ['Court plane locked from three visible lines.'],
       ),
-      cues: [
-        if (state.activeCue != null) state.activeCue!,
-      ],
+      cues: [if (state.activeCue != null) state.activeCue!],
       modelVersion: 'det-1.4.2 / pose-2.1.0 / event-3.0.1',
       deviceName: 'iPhone 17 Pro',
       processedOnDevice: true,
@@ -504,24 +470,5 @@ class LiveSessionController extends Notifier<LiveSessionState> {
 
 final liveSessionProvider =
     NotifierProvider<LiveSessionController, LiveSessionState>(
-  LiveSessionController.new,
-);
-
-/// Geometry of the tracked scene in normalised preview coordinates.
-abstract final class LiveScene {
-  static const Rect hoop = Rect.fromLTWH(0.700, 0.212, 0.132, 0.030);
-  static const Rect backboard = Rect.fromLTWH(0.688, 0.098, 0.180, 0.118);
-  static Offset get rimCentre => hoop.center;
-
-  static Rect playerBox(PoseFrame pose) {
-    var left = 1.0, top = 1.0, right = 0.0, bottom = 0.0;
-    for (final point in pose.landmarks.values) {
-      left = math.min(left, point.dx);
-      top = math.min(top, point.dy);
-      right = math.max(right, point.dx);
-      bottom = math.max(bottom, point.dy);
-    }
-    return Rect.fromLTRB(left - 0.045, top - 0.055, right + 0.045,
-        bottom + 0.025);
-  }
-}
+      LiveSessionController.new,
+    );

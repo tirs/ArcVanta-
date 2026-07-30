@@ -29,18 +29,18 @@ enum TrendRange {
   season;
 
   String get label => switch (this) {
-        TrendRange.week => '7 days',
-        TrendRange.month => '30 days',
-        TrendRange.quarter => '90 days',
-        TrendRange.season => 'Season',
-      };
+    TrendRange.week => '7 days',
+    TrendRange.month => '30 days',
+    TrendRange.quarter => '90 days',
+    TrendRange.season => 'Season',
+  };
 
   int get days => switch (this) {
-        TrendRange.week => 7,
-        TrendRange.month => 30,
-        TrendRange.quarter => 90,
-        TrendRange.season => 180,
-      };
+    TrendRange.week => 7,
+    TrendRange.month => 30,
+    TrendRange.quarter => 90,
+    TrendRange.season => 180,
+  };
 }
 
 /// A personal record with the evidence that produced it.

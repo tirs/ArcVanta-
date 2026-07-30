@@ -118,8 +118,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 children: [
                   const Expanded(child: Divider()),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AvSpace.sm),
+                    padding: const EdgeInsets.symmetric(horizontal: AvSpace.sm),
                     child: Text('or use email', style: AvType.caption.faint),
                   ),
                   const Expanded(child: Divider()),
@@ -142,8 +141,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       validator: (value) {
                         final text = value?.trim() ?? '';
                         if (text.isEmpty) return 'Enter your email address.';
-                        if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+')
-                            .hasMatch(text)) {
+                        if (!RegExp(
+                          r'^[^@\s]+@[^@\s]+\.[^@\s]+',
+                        ).hasMatch(text)) {
                           return 'That does not look like an email address.';
                         }
                         return null;
@@ -160,15 +160,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
                         suffixIcon: IconButton(
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                           icon: Icon(
                             _obscure
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                           ),
-                          tooltip:
-                              _obscure ? 'Show password' : 'Hide password',
+                          tooltip: _obscure ? 'Show password' : 'Hide password',
                         ),
                       ),
                       validator: (value) {
@@ -273,8 +271,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Train without an account',
-                              style: AvType.titleMedium.primary),
+                          Text(
+                            'Train without an account',
+                            style: AvType.titleMedium.primary,
+                          ),
                           const SizedBox(height: 3),
                           Text(
                             'Guest mode keeps every session on this device. '
@@ -331,7 +331,9 @@ class _ProviderButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           borderRadius: AvRadius.pill,
-          border: border == null ? null : Border.all(color: border!, width: 1.4),
+          border: border == null
+              ? null
+              : Border.all(color: border!, width: 1.4),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

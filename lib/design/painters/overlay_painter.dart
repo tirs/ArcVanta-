@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_typography.dart';
+import '../../data/capture/live_scene.dart';
 import '../../data/models/pose.dart';
-import '../../state/live_session.dart';
 
 /// Live analysis overlay: skeleton, hand landmarks, tracked object boxes and
 /// the ball trace. Everything is generated from the frame payload, never from
@@ -21,12 +21,19 @@ class AnalysisOverlayPainter extends CustomPainter {
     required this.showBoxes,
     required this.trackingConfidence,
     required this.textDirection,
+    this.rim,
+    this.backboard,
     this.highlightRelease = false,
   });
 
   final PoseFrame pose;
   final Offset ball;
   final List<Offset> trail;
+
+  /// Scene geometry as located by the pipeline. Null until it locks on.
+  final Rect? rim;
+  final Rect? backboard;
+
   final ShotPhaseKind phase;
   final bool showSkeleton;
   final bool showTrajectory;
@@ -41,21 +48,19 @@ class AnalysisOverlayPainter extends CustomPainter {
         Offset(point.dx * size.width, point.dy * size.height);
 
     if (showBoxes) {
-      _paintTrackedBox(
-        canvas,
-        size,
-        LiveScene.hoop,
-        AvColors.overlayHoop,
-        'RIM 0.98',
-      );
-      _paintTrackedBox(
-        canvas,
-        size,
-        LiveScene.backboard,
-        AvColors.overlayHoop.withValues(alpha: 0.55),
-        'BACKBOARD',
-        thin: true,
-      );
+      if (rim != null) {
+        _paintTrackedBox(canvas, size, rim!, AvColors.overlayHoop, 'RIM 0.98');
+      }
+      if (backboard != null) {
+        _paintTrackedBox(
+          canvas,
+          size,
+          backboard!,
+          AvColors.overlayHoop.withValues(alpha: 0.55),
+          'BACKBOARD',
+          thin: true,
+        );
+      }
       _paintTrackedBox(
         canvas,
         size,
@@ -66,8 +71,7 @@ class AnalysisOverlayPainter extends CustomPainter {
     }
 
     if (showTrajectory && trail.length > 1) {
-      final path = Path()
-        ..moveTo(scale(trail.first).dx, scale(trail.first).dy);
+      final path = Path()..moveTo(scale(trail.first).dx, scale(trail.first).dy);
       for (var i = 1; i < trail.length; i++) {
         final point = scale(trail[i]);
         path.lineTo(point.dx, point.dy);
@@ -103,8 +107,9 @@ class AnalysisOverlayPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
-        ..color = AvColors.overlaySkeleton
-            .withValues(alpha: 0.35 + trackingConfidence * 0.55);
+        ..color = AvColors.overlaySkeleton.withValues(
+          alpha: 0.35 + trackingConfidence * 0.55,
+        );
 
       for (final (from, to) in poseSkeleton) {
         canvas.drawLine(scale(pose[from]), scale(pose[to]), bone);
@@ -112,7 +117,8 @@ class AnalysisOverlayPainter extends CustomPainter {
 
       for (final joint in PoseJoint.values) {
         final point = scale(pose[joint]);
-        final major = joint == PoseJoint.rightWrist ||
+        final major =
+            joint == PoseJoint.rightWrist ||
             joint == PoseJoint.rightElbow ||
             joint == PoseJoint.rightShoulder;
         canvas.drawCircle(
@@ -147,14 +153,15 @@ class AnalysisOverlayPainter extends CustomPainter {
       ballCentre,
       radius * 1.9,
       Paint()
-        ..shader = RadialGradient(
-          colors: [
-            AvColors.overlayBall.withValues(alpha: 0.32),
-            AvColors.overlayBall.withValues(alpha: 0),
-          ],
-        ).createShader(
-          Rect.fromCircle(center: ballCentre, radius: radius * 1.9),
-        ),
+        ..shader =
+            RadialGradient(
+              colors: [
+                AvColors.overlayBall.withValues(alpha: 0.32),
+                AvColors.overlayBall.withValues(alpha: 0),
+              ],
+            ).createShader(
+              Rect.fromCircle(center: ballCentre, radius: radius * 1.9),
+            ),
     );
     canvas.drawCircle(
       ballCentre,
@@ -179,10 +186,7 @@ class AnalysisOverlayPainter extends CustomPainter {
       _paintTrackedBox(
         canvas,
         size,
-        Rect.fromCircle(
-          center: ball,
-          radius: 0.030,
-        ),
+        Rect.fromCircle(center: ball, radius: 0.030),
         AvColors.overlayBall,
         'BALL 0.96',
         thin: true,
@@ -226,7 +230,10 @@ class AnalysisOverlayPainter extends CustomPainter {
     final a = shoulder - elbow;
     final b = wrist - elbow;
     final angle = math.acos(
-      ((a.dx * b.dx + a.dy * b.dy) / (a.distance * b.distance)).clamp(-1.0, 1.0),
+      ((a.dx * b.dx + a.dy * b.dy) / (a.distance * b.distance)).clamp(
+        -1.0,
+        1.0,
+      ),
     );
     final degrees = angle * 180 / math.pi;
 
@@ -250,11 +257,9 @@ class AnalysisOverlayPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: '${degrees.round()}\u00B0',
-        style: AvType.tabular(AvType.overline).copyWith(
-          color: Colors.white,
-          fontSize: 10,
-          letterSpacing: 0,
-        ),
+        style: AvType.tabular(
+          AvType.overline,
+        ).copyWith(color: Colors.white, fontSize: 10, letterSpacing: 0),
       ),
       textDirection: textDirection,
     )..layout();

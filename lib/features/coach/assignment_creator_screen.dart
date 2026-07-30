@@ -128,7 +128,9 @@ class _AssignmentCreatorScreenState
         SliverGutter(
           child: Row(
             children: [
-              Expanded(child: Text('Athletes', style: AvType.headingSmall.primary)),
+              Expanded(
+                child: Text('Athletes', style: AvType.headingSmall.primary),
+              ),
               AvTextAction(
                 label: _selected.length == roster.length
                     ? 'Clear all'
@@ -155,7 +157,8 @@ class _AssignmentCreatorScreenState
                   _AthletePick(
                     initials: athlete.initials,
                     name: athlete.name,
-                    detail: '${athlete.position.abbreviation} \u00B7 '
+                    detail:
+                        '${athlete.position.abbreviation} \u00B7 '
                         '${athlete.percentage.toStringAsFixed(0)} per cent '
                         '\u00B7 ${athlete.focusArea}',
                     color: athlete.accentColor,
@@ -205,8 +208,9 @@ class _AssignmentCreatorScreenState
                     const Spacer(),
                     Text(
                       '$_targetMakes',
-                      style: AvType.tabular(AvType.metricMedium)
-                          .copyWith(color: AvColors.flare),
+                      style: AvType.tabular(
+                        AvType.metricMedium,
+                      ).copyWith(color: AvColors.flare),
                     ),
                   ],
                 ),
@@ -252,8 +256,8 @@ class _AssignmentCreatorScreenState
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 labelText: 'Note to the athlete',
-                hintText: _drill?.coachingFocus ??
-                    'What should they concentrate on?',
+                hintText:
+                    _drill?.coachingFocus ?? 'What should they concentrate on?',
               ),
             ),
           ),

@@ -39,11 +39,11 @@ class SessionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (showAthlete != null)
-                      Text(showAthlete!, style: AvType.label.copyWith(
-                        color: AvColors.insight,
-                      )),
-                    Text(session.drillName,
-                        style: AvType.headingSmall.primary),
+                      Text(
+                        showAthlete!,
+                        style: AvType.label.copyWith(color: AvColors.insight),
+                      ),
+                    Text(session.drillName, style: AvType.headingSmall.primary),
                     const SizedBox(height: 2),
                     Text(
                       '${Fmt.dateTime(session.startedAt)} \u00B7 '
@@ -133,7 +133,8 @@ class SessionCard extends StatelessWidget {
               ),
               _Meta(
                 icon: Icons.accessibility_new_rounded,
-                label: 'Mechanics ${session.averageMechanics.toStringAsFixed(0)}',
+                label:
+                    'Mechanics ${session.averageMechanics.toStringAsFixed(0)}',
                 color: AvColors.insight,
               ),
               if (uncertain > 0)
@@ -158,11 +159,7 @@ class SessionCard extends StatelessWidget {
 }
 
 class _Meta extends StatelessWidget {
-  const _Meta({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+  const _Meta({required this.icon, required this.label, required this.color});
 
   final IconData icon;
   final String label;

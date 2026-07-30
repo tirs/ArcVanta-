@@ -89,9 +89,7 @@ class AvInkCard extends StatelessWidget {
           children: [
             if (showCourtLines)
               Positioned.fill(
-                child: CustomPaint(
-                  painter: _CourtArcPainter(accent: accent),
-                ),
+                child: CustomPaint(painter: _CourtArcPainter(accent: accent)),
               ),
             Padding(padding: padding, child: child),
           ],
@@ -128,14 +126,18 @@ class _CourtArcPainter extends CustomPainter {
     }
 
     final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [accent.withValues(alpha: 0.22), accent.withValues(alpha: 0)],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width * 0.94, -size.height * 0.1),
-          radius: size.height * 1.1,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              accent.withValues(alpha: 0.22),
+              accent.withValues(alpha: 0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.94, -size.height * 0.1),
+              radius: size.height * 1.1,
+            ),
+          );
     canvas.drawRect(Offset.zero & size, glow);
   }
 

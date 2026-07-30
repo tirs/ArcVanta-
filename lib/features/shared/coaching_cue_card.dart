@@ -57,10 +57,7 @@ class _CoachingCueCardState extends State<CoachingCueCard> {
                       style: AvType.label.copyWith(color: accent),
                     ),
                     if (cue.authorName != null)
-                      Text(
-                        cue.source.label,
-                        style: AvType.overline.faint,
-                      ),
+                      Text(cue.source.label, style: AvType.overline.faint),
                   ],
                 ),
               ),
@@ -139,8 +136,7 @@ class _CoachingCueCardState extends State<CoachingCueCard> {
                   size: AvButtonSize.small,
                   variant: AvButtonVariant.outline,
                   trailingIcon: Icons.arrow_forward_rounded,
-                  onPressed: () =>
-                      widget.onDrillTap!(cue.suggestedDrillId!),
+                  onPressed: () => widget.onDrillTap!(cue.suggestedDrillId!),
                 ),
             ],
           ),

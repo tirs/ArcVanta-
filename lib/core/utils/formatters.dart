@@ -4,6 +4,12 @@ import 'package:intl/intl.dart';
 /// stays identical everywhere, including the rule that low-confidence values
 /// never carry misleading decimals.
 abstract final class Fmt {
+  /// Source of "now" for relative dates.
+  ///
+  /// Everything reads the time through here so tests and golden previews can
+  /// pin it, rather than producing output that changes with the wall clock.
+  static DateTime Function() currentTime = DateTime.now;
+
   static final _dayMonth = DateFormat('d MMM');
   static final _dayMonthYear = DateFormat('d MMM yyyy');
   static final _weekdayLong = DateFormat('EEEE');
@@ -43,7 +49,7 @@ abstract final class Fmt {
   }
 
   static String relative(DateTime value, {DateTime? now}) {
-    final reference = now ?? DateTime.now();
+    final reference = now ?? currentTime();
     final diff = reference.difference(value);
     if (diff.inSeconds.abs() < 60) return 'just now';
     if (diff.isNegative) {

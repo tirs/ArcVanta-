@@ -32,7 +32,7 @@ class DrillDetailScreen extends ConsumerWidget {
     final history = sessions.isEmpty
         ? null
         : sessions.map((s) => s.percentage).reduce((a, b) => a + b) /
-            sessions.length;
+              sessions.length;
 
     return AvScaffold(
       title: drill.name,
@@ -212,8 +212,9 @@ class DrillDetailScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           drill.recommendedAngle.description,
-                          style: AvType.caption
-                              .copyWith(color: AvColors.courtDeep),
+                          style: AvType.caption.copyWith(
+                            color: AvColors.courtDeep,
+                          ),
                         ),
                       ),
                     ],
@@ -298,7 +299,8 @@ class DrillDetailScreen extends ConsumerWidget {
                   const SizedBox(height: AvSpace.sm),
                   for (final session in sessions)
                     AvKeyValue(
-                      label: '${session.startedAt.day}/${session.startedAt.month} '
+                      label:
+                          '${session.startedAt.day}/${session.startedAt.month} '
                           '\u00B7 ${session.attemptCount} attempts',
                       value:
                           '${session.makeCount} makes \u00B7 ${session.percentage.toStringAsFixed(0)}%',

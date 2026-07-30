@@ -96,7 +96,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               child: Row(
                 children: [
-                  const AvBrandLockup(markSize: 34, fontSize: 17),
+                  const Flexible(
+                    child: AvBrandLockup(markSize: 34, fontSize: 17),
+                  ),
+                  const SizedBox(width: AvSpace.sm),
                   const Spacer(),
                   AvTextAction(
                     label: 'Skip',
@@ -268,10 +271,7 @@ class _CountingArt extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text('23', style: AvType.heroMetric.onInk),
-                    Text(
-                      ' / 48',
-                      style: AvType.headingMedium.onInkMuted,
-                    ),
+                    Text(' / 48', style: AvType.headingMedium.onInkMuted),
                   ],
                 ),
               ),
@@ -281,7 +281,9 @@ class _CountingArt extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AvType.overline.onInkMuted,
               ),
-              const SizedBox(height: AvSpace.md),
+              // The gap gives way first when the reader's text is large, so the
+              // figures keep their room instead of the card clipping.
+              const Flexible(child: SizedBox(height: AvSpace.md)),
               Wrap(
                 spacing: AvSpace.lg,
                 runSpacing: AvSpace.sm,
@@ -474,11 +476,7 @@ class _PrivacyArt extends StatelessWidget {
           value: 'Always',
           on: true,
         ),
-        _PrivacyRow(
-          label: 'Encrypted cloud backup',
-          value: 'Off',
-          on: false,
-        ),
+        _PrivacyRow(label: 'Encrypted cloud backup', value: 'Off', on: false),
         _PrivacyRow(
           label: 'Share clips with your coach',
           value: 'Ask each time',

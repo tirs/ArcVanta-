@@ -20,8 +20,7 @@ class TrainingPlanScreen extends ConsumerStatefulWidget {
   const TrainingPlanScreen({super.key});
 
   @override
-  ConsumerState<TrainingPlanScreen> createState() =>
-      _TrainingPlanScreenState();
+  ConsumerState<TrainingPlanScreen> createState() => _TrainingPlanScreenState();
 }
 
 class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
@@ -32,8 +31,7 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
     final plan = ref.watch(trainingPlanProvider);
     final drills = ref.watch(drillStoreProvider);
     final day = plan.days[_selectedDay.clamp(0, plan.days.length - 1)];
-    final textScale =
-        MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
+    final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
 
     return AvScaffold(
       title: 'Training plan',
@@ -84,10 +82,7 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
                       },
                       dense: true,
                     ),
-                    Text(
-                      Fmt.weekday(day.date),
-                      style: AvType.caption.faint,
-                    ),
+                    Text(Fmt.weekday(day.date), style: AvType.caption.faint),
                     if (day.completed)
                       const AvPill(
                         label: 'Done',
@@ -124,8 +119,9 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
                               AvGlyph(
                                 icon: drill.category.icon,
                                 color: drill.category.color,
-                                background:
-                                    drill.category.color.withValues(alpha: 0.12),
+                                background: drill.category.color.withValues(
+                                  alpha: 0.12,
+                                ),
                                 size: 34,
                               ),
                               const SizedBox(width: AvSpace.sm),
@@ -148,9 +144,8 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
                               AvButton(
                                 label: 'Start',
                                 size: AvButtonSize.small,
-                                onPressed: () => context.push(
-                                  AppRoute.placement(drill.id),
-                                ),
+                                onPressed: () =>
+                                    context.push(AppRoute.placement(drill.id)),
                               ),
                             ],
                           ),
@@ -228,10 +223,7 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
           child: AvCard(
             child: Column(
               children: [
-                AvKeyValue(
-                  label: 'Target metric',
-                  value: plan.targetMetric,
-                ),
+                AvKeyValue(label: 'Target metric', value: plan.targetMetric),
                 AvKeyValue(
                   label: 'Now',
                   value: plan.currentValue.toStringAsFixed(1),
@@ -289,20 +281,23 @@ class _PlanHeader extends StatelessWidget {
               children: [
                 Text(
                   'WEEK OF ${Fmt.date(plan.weekStart).toUpperCase()}',
-                  style:
-                      AvType.overline.copyWith(color: AvColors.textOnInkMuted),
+                  style: AvType.overline.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
                 const SizedBox(height: AvSpace.xs),
                 Text(
                   plan.name,
-                  style: AvType.headingMedium
-                      .copyWith(color: AvColors.textOnInk),
+                  style: AvType.headingMedium.copyWith(
+                    color: AvColors.textOnInk,
+                  ),
                 ),
                 const SizedBox(height: AvSpace.xs),
                 Text(
                   '${plan.completedDays} of ${plan.sessionDays} sessions done',
-                  style: AvType.caption
-                      .copyWith(color: AvColors.textOnInkMuted),
+                  style: AvType.caption.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
               ],
             ),
@@ -315,8 +310,9 @@ class _PlanHeader extends StatelessWidget {
             trackColor: AvColors.hairlineOnInk,
             child: Text(
               '${(plan.progress * 100).round()}%',
-              style: AvType.tabular(AvType.metricSmall)
-                  .copyWith(color: AvColors.textOnInk),
+              style: AvType.tabular(
+                AvType.metricSmall,
+              ).copyWith(color: AvColors.textOnInk),
             ),
           ),
         ],
@@ -366,8 +362,7 @@ class _DayPip extends StatelessWidget {
               Fmt.weekdayShort(day.date).toUpperCase(),
               style: AvType.overline.copyWith(
                 fontSize: 9,
-                color:
-                    selected ? AvColors.textOnInkMuted : AvColors.textMuted,
+                color: selected ? AvColors.textOnInkMuted : AvColors.textMuted,
               ),
             ),
             const SizedBox(height: 4),

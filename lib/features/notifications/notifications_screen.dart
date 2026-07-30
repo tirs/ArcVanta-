@@ -38,9 +38,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       leading: const AvBackButton(),
       actions: [
         AvIconButton(
-          icon: _showSettings
-              ? Icons.inbox_rounded
-              : Icons.tune_rounded,
+          icon: _showSettings ? Icons.inbox_rounded : Icons.tune_rounded,
           tooltip: _showSettings ? 'Back to inbox' : 'Notification settings',
           onPressed: () => setState(() => _showSettings = !_showSettings),
         ),
@@ -51,10 +49,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  List<Widget> _inboxSlivers(
-    List<AppNotification> notifications,
-    int unread,
-  ) {
+  List<Widget> _inboxSlivers(List<AppNotification> notifications, int unread) {
     return [
       if (unread > 0)
         SliverGutter(
@@ -74,7 +69,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           child: AvEmptyState(
             icon: Icons.notifications_none_rounded,
             title: 'Nothing here',
-            message: 'Reminders, coach assignments and analysis updates land '
+            message:
+                'Reminders, coach assignments and analysis updates land '
                 'in this inbox.',
           ),
         )
@@ -139,10 +135,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(kind.label, style: AvType.titleSmall.primary),
-                            Text(
-                              _describe(kind),
-                              style: AvType.caption.faint,
-                            ),
+                            Text(_describe(kind), style: AvType.caption.faint),
                           ],
                         ),
                       ),
@@ -151,9 +144,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         onChanged: kind == NotificationKind.safety
                             ? null
                             : (value) => controller.setNotificationOptIn(
-                                  kind.name,
-                                  value,
-                                ),
+                                kind.name,
+                                value,
+                              ),
                       ),
                     ],
                   ),
@@ -238,15 +231,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   String _describe(NotificationKind kind) => switch (kind) {
-        NotificationKind.training =>
-          'Scheduled sessions and plan reminders',
-        NotificationKind.assignment => 'New work and feedback from a coach',
-        NotificationKind.progress => 'Goals reached and records broken',
-        NotificationKind.analysis => 'When a cloud analysis finishes',
-        NotificationKind.account => 'Billing, plan and device changes',
-        NotificationKind.safety =>
-          'Guardian approvals and safety notices, always on',
-      };
+    NotificationKind.training => 'Scheduled sessions and plan reminders',
+    NotificationKind.assignment => 'New work and feedback from a coach',
+    NotificationKind.progress => 'Goals reached and records broken',
+    NotificationKind.analysis => 'When a cloud analysis finishes',
+    NotificationKind.account => 'Billing, plan and device changes',
+    NotificationKind.safety =>
+      'Guardian approvals and safety notices, always on',
+  };
 }
 
 class _HourRow extends StatelessWidget {
@@ -264,10 +256,7 @@ class _HourRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(
-          width: 54,
-          child: Text(label, style: AvType.caption.muted),
-        ),
+        SizedBox(width: 54, child: Text(label, style: AvType.caption.muted)),
         Expanded(
           child: Slider(
             value: hour.toDouble(),
@@ -301,9 +290,7 @@ class _NotificationTile extends StatelessWidget {
     return AvCard(
       onTap: onTap,
       color: notification.read ? AvColors.surface : AvColors.flareTint,
-      border: notification.read
-          ? null
-          : Border.all(color: AvColors.flareSoft),
+      border: notification.read ? null : Border.all(color: AvColors.flareSoft),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

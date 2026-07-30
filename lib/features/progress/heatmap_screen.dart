@@ -17,10 +17,10 @@ enum _HeatWindow { recent, month, all }
 
 extension on _HeatWindow {
   String get label => switch (this) {
-        _HeatWindow.recent => 'Last 5',
-        _HeatWindow.month => '30 days',
-        _HeatWindow.all => 'All time',
-      };
+    _HeatWindow.recent => 'Last 5',
+    _HeatWindow.month => '30 days',
+    _HeatWindow.all => 'All time',
+  };
 }
 
 /// Full-court shot chart. Zones below the reliability threshold are drawn as
@@ -103,9 +103,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                         label: type.label,
                         selected: _type == type,
                         accent: AvColors.insight,
-                        onTap: () => setState(
-                          () => _type = _type == type ? null : type,
-                        ),
+                        onTap: () =>
+                            setState(() => _type = _type == type ? null : type),
                       ),
                     ),
                 ],
@@ -153,7 +152,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           top: AvSpace.md,
           child: AvUnavailableNotice(
             metric: 'Zones with fewer than four attempts',
-            reason: 'A percentage from two or three shots is noise. Those '
+            reason:
+                'A percentage from two or three shots is noise. Those '
                 'zones stay grey until there is enough evidence to colour '
                 'them honestly.',
           ),
@@ -166,11 +166,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final sorted = [...all]..sort((a, b) => b.startedAt.compareTo(a.startedAt));
     return switch (_window) {
       _HeatWindow.recent => sorted.take(5).toList(growable: false),
-      _HeatWindow.month => sorted
-          .where(
-            (s) => DateTime.now().difference(s.startedAt).inDays <= 30,
-          )
-          .toList(growable: false),
+      _HeatWindow.month =>
+        sorted
+            .where((s) => DateTime.now().difference(s.startedAt).inDays <= 30)
+            .toList(growable: false),
       _HeatWindow.all => sorted,
     };
   }
@@ -189,8 +188,9 @@ class _ZoneDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final graded =
-        shots.where((s) => s.confidence.isAuthoritative).toList(growable: false);
+    final graded = shots
+        .where((s) => s.confidence.isAuthoritative)
+        .toList(growable: false);
 
     double mean(double Function(Shot) selector) => graded.isEmpty
         ? 0
@@ -265,16 +265,15 @@ class _RankedZones extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final eligible = zones.entries
-        .where((e) => e.value.attempts >= 4)
-        .toList()
+    final eligible = zones.entries.where((e) => e.value.attempts >= 4).toList()
       ..sort((a, b) => b.value.percentage.compareTo(a.value.percentage));
 
     if (eligible.isEmpty) {
       return const AvEmptyState(
         icon: Icons.query_stats_rounded,
         title: 'Not enough evidence yet',
-        message: 'Record at least four attempts from a spot and it will be '
+        message:
+            'Record at least four attempts from a spot and it will be '
             'ranked here.',
       );
     }
@@ -339,9 +338,9 @@ class _ZoneRow extends StatelessWidget {
             child: Text(
               '${record.percentage.toStringAsFixed(0)}%',
               textAlign: TextAlign.right,
-              style: AvType.tabular(AvType.metricSmall).copyWith(
-                color: positive ? AvColors.made : AvColors.miss,
-              ),
+              style: AvType.tabular(
+                AvType.metricSmall,
+              ).copyWith(color: positive ? AvColors.made : AvColors.miss),
             ),
           ),
         ],

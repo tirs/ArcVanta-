@@ -37,7 +37,8 @@ class HighlightsScreen extends ConsumerWidget {
             child: AvEmptyState(
               icon: Icons.movie_creation_rounded,
               title: 'No reels yet',
-              message: 'Save a highlight from any session summary and it will '
+              message:
+                  'Save a highlight from any session summary and it will '
                   'appear here.',
             ),
           )
@@ -185,8 +186,9 @@ class _HighlightCard extends StatelessWidget {
                     child: Text(
                       '${highlight.clipCount} clips \u00B7 '
                       '${Fmt.duration(highlight.duration)}',
-                      style: AvType.tabular(AvType.caption)
-                          .copyWith(color: Colors.white),
+                      style: AvType.tabular(
+                        AvType.caption,
+                      ).copyWith(color: Colors.white),
                     ),
                   ),
                 ),
@@ -263,10 +265,12 @@ class _HighlightCard extends StatelessWidget {
                         expand: true,
                         onPressed: () =>
                             ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Rendering reel to your camera roll'),
-                          ),
-                        ),
+                              const SnackBar(
+                                content: Text(
+                                  'Rendering reel to your camera roll',
+                                ),
+                              ),
+                            ),
                       ),
                     ),
                   ],
@@ -297,10 +301,7 @@ class _ReelBackdrop extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(AvColors.ink, accent, 0.30)!,
-            AvColors.ink,
-          ],
+          colors: [Color.lerp(AvColors.ink, accent, 0.30)!, AvColors.ink],
         ).createShader(rect),
     );
 
@@ -342,10 +343,7 @@ class _ReelBackdrop extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            AvColors.ink.withValues(alpha: 0.55),
-          ],
+          colors: [Colors.transparent, AvColors.ink.withValues(alpha: 0.55)],
         ).createShader(rect),
     );
   }

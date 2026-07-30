@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../state/live_session.dart';
+import '../../data/capture/live_scene.dart';
 
 /// Renders the tracked scene behind the analysis overlay.
 ///
@@ -11,10 +11,7 @@ import '../../state/live_session.dart';
 /// uses for the rim, backboard and floor plane, and so the composition scales
 /// to any preview aspect ratio.
 class GymScenePainter extends CustomPainter {
-  const GymScenePainter({
-    required this.brightness,
-    this.indoor = true,
-  });
+  const GymScenePainter({required this.brightness, this.indoor = true});
 
   /// 0 to 1. Drives the exposure of the scene, used by the lighting check.
   final double brightness;
@@ -28,11 +25,27 @@ class GymScenePainter extends CustomPainter {
     final exposure = brightness.clamp(0.25, 1.0);
 
     final wallTop = indoor
-        ? Color.lerp(const Color(0xFF11131F), const Color(0xFF2C3145), exposure)!
-        : Color.lerp(const Color(0xFF13233A), const Color(0xFF4E7CA8), exposure)!;
+        ? Color.lerp(
+            const Color(0xFF11131F),
+            const Color(0xFF2C3145),
+            exposure,
+          )!
+        : Color.lerp(
+            const Color(0xFF13233A),
+            const Color(0xFF4E7CA8),
+            exposure,
+          )!;
     final wallBottom = indoor
-        ? Color.lerp(const Color(0xFF1A1D2C), const Color(0xFF3C4358), exposure)!
-        : Color.lerp(const Color(0xFF1B3350), const Color(0xFF6E9AC4), exposure)!;
+        ? Color.lerp(
+            const Color(0xFF1A1D2C),
+            const Color(0xFF3C4358),
+            exposure,
+          )!
+        : Color.lerp(
+            const Color(0xFF1B3350),
+            const Color(0xFF6E9AC4),
+            exposure,
+          )!;
 
     canvas.drawRect(
       Rect.fromLTRB(0, 0, size.width, size.height * horizon),
@@ -51,8 +64,12 @@ class GymScenePainter extends CustomPainter {
   }
 
   void _paintFloor(Canvas canvas, Size size, double exposure) {
-    final floorRect =
-        Rect.fromLTRB(0, size.height * horizon, size.width, size.height);
+    final floorRect = Rect.fromLTRB(
+      0,
+      size.height * horizon,
+      size.width,
+      size.height,
+    );
     final near = Color.lerp(
       const Color(0xFF3A2A1C),
       const Color(0xFFB98A55),
@@ -222,7 +239,9 @@ class GymScenePainter extends CustomPainter {
           rim.center.dx + math.cos(angle) * rx,
           rim.center.dy + math.sin(angle) * rim.height / 2 + netDepth * t,
         );
-        i == 0 ? path.moveTo(point.dx, point.dy) : path.lineTo(point.dx, point.dy);
+        i == 0
+            ? path.moveTo(point.dx, point.dy)
+            : path.lineTo(point.dx, point.dy);
       }
       canvas.drawPath(
         path,
@@ -254,10 +273,7 @@ class GymScenePainter extends CustomPainter {
         ..shader = RadialGradient(
           center: Alignment.center,
           radius: 1.05,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.42),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.42)],
           stops: const [0.55, 1.0],
         ).createShader(Offset.zero & size),
     );

@@ -77,28 +77,27 @@ enum ShotPhaseKind {
   recovery;
 
   String get label => switch (this) {
-        ShotPhaseKind.idle => 'Idle',
-        ShotPhaseKind.possession => 'Possession',
-        ShotPhaseKind.ready => 'Ready',
-        ShotPhaseKind.dip => 'Dip',
-        ShotPhaseKind.load => 'Load',
-        ShotPhaseKind.upward => 'Upward motion',
-        ShotPhaseKind.setPoint => 'Set point',
-        ShotPhaseKind.release => 'Release',
-        ShotPhaseKind.flight => 'Ball flight',
-        ShotPhaseKind.rimInteraction => 'Rim interaction',
-        ShotPhaseKind.followThrough => 'Follow-through',
-        ShotPhaseKind.landing => 'Landing',
-        ShotPhaseKind.recovery => 'Recovery',
-      };
+    ShotPhaseKind.idle => 'Idle',
+    ShotPhaseKind.possession => 'Possession',
+    ShotPhaseKind.ready => 'Ready',
+    ShotPhaseKind.dip => 'Dip',
+    ShotPhaseKind.load => 'Load',
+    ShotPhaseKind.upward => 'Upward motion',
+    ShotPhaseKind.setPoint => 'Set point',
+    ShotPhaseKind.release => 'Release',
+    ShotPhaseKind.flight => 'Ball flight',
+    ShotPhaseKind.rimInteraction => 'Rim interaction',
+    ShotPhaseKind.followThrough => 'Follow-through',
+    ShotPhaseKind.landing => 'Landing',
+    ShotPhaseKind.recovery => 'Recovery',
+  };
 
   bool get ballInHand => switch (this) {
-        ShotPhaseKind.flight ||
-        ShotPhaseKind.rimInteraction ||
-        ShotPhaseKind.followThrough ||
-        ShotPhaseKind.landing ||
-        ShotPhaseKind.recovery =>
-          false,
-        _ => true,
-      };
+    ShotPhaseKind.flight ||
+    ShotPhaseKind.rimInteraction ||
+    ShotPhaseKind.followThrough ||
+    ShotPhaseKind.landing ||
+    ShotPhaseKind.recovery => false,
+    _ => true,
+  };
 }

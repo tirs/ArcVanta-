@@ -10,41 +10,40 @@ enum AccountRole {
   organizationAdmin;
 
   String get label => switch (this) {
-        AccountRole.player => 'Player',
-        AccountRole.guardian => 'Parent or guardian',
-        AccountRole.trainer => 'Skills trainer',
-        AccountRole.coach => 'Team coach',
-        AccountRole.organizationAdmin => 'Academy or facility',
-      };
+    AccountRole.player => 'Player',
+    AccountRole.guardian => 'Parent or guardian',
+    AccountRole.trainer => 'Skills trainer',
+    AccountRole.coach => 'Team coach',
+    AccountRole.organizationAdmin => 'Academy or facility',
+  };
 
   String get description => switch (this) {
-        AccountRole.player =>
-          'Track your own sessions, mechanics and progress.',
-        AccountRole.guardian =>
-          'Manage a minor account, approve access and review progress.',
-        AccountRole.trainer =>
-          'Work with multiple athletes, assign drills and review clips.',
-        AccountRole.coach =>
-          'Build rosters, assign programs and follow team development.',
-        AccountRole.organizationAdmin =>
-          'Administer teams, coaches, branding and shared devices.',
-      };
+    AccountRole.player => 'Track your own sessions, mechanics and progress.',
+    AccountRole.guardian =>
+      'Manage a minor account, approve access and review progress.',
+    AccountRole.trainer =>
+      'Work with multiple athletes, assign drills and review clips.',
+    AccountRole.coach =>
+      'Build rosters, assign programs and follow team development.',
+    AccountRole.organizationAdmin =>
+      'Administer teams, coaches, branding and shared devices.',
+  };
 
   IconData get icon => switch (this) {
-        AccountRole.player => Icons.sports_basketball_rounded,
-        AccountRole.guardian => Icons.family_restroom_rounded,
-        AccountRole.trainer => Icons.fitness_center_rounded,
-        AccountRole.coach => Icons.groups_rounded,
-        AccountRole.organizationAdmin => Icons.apartment_rounded,
-      };
+    AccountRole.player => Icons.sports_basketball_rounded,
+    AccountRole.guardian => Icons.family_restroom_rounded,
+    AccountRole.trainer => Icons.fitness_center_rounded,
+    AccountRole.coach => Icons.groups_rounded,
+    AccountRole.organizationAdmin => Icons.apartment_rounded,
+  };
 
   Color get color => switch (this) {
-        AccountRole.player => AvColors.flare,
-        AccountRole.guardian => AvColors.court,
-        AccountRole.trainer => AvColors.insight,
-        AccountRole.coach => AvColors.made,
-        AccountRole.organizationAdmin => AvColors.caution,
-      };
+    AccountRole.player => AvColors.flare,
+    AccountRole.guardian => AvColors.court,
+    AccountRole.trainer => AvColors.insight,
+    AccountRole.coach => AvColors.made,
+    AccountRole.organizationAdmin => AvColors.caution,
+  };
 }
 
 enum DominantHand {
@@ -62,20 +61,20 @@ enum PlayerPosition {
   center;
 
   String get label => switch (this) {
-        PlayerPosition.pointGuard => 'Point guard',
-        PlayerPosition.shootingGuard => 'Shooting guard',
-        PlayerPosition.smallForward => 'Small forward',
-        PlayerPosition.powerForward => 'Power forward',
-        PlayerPosition.center => 'Center',
-      };
+    PlayerPosition.pointGuard => 'Point guard',
+    PlayerPosition.shootingGuard => 'Shooting guard',
+    PlayerPosition.smallForward => 'Small forward',
+    PlayerPosition.powerForward => 'Power forward',
+    PlayerPosition.center => 'Center',
+  };
 
   String get abbreviation => switch (this) {
-        PlayerPosition.pointGuard => 'PG',
-        PlayerPosition.shootingGuard => 'SG',
-        PlayerPosition.smallForward => 'SF',
-        PlayerPosition.powerForward => 'PF',
-        PlayerPosition.center => 'C',
-      };
+    PlayerPosition.pointGuard => 'PG',
+    PlayerPosition.shootingGuard => 'SG',
+    PlayerPosition.smallForward => 'SF',
+    PlayerPosition.powerForward => 'PF',
+    PlayerPosition.center => 'C',
+  };
 }
 
 enum SkillLevel {
@@ -85,11 +84,11 @@ enum SkillLevel {
   competitive;
 
   String get label => switch (this) {
-        SkillLevel.beginner => 'Beginner',
-        SkillLevel.intermediate => 'Intermediate',
-        SkillLevel.advanced => 'Advanced',
-        SkillLevel.competitive => 'Competitive',
-      };
+    SkillLevel.beginner => 'Beginner',
+    SkillLevel.intermediate => 'Intermediate',
+    SkillLevel.advanced => 'Advanced',
+    SkillLevel.competitive => 'Competitive',
+  };
 }
 
 class PlayerProfile {

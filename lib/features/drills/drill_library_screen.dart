@@ -18,8 +18,7 @@ class DrillLibraryScreen extends ConsumerStatefulWidget {
   const DrillLibraryScreen({super.key});
 
   @override
-  ConsumerState<DrillLibraryScreen> createState() =>
-      _DrillLibraryScreenState();
+  ConsumerState<DrillLibraryScreen> createState() => _DrillLibraryScreenState();
 }
 
 class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
@@ -30,15 +29,19 @@ class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final drills = ref.watch(drillStoreProvider);
-    final filtered = drills.where((drill) {
-      if (_category != null && drill.category != _category) return false;
-      if (_difficulty != null && drill.difficulty != _difficulty) return false;
-      if (_query.isEmpty) return true;
-      final q = _query.toLowerCase();
-      return drill.name.toLowerCase().contains(q) ||
-          drill.summary.toLowerCase().contains(q) ||
-          drill.coachingFocus.toLowerCase().contains(q);
-    }).toList(growable: false);
+    final filtered = drills
+        .where((drill) {
+          if (_category != null && drill.category != _category) return false;
+          if (_difficulty != null && drill.difficulty != _difficulty) {
+            return false;
+          }
+          if (_query.isEmpty) return true;
+          final q = _query.toLowerCase();
+          return drill.name.toLowerCase().contains(q) ||
+              drill.summary.toLowerCase().contains(q) ||
+              drill.coachingFocus.toLowerCase().contains(q);
+        })
+        .toList(growable: false);
 
     return AvScaffold(
       title: 'Train',
@@ -75,8 +78,7 @@ class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AvSpace.gutter),
+                padding: const EdgeInsets.symmetric(horizontal: AvSpace.gutter),
                 children: [
                   AvChip(
                     label: 'All',
@@ -92,11 +94,10 @@ class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
                       icon: category.icon,
                       accent: category.color,
                       selected: _category == category,
-                      count: drills
-                          .where((d) => d.category == category)
-                          .length,
+                      count: drills.where((d) => d.category == category).length,
                       onTap: () => setState(
-                        () => _category = _category == category ? null : category,
+                        () =>
+                            _category = _category == category ? null : category,
                       ),
                     ),
                   ],
@@ -129,8 +130,9 @@ class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
                             selected: _difficulty == level,
                             accent: AvColors.insight,
                             onTap: () => setState(
-                              () => _difficulty =
-                                  _difficulty == level ? null : level,
+                              () => _difficulty = _difficulty == level
+                                  ? null
+                                  : level,
                             ),
                           ),
                           const SizedBox(width: AvSpace.xs),
@@ -195,8 +197,10 @@ class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Custom drill builder',
-                          style: AvType.titleMedium.primary),
+                      Text(
+                        'Custom drill builder',
+                        style: AvType.titleMedium.primary,
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         'Define spots, targets, time limits, rest, movement '

@@ -139,9 +139,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'drill/:id',
-                    builder: (context, state) => DrillDetailScreen(
-                      drillId: state.pathParameters['id']!,
-                    ),
+                    builder: (context, state) =>
+                        DrillDetailScreen(drillId: state.pathParameters['id']!),
                   ),
                 ],
               ),
@@ -198,9 +197,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/session/placement/:drillId',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => PlacementGuideScreen(
-          drillId: state.pathParameters['drillId']!,
-        ),
+        builder: (context, state) =>
+            PlacementGuideScreen(drillId: state.pathParameters['drillId']!),
       ),
       GoRoute(
         path: '/session/calibration/:drillId',
@@ -226,16 +224,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sessions/:id',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => SessionSummaryScreen(
-          sessionId: state.pathParameters['id']!,
-        ),
+        builder: (context, state) =>
+            SessionSummaryScreen(sessionId: state.pathParameters['id']!),
         routes: [
           GoRoute(
             path: 'timeline',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => ShotTimelineScreen(
-              sessionId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                ShotTimelineScreen(sessionId: state.pathParameters['id']!),
           ),
           GoRoute(
             path: 'shot/:shotId',
@@ -321,6 +317,6 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 CameraAngle _angle(String? name) => CameraAngle.values.firstWhere(
-      (a) => a.name == name,
-      orElse: () => CameraAngle.side,
-    );
+  (a) => a.name == name,
+  orElse: () => CameraAngle.side,
+);

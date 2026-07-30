@@ -24,8 +24,9 @@ class DeviceSettingsScreen extends ConsumerWidget {
     final sessions = ref.watch(sessionStoreProvider);
 
     final usedGb = sessions.length * 0.62;
-    final usedFraction =
-        (usedGb / settings.storageBudgetGb).clamp(0.0, 1.0).toDouble();
+    final usedFraction = (usedGb / settings.storageBudgetGb)
+        .clamp(0.0, 1.0)
+        .toDouble();
 
     return AvScaffold(
       title: 'Device and capture',
@@ -96,7 +97,8 @@ class DeviceSettingsScreen extends ConsumerWidget {
               children: [
                 _SettingSwitch(
                   title: 'High frame rate capture',
-                  detail: 'Records at 60 fps. Sharper release timing and '
+                  detail:
+                      'Records at 60 fps. Sharper release timing and '
                       'better arc, at roughly twice the storage and more heat.',
                   value: settings.highFrameRateCapture,
                   onChanged: (v) => controller.update(
@@ -105,7 +107,8 @@ class DeviceSettingsScreen extends ConsumerWidget {
                 ),
                 _SettingSwitch(
                   title: 'Thermal guard',
-                  detail: 'Drops overlay detail before it drops measurement '
+                  detail:
+                      'Drops overlay detail before it drops measurement '
                       'quality when the phone gets hot.',
                   value: settings.thermalGuard,
                   onChanged: (v) =>
@@ -133,11 +136,11 @@ class DeviceSettingsScreen extends ConsumerWidget {
                   child: Text(
                     settings.thermalGuard
                         ? 'With the guard on, a long session in a warm gym '
-                            'will simplify the overlay rather than lower '
-                            'tracking accuracy.'
+                              'will simplify the overlay rather than lower '
+                              'tracking accuracy.'
                         : 'With the guard off, sustained capture may throttle '
-                            'the processing rate, which lowers confidence on '
-                            'release timing.',
+                              'the processing rate, which lowers confidence on '
+                              'release timing.',
                     style: AvType.caption.muted,
                   ),
                 ),
@@ -163,8 +166,9 @@ class DeviceSettingsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       usedGb.toStringAsFixed(1),
-                      style: AvType.tabular(AvType.metricLarge)
-                          .copyWith(fontSize: 30, color: AvColors.insight),
+                      style: AvType.tabular(
+                        AvType.metricLarge,
+                      ).copyWith(fontSize: 30, color: AvColors.insight),
                     ),
                     Text(' GB used', style: AvType.caption.muted),
                     const Spacer(),
@@ -209,10 +213,12 @@ class DeviceSettingsScreen extends ConsumerWidget {
                         expand: true,
                         onPressed: () =>
                             ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Temporary analysis files removed'),
-                          ),
-                        ),
+                              const SnackBar(
+                                content: Text(
+                                  'Temporary analysis files removed',
+                                ),
+                              ),
+                            ),
                       ),
                     ),
                     const SizedBox(width: AvSpace.xs),
@@ -222,8 +228,7 @@ class DeviceSettingsScreen extends ConsumerWidget {
                         variant: AvButtonVariant.tonal,
                         size: AvButtonSize.small,
                         expand: true,
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
                               'Removing clips older than your retention window',

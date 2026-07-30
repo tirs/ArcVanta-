@@ -65,8 +65,10 @@ class ShotFactory {
         CourtZone.leftCorner3 || CourtZone.rightCorner3 => -0.04,
       };
 
-      final makeChance =
-          (baseAccuracy + zoneModifier - fatigue * 0.07).clamp(0.05, 0.95);
+      final makeChance = (baseAccuracy + zoneModifier - fatigue * 0.07).clamp(
+        0.05,
+        0.95,
+      );
       final roll = _random.nextDouble();
 
       final mechanics = _gauss(
@@ -75,10 +77,11 @@ class ShotFactory {
       ).clamp(38, 99).toDouble();
 
       // Occlusion and blur occasionally reduce evidence quality.
-      final evidence = (calibrationQuality -
-              _random.nextDouble() * 0.22 -
-              (zone.isThree ? 0.05 : 0.0))
-          .clamp(0.0, 1.0);
+      final evidence =
+          (calibrationQuality -
+                  _random.nextDouble() * 0.22 -
+                  (zone.isThree ? 0.05 : 0.0))
+              .clamp(0.0, 1.0);
       var confidence = ConfidenceLevel.fromScore(evidence);
 
       ShotResult result;
@@ -94,18 +97,21 @@ class ShotFactory {
         detail = swish
             ? ShotOutcomeDetail.swish
             : (_random.nextDouble() < 0.72
-                ? ShotOutcomeDetail.rimMake
-                : ShotOutcomeDetail.backboardMake);
+                  ? ShotOutcomeDetail.rimMake
+                  : ShotOutcomeDetail.backboardMake);
       } else {
         result = ShotResult.missed;
         detail = _missDetail(mechanics);
       }
 
-      final lateral = _gauss(lateralBias, 6.2) +
+      final lateral =
+          _gauss(lateralBias, 6.2) +
           (result == ShotResult.missed ? _gauss(0, 4.4) : 0);
       final depth = _gauss(result == ShotResult.made ? 1.4 : -3.6, 5.8);
-      final releaseAngle =
-          _gauss(releaseAngleCentre - fatigue * 1.1, 2.6).clamp(38, 62);
+      final releaseAngle = _gauss(
+        releaseAngleCentre - fatigue * 1.1,
+        2.6,
+      ).clamp(38, 62);
       final entryAngle = (releaseAngle * 0.86 + 8.4 + _gauss(0, 1.6))
           .clamp(31, 56)
           .toDouble();
@@ -144,8 +150,7 @@ class ShotFactory {
       );
 
       elapsed += Duration(
-        milliseconds:
-            interval.inMilliseconds + (_random.nextInt(5200) - 2400),
+        milliseconds: interval.inMilliseconds + (_random.nextInt(5200) - 2400),
       );
     }
 
@@ -155,18 +160,18 @@ class ShotFactory {
   ShotOutcomeDetail _missDetail(double mechanics) {
     final options = lateralBias.abs() > 3
         ? (lateralBias < 0
-            ? [
-                ShotOutcomeDetail.leftRim,
-                ShotOutcomeDetail.leftRim,
-                ShotOutcomeDetail.frontRim,
-                ShotOutcomeDetail.short,
-              ]
-            : [
-                ShotOutcomeDetail.rightRim,
-                ShotOutcomeDetail.rightRim,
-                ShotOutcomeDetail.backRim,
-                ShotOutcomeDetail.long,
-              ])
+              ? [
+                  ShotOutcomeDetail.leftRim,
+                  ShotOutcomeDetail.leftRim,
+                  ShotOutcomeDetail.frontRim,
+                  ShotOutcomeDetail.short,
+                ]
+              : [
+                  ShotOutcomeDetail.rightRim,
+                  ShotOutcomeDetail.rightRim,
+                  ShotOutcomeDetail.backRim,
+                  ShotOutcomeDetail.long,
+                ])
         : [
             ShotOutcomeDetail.frontRim,
             ShotOutcomeDetail.backRim,
@@ -181,8 +186,11 @@ class ShotFactory {
 
   /// Normalised ball path in the shot-detail viewport. x runs from the release
   /// hand to the rim, y is inverted screen space where 0 is the top.
-  List<Offset> _trajectory(double releaseAngle, double lateral,
-      ShotResult result) {
+  List<Offset> _trajectory(
+    double releaseAngle,
+    double lateral,
+    ShotResult result,
+  ) {
     const steps = 34;
     final arcHeight = 0.52 + (releaseAngle - 50) * 0.012;
     final overshoot = result == ShotResult.made ? 0.0 : lateral / 260;
@@ -198,8 +206,11 @@ class ShotFactory {
     final crisp = mechanics > 80;
     var cursor = 0;
     ShotPhase step(String name, int duration) {
-      final phase =
-          ShotPhase(name: name, startMs: cursor, durationMs: duration);
+      final phase = ShotPhase(
+        name: name,
+        startMs: cursor,
+        durationMs: duration,
+      );
       cursor += duration;
       return phase;
     }

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +19,6 @@ import '../../data/seed/drill_catalog.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/painters/overlay_painter.dart';
-import '../../design/painters/pose_animator.dart';
 import '../../state/app_settings.dart';
 import '../../state/live_session.dart';
 import '../../state/stores.dart';
@@ -43,16 +41,11 @@ class LiveSessionScreen extends ConsumerStatefulWidget {
   ConsumerState<LiveSessionScreen> createState() => _LiveSessionScreenState();
 }
 
-class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _frameClock;
-  final List<Offset> _trail = [];
-
+class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   late bool _showSkeleton;
   late bool _showTrajectory;
   late bool _showBoxes;
   bool _statsExpanded = false;
-  int _cycleMs = 0;
 
   @override
   void initState() {
@@ -64,9 +57,8 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen>
     _showTrajectory = settings.showOverlays && settings.showTrajectory;
     _showBoxes = settings.showOverlays && settings.showZones;
 
-    _frameClock = createTicker(_onFrame)..start();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final controller = ref.read(liveSessionProvider.notifier);
       controller.configure(DrillCatalog.byId(widget.drillId), widget.angle);
       controller.startCountdown();
@@ -75,26 +67,8 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen>
 
   @override
   void dispose() {
-    _frameClock.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
-  }
-
-  void _onFrame(Duration elapsed) {
-    final state = ref.read(liveSessionProvider);
-    if (state.status != LiveStatus.running) return;
-
-    final cycleMs = (state.cycleProgress * ShotCycle.total).round();
-    final flight = ShotCycle.flightProgress(cycleMs);
-
-    if (cycleMs < _cycleMs) _trail.clear();
-
-    if (flight != null) {
-      _trail.add(PoseAnimator.ballAt(cycleMs));
-      if (_trail.length > 90) _trail.removeAt(0);
-    }
-
-    setState(() => _cycleMs = cycleMs);
   }
 
   Future<void> _finish() async {
@@ -124,10 +98,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(liveSessionProvider);
-    final pose = PoseAnimator.at(
-      _cycleMs,
-      trackingConfidence: state.trackingConfidence,
-    );
+    final pose = state.pose;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AvTheme.inkOverlay,
@@ -142,20 +113,25 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen>
             fit: StackFit.expand,
             children: [
               CameraStage(
-                overlay: CustomPaint(
-                  painter: AnalysisOverlayPainter(
-                    pose: pose,
-                    ball: PoseAnimator.ballAt(_cycleMs),
-                    trail: _trail,
-                    phase: state.phase,
-                    showSkeleton: _showSkeleton,
-                    showTrajectory: _showTrajectory,
-                    showBoxes: _showBoxes,
-                    trackingConfidence: state.trackingConfidence,
-                    textDirection: Directionality.of(context),
-                    highlightRelease: state.phase == ShotPhaseKind.release,
-                  ),
-                ),
+                overlay: pose == null
+                    ? null
+                    : CustomPaint(
+                        painter: AnalysisOverlayPainter(
+                          pose: pose,
+                          ball: state.ball ?? pose[PoseJoint.rightWrist],
+                          trail: state.ballTrail,
+                          phase: state.phase,
+                          rim: state.rim,
+                          backboard: state.backboard,
+                          showSkeleton: _showSkeleton,
+                          showTrajectory: _showTrajectory,
+                          showBoxes: _showBoxes,
+                          trackingConfidence: state.trackingConfidence,
+                          textDirection: Directionality.of(context),
+                          highlightRelease:
+                              state.phase == ShotPhaseKind.release,
+                        ),
+                      ),
               ),
               const _EdgeScrim(),
               SafeArea(
@@ -270,12 +246,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AvSpace.md,
-        AvSpace.sm,
-        AvSpace.md,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(AvSpace.md, AvSpace.sm, AvSpace.md, 0),
       child: Column(
         children: [
           Row(
@@ -299,9 +270,9 @@ class _TopBar extends StatelessWidget {
                     Text(
                       '${state.angle.label} view \u00B7 '
                       '${Fmt.clock(state.elapsed)}',
-                      style: AvType.tabular(AvType.caption).copyWith(
-                        color: Colors.white.withValues(alpha: 0.72),
-                      ),
+                      style: AvType.tabular(
+                        AvType.caption,
+                      ).copyWith(color: Colors.white.withValues(alpha: 0.72)),
                     ),
                   ],
                 ),
@@ -310,7 +281,10 @@ class _TopBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AvSpace.sm),
-          Row(
+          Wrap(
+            spacing: AvSpace.xs,
+            runSpacing: AvSpace.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _OverlayToggle(
                 label: 'Skeleton',
@@ -318,21 +292,18 @@ class _TopBar extends StatelessWidget {
                 color: AvColors.overlaySkeleton,
                 onTap: onToggleSkeleton,
               ),
-              const SizedBox(width: AvSpace.xs),
               _OverlayToggle(
                 label: 'Arc',
                 active: showTrajectory,
                 color: AvColors.overlayTrace,
                 onTap: onToggleTrajectory,
               ),
-              const SizedBox(width: AvSpace.xs),
               _OverlayToggle(
                 label: 'Boxes',
                 active: showBoxes,
                 color: AvColors.overlayHoop,
                 onTap: onToggleBoxes,
               ),
-              const Spacer(),
               _Telemetry(state: state),
             ],
           ),
@@ -371,10 +342,9 @@ class _TrackingChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             'TRACKING ${(state.trackingConfidence * 100).round()}',
-            style: AvType.tabular(AvType.overline).copyWith(
-              color: Colors.white,
-              fontSize: 9,
-            ),
+            style: AvType.tabular(
+              AvType.overline,
+            ).copyWith(color: Colors.white, fontSize: 9),
           ),
         ],
       ),
@@ -394,10 +364,9 @@ class _Telemetry extends StatelessWidget {
       children: [
         Text(
           '${state.processedFps} FPS',
-          style: AvType.tabular(AvType.overline).copyWith(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 9,
-          ),
+          style: AvType.tabular(
+            AvType.overline,
+          ).copyWith(color: Colors.white.withValues(alpha: 0.7), fontSize: 9),
         ),
         const SizedBox(width: AvSpace.xs),
         Icon(
@@ -497,14 +466,14 @@ class _PhaseStrip extends StatelessWidget {
         AvSpace.md,
         AvSpace.xs,
       ),
-      child: Row(
+      child: Column(
         children: [
-          for (var i = 0; i < _tracked.length; i++) ...[
-            if (i > 0) const SizedBox(width: 4),
-            Expanded(
-              child: Column(
-                children: [
-                  AnimatedContainer(
+          Row(
+            children: [
+              for (var i = 0; i < _tracked.length; i++) ...[
+                if (i > 0) const SizedBox(width: 4),
+                Expanded(
+                  child: AnimatedContainer(
                     duration: AvMotion.fast,
                     height: 3,
                     decoration: BoxDecoration(
@@ -514,23 +483,27 @@ class _PhaseStrip extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  if (i == index)
-                    Text(
-                      _tracked[i].label.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      style: AvType.overline.copyWith(
-                        color: AvColors.flare,
-                        fontSize: 8.5,
-                      ),
-                    )
-                  else
-                    const SizedBox(height: 11),
-                ],
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          // The label sits over the whole strip rather than inside one segment,
+          // which is a fraction of the width and would clip every long phase.
+          Align(
+            alignment: index < 0
+                ? Alignment.center
+                : Alignment(-1 + 2 * ((index + 0.5) / _tracked.length), 0),
+            child: Text(
+              index < 0 ? '' : _tracked[index].label.toUpperCase(),
+              maxLines: 1,
+              softWrap: false,
+              style: AvType.overline.copyWith(
+                color: AvColors.flare,
+                fontSize: 8.5,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -566,60 +539,85 @@ class _Scoreboard extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // Read at four metres on anything from a small phone upward, so
+              // both halves scale down together rather than one clipping.
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _BigFigure(
-                    value: '${state.makes}',
-                    caption: 'of ${state.attemptCount}',
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: AvSpace.md),
-                  Container(
-                    width: 1,
-                    height: 38,
-                    color: AvColors.scrimHairline,
-                  ),
-                  const SizedBox(width: AvSpace.md),
-                  _BigFigure(
-                    value: state.attemptCount == 0
-                        ? '\u2014'
-                        : '${state.percentage.round()}',
-                    caption: 'per cent',
-                    color: AvColors.flare,
-                  ),
-                  const Spacer(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'STREAK ${state.streak}',
-                        style: AvType.tabular(AvType.overline).copyWith(
-                          color: state.streak >= 3
-                              ? AvColors.made
-                              : Colors.white.withValues(alpha: 0.75),
-                          fontSize: 10,
-                        ),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.bottomLeft,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _BigFigure(
+                            value: '${state.makes}',
+                            caption: 'of ${state.attemptCount}',
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: AvSpace.md),
+                          Container(
+                            width: 1,
+                            height: 38,
+                            color: AvColors.scrimHairline,
+                          ),
+                          const SizedBox(width: AvSpace.md),
+                          _BigFigure(
+                            value: state.attemptCount == 0
+                                ? '\u2014'
+                                : '${state.percentage.round()}',
+                            caption: 'per cent',
+                            color: AvColors.flare,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
-                      SizedBox(
-                        width: 108,
-                        child: AvMeter(
-                          value: state.targetProgress,
-                          color: AvColors.flare,
-                          trackColor: Colors.white24,
-                          height: 5,
+                    ),
+                  ),
+                  const SizedBox(width: AvSpace.sm),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'STREAK ${state.streak}',
+                            maxLines: 1,
+                            style: AvType.tabular(AvType.overline).copyWith(
+                              color: state.streak >= 3
+                                  ? AvColors.made
+                                  : Colors.white.withValues(alpha: 0.75),
+                              fontSize: 10,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'TARGET ${state.drill.targetMakes} MAKES',
-                        style: AvType.tabular(AvType.overline).copyWith(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 8.5,
+                        const SizedBox(height: 6),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 108),
+                          child: AvMeter(
+                            value: state.targetProgress,
+                            color: AvColors.flare,
+                            trackColor: Colors.white24,
+                            height: 5,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'TARGET ${state.drill.targetMakes} MAKES',
+                            maxLines: 1,
+                            style: AvType.tabular(AvType.overline).copyWith(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 8.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -748,8 +746,9 @@ class _ShotDot extends StatelessWidget {
       ),
       child: Text(
         '${shot.index}',
-        style: AvType.tabular(AvType.overline)
-            .copyWith(color: Colors.white, fontSize: 9),
+        style: AvType.tabular(
+          AvType.overline,
+        ).copyWith(color: Colors.white, fontSize: 9),
       ),
     );
   }
@@ -777,8 +776,9 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             value,
-            style: AvType.tabular(AvType.metricSmall)
-                .copyWith(color: Colors.white, fontSize: 15),
+            style: AvType.tabular(
+              AvType.metricSmall,
+            ).copyWith(color: Colors.white, fontSize: 15),
           ),
         ],
       ),
@@ -805,8 +805,9 @@ class _BigFigure extends StatelessWidget {
       children: [
         Text(
           value,
-          style: AvType.tabular(AvType.metricLarge)
-              .copyWith(color: color, fontSize: 38),
+          style: AvType.tabular(
+            AvType.metricLarge,
+          ).copyWith(color: color, fontSize: 38),
         ),
         const SizedBox(height: 2),
         Text(
@@ -997,12 +998,7 @@ class _LiveCueBanner extends StatelessWidget {
     };
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AvSpace.md,
-        0,
-        AvSpace.md,
-        AvSpace.sm,
-      ),
+      padding: const EdgeInsets.fromLTRB(AvSpace.md, 0, AvSpace.md, AvSpace.sm),
       child: AnimatedSwitcher(
         duration: AvMotion.normal,
         child: Container(
@@ -1028,8 +1024,7 @@ class _LiveCueBanner extends StatelessWidget {
                   children: [
                     Text(
                       cue.headline,
-                      style:
-                          AvType.titleSmall.copyWith(color: Colors.white),
+                      style: AvType.titleSmall.copyWith(color: Colors.white),
                     ),
                     Text(
                       cue.detail,
@@ -1040,7 +1035,11 @@ class _LiveCueBanner extends StatelessWidget {
                   ],
                 ),
               ),
-              AvConfidenceBadge(level: cue.confidence, compact: true, onInk: true),
+              AvConfidenceBadge(
+                level: cue.confidence,
+                compact: true,
+                onInk: true,
+              ),
             ],
           ),
         ),
@@ -1057,12 +1056,7 @@ class _ConfirmationPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AvSpace.md,
-        0,
-        AvSpace.md,
-        AvSpace.sm,
-      ),
+      padding: const EdgeInsets.fromLTRB(AvSpace.md, 0, AvSpace.md, AvSpace.sm),
       child: Container(
         padding: const EdgeInsets.all(AvSpace.sm),
         decoration: BoxDecoration(
@@ -1119,14 +1113,8 @@ class _MiniAction extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: AvRadius.pill,
-        ),
-        child: Text(
-          label,
-          style: AvType.label.copyWith(color: Colors.white),
-        ),
+        decoration: BoxDecoration(color: color, borderRadius: AvRadius.pill),
+        child: Text(label, style: AvType.label.copyWith(color: Colors.white)),
       ),
     );
   }
@@ -1159,16 +1147,13 @@ class _CountdownVeil extends StatelessWidget {
             tween: Tween(begin: 0.7, end: 1),
             duration: AvMotion.slow,
             curve: AvMotion.emphasized,
-            builder: (context, scale, child) => Transform.scale(
-              scale: scale,
-              child: child,
-            ),
+            builder: (context, scale, child) =>
+                Transform.scale(scale: scale, child: child),
             child: Text(
               '$value',
-              style: AvType.tabular(AvType.metricLarge).copyWith(
-                color: AvColors.flare,
-                fontSize: 132,
-              ),
+              style: AvType.tabular(
+                AvType.metricLarge,
+              ).copyWith(color: AvColors.flare, fontSize: 132),
             ),
           ),
           const SizedBox(height: AvSpace.md),
@@ -1221,8 +1206,8 @@ class _ResultFlashState extends State<_ResultFlash>
     final color = made
         ? AvColors.made
         : widget.shot.result == ShotResult.uncertain
-            ? AvColors.caution
-            : AvColors.miss;
+        ? AvColors.caution
+        : AvColors.miss;
 
     return IgnorePointer(
       child: AnimatedBuilder(
@@ -1253,8 +1238,8 @@ class _ResultFlashState extends State<_ResultFlash>
                         made
                             ? Icons.sports_basketball_rounded
                             : widget.shot.result == ShotResult.uncertain
-                                ? Icons.help_outline_rounded
-                                : Icons.close_rounded,
+                            ? Icons.help_outline_rounded
+                            : Icons.close_rounded,
                         color: Colors.white,
                         size: 20,
                       ),

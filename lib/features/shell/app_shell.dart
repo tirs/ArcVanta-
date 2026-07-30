@@ -60,10 +60,8 @@ class AppShell extends ConsumerWidget {
       bottomNavigationBar: _NavBar(
         destinations: destinations,
         currentIndex: shell.currentIndex,
-        onSelect: (index) => shell.goBranch(
-          index,
-          initialLocation: index == shell.currentIndex,
-        ),
+        onSelect: (index) =>
+            shell.goBranch(index, initialLocation: index == shell.currentIndex),
       ),
     );
   }
@@ -148,8 +146,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        selected ? destination.accent : AvColors.textOnInkMuted;
+    final color = selected ? destination.accent : AvColors.textOnInkMuted;
 
     return Semantics(
       selected: selected,

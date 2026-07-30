@@ -23,44 +23,44 @@ enum _TrendMetric { accuracy, mechanics, consistency, entryAngle, volume }
 
 extension on _TrendMetric {
   String get label => switch (this) {
-        _TrendMetric.accuracy => 'Accuracy',
-        _TrendMetric.mechanics => 'Mechanics',
-        _TrendMetric.consistency => 'Repeatability',
-        _TrendMetric.entryAngle => 'Entry angle',
-        _TrendMetric.volume => 'Volume',
-      };
+    _TrendMetric.accuracy => 'Accuracy',
+    _TrendMetric.mechanics => 'Mechanics',
+    _TrendMetric.consistency => 'Repeatability',
+    _TrendMetric.entryAngle => 'Entry angle',
+    _TrendMetric.volume => 'Volume',
+  };
 
   String get unit => switch (this) {
-        _TrendMetric.accuracy => '%',
-        _TrendMetric.mechanics => '',
-        _TrendMetric.consistency => '',
-        _TrendMetric.entryAngle => '\u00B0',
-        _TrendMetric.volume => '',
-      };
+    _TrendMetric.accuracy => '%',
+    _TrendMetric.mechanics => '',
+    _TrendMetric.consistency => '',
+    _TrendMetric.entryAngle => '\u00B0',
+    _TrendMetric.volume => '',
+  };
 
   Color get color => switch (this) {
-        _TrendMetric.accuracy => AvColors.flare,
-        _TrendMetric.mechanics => AvColors.insight,
-        _TrendMetric.consistency => AvColors.court,
-        _TrendMetric.entryAngle => AvColors.made,
-        _TrendMetric.volume => AvColors.caution,
-      };
+    _TrendMetric.accuracy => AvColors.flare,
+    _TrendMetric.mechanics => AvColors.insight,
+    _TrendMetric.consistency => AvColors.court,
+    _TrendMetric.entryAngle => AvColors.made,
+    _TrendMetric.volume => AvColors.caution,
+  };
 
   double? get target => switch (this) {
-        _TrendMetric.accuracy => 45,
-        _TrendMetric.mechanics => 88,
-        _TrendMetric.consistency => 80,
-        _TrendMetric.entryAngle => 45,
-        _TrendMetric.volume => null,
-      };
+    _TrendMetric.accuracy => 45,
+    _TrendMetric.mechanics => 88,
+    _TrendMetric.consistency => 80,
+    _TrendMetric.entryAngle => 45,
+    _TrendMetric.volume => null,
+  };
 
   double read(ProgressPoint point) => switch (this) {
-        _TrendMetric.accuracy => point.percentage,
-        _TrendMetric.mechanics => point.mechanicsScore,
-        _TrendMetric.consistency => point.consistencyScore,
-        _TrendMetric.entryAngle => point.averageEntryAngle,
-        _TrendMetric.volume => point.attempts.toDouble(),
-      };
+    _TrendMetric.accuracy => point.percentage,
+    _TrendMetric.mechanics => point.mechanicsScore,
+    _TrendMetric.consistency => point.consistencyScore,
+    _TrendMetric.entryAngle => point.averageEntryAngle,
+    _TrendMetric.volume => point.attempts.toDouble(),
+  };
 }
 
 /// Long-range view of whether training is working. Every headline number is
@@ -164,7 +164,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                 if (values.length < 2)
                   const AvUnavailableNotice(
                     metric: 'Trend line',
-                    reason: 'At least two sessions inside this range are '
+                    reason:
+                        'At least two sessions inside this range are '
                         'needed before a trend means anything.',
                   )
                 else
@@ -315,8 +316,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     if (values.length < 4) return 0;
     final half = values.length ~/ 2;
     final early = values.take(half).reduce((a, b) => a + b) / half;
-    final late = values.skip(half).reduce((a, b) => a + b) /
-        (values.length - half);
+    final late =
+        values.skip(half).reduce((a, b) => a + b) / (values.length - half);
     return late - early;
   }
 
@@ -325,9 +326,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     final step = (points.length / 5).ceil().clamp(1, points.length);
     return [
       for (var i = 0; i < points.length; i++)
-        i % step == 0 || i == points.length - 1
-            ? Fmt.date(points[i].date)
-            : '',
+        i % step == 0 || i == points.length - 1 ? Fmt.date(points[i].date) : '',
     ];
   }
 
@@ -354,8 +353,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           color: percentage >= 45
               ? AvColors.made
               : percentage >= 33
-                  ? AvColors.caution
-                  : AvColors.miss,
+              ? AvColors.caution
+              : AvColors.miss,
           caption: '${value.$1}/${value.$2}',
         ),
       );
@@ -379,7 +378,7 @@ class _SummaryPanel extends StatelessWidget {
     final mechanics = points.isEmpty
         ? 0.0
         : points.map((p) => p.mechanicsScore).reduce((a, b) => a + b) /
-            points.length;
+              points.length;
 
     return AvInkCard(
       padding: const EdgeInsets.all(AvSpace.lg),
@@ -393,8 +392,9 @@ class _SummaryPanel extends StatelessWidget {
                   'LAST ${range.label.toUpperCase()}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      AvType.overline.copyWith(color: AvColors.textOnInkMuted),
+                  style: AvType.overline.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
               ),
               const SizedBox(width: AvSpace.xs),
@@ -504,7 +504,7 @@ class _ExplanationCard extends StatelessWidget {
                   setupShare == 0
                       ? 'None of this movement is explained by camera setup.'
                       : '$setupShare per cent of this movement is explained '
-                          'by camera setup rather than performance.',
+                            'by camera setup rather than performance.',
                   style: AvType.caption.muted,
                 ),
               ),
@@ -558,8 +558,9 @@ class _RecordTile extends StatelessWidget {
             children: [
               Text(
                 record.value,
-                style: AvType.tabular(AvType.metricLarge)
-                    .copyWith(fontSize: 26),
+                style: AvType.tabular(
+                  AvType.metricLarge,
+                ).copyWith(fontSize: 26),
               ),
               Text(record.unit, style: AvType.caption.muted),
             ],

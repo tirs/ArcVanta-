@@ -62,8 +62,8 @@ class AvScaffold extends StatelessWidget {
                     ...slivers,
                     SliverToBoxAdapter(
                       child: SizedBox(
-                        height: MediaQuery.paddingOf(context).bottom +
-                            AvSpace.xxl,
+                        height:
+                            MediaQuery.paddingOf(context).bottom + AvSpace.xxl,
                       ),
                     ),
                   ],
@@ -105,10 +105,7 @@ class AvPageHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: AvSpace.sm),
-          ],
+          if (leading != null) ...[leading!, const SizedBox(width: AvSpace.sm)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +219,10 @@ class AvOverline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text.toUpperCase(), style: AvType.overline.copyWith(color: color));
+    return Text(
+      text.toUpperCase(),
+      style: AvType.overline.copyWith(color: color),
+    );
   }
 }
 
@@ -247,7 +247,12 @@ class AvGutter extends StatelessWidget {
 
 /// Sliver wrapper that applies the page gutter.
 class SliverGutter extends StatelessWidget {
-  const SliverGutter({super.key, required this.child, this.top = 0, this.bottom = 0});
+  const SliverGutter({
+    super.key,
+    required this.child,
+    this.top = 0,
+    this.bottom = 0,
+  });
 
   final Widget child;
   final double top;
@@ -256,12 +261,7 @@ class SliverGutter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: EdgeInsets.fromLTRB(
-        AvSpace.gutter,
-        top,
-        AvSpace.gutter,
-        bottom,
-      ),
+      padding: EdgeInsets.fromLTRB(AvSpace.gutter, top, AvSpace.gutter, bottom),
       sliver: SliverToBoxAdapter(child: child),
     );
   }
@@ -308,7 +308,8 @@ class AvKeyValue extends StatelessWidget {
               maxLines: 2,
               textAlign: TextAlign.right,
               style: AvType.tabular(AvType.titleSmall).copyWith(
-                color: valueColor ??
+                color:
+                    valueColor ??
                     (onInk ? AvColors.textOnInk : AvColors.textPrimary),
               ),
             ),
@@ -358,10 +359,7 @@ class AvEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AvType.bodySmall.muted,
           ),
-          if (action != null) ...[
-            const SizedBox(height: AvSpace.lg),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: AvSpace.lg), action!],
         ],
       ),
     );
@@ -399,10 +397,7 @@ class AvBottomBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (note != null) ...[
-            note!,
-            const SizedBox(height: AvSpace.sm),
-          ],
+          if (note != null) ...[note!, const SizedBox(height: AvSpace.sm)],
           Row(
             children: [
               for (var i = 0; i < children.length; i++) ...[
@@ -449,14 +444,15 @@ class AvTileGrid extends StatelessWidget {
   final List<Widget> children;
   final double spacing;
   final double minTileWidth;
+
+  /// Shape a tile aims for. It is a floor, not a cap: a tile always grows to
+  /// whatever its own text needs, so nothing clips at large accessibility
+  /// sizes.
   final double aspectRatio;
 
   @override
   Widget build(BuildContext context) {
-    // Tiles hold a fixed amount of text, so their height has to follow the
-    // reader's text size rather than the tile width alone.
-    final textScale =
-        MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
+    if (children.isEmpty) return const SizedBox.shrink();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -464,16 +460,37 @@ class AvTileGrid extends StatelessWidget {
             (constraints.maxWidth / minTileWidth).floor().clamp(2, 4);
         final width =
             (constraints.maxWidth - spacing * (columns - 1)) / columns;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
+        final rows = (children.length / columns).ceil();
+
+        return Column(
           children: [
-            for (final child in children)
-              SizedBox(
-                width: width,
-                height: width / aspectRatio * textScale,
-                child: child,
+            for (var row = 0; row < rows; row++) ...[
+              if (row > 0) SizedBox(height: spacing),
+              // Tiles in a row share the tallest one's height, and that height
+              // comes from the content rather than a fixed ratio.
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var column = 0; column < columns; column++) ...[
+                      if (column > 0) SizedBox(width: spacing),
+                      Expanded(
+                        child: switch (row * columns + column) {
+                          final index when index < children.length =>
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: width / aspectRatio,
+                              ),
+                              child: children[index],
+                            ),
+                          _ => const SizedBox.shrink(),
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
+            ],
           ],
         );
       },

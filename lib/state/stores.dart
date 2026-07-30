@@ -59,8 +59,7 @@ class SessionStore extends Notifier<List<TrainingSession>> {
     ];
   }
 
-  void addSession(TrainingSession session) =>
-      state = [session, ...state];
+  void addSession(TrainingSession session) => state = [session, ...state];
 
   void setCoachComment(String sessionId, String comment) {
     state = [
@@ -90,8 +89,10 @@ class SessionStore extends Notifier<List<TrainingSession>> {
 final sessionStoreProvider =
     NotifierProvider<SessionStore, List<TrainingSession>>(SessionStore.new);
 
-final sessionByIdProvider =
-    Provider.family<TrainingSession?, String>((ref, id) {
+final sessionByIdProvider = Provider.family<TrainingSession?, String>((
+  ref,
+  id,
+) {
   final sessions = ref.watch(sessionStoreProvider);
   for (final session in sessions) {
     if (session.id == id) return session;
@@ -109,8 +110,9 @@ class DrillStore extends Notifier<List<Drill>> {
       state.firstWhere((d) => d.id == id, orElse: () => state.first);
 }
 
-final drillStoreProvider =
-    NotifierProvider<DrillStore, List<Drill>>(DrillStore.new);
+final drillStoreProvider = NotifierProvider<DrillStore, List<Drill>>(
+  DrillStore.new,
+);
 
 final drillByIdProvider = Provider.family<Drill, String>((ref, id) {
   final drills = ref.watch(drillStoreProvider);
@@ -161,8 +163,8 @@ class NotificationStore extends Notifier<List<AppNotification>> {
 
 final notificationStoreProvider =
     NotifierProvider<NotificationStore, List<AppNotification>>(
-  NotificationStore.new,
-);
+      NotificationStore.new,
+    );
 
 final unreadNotificationCountProvider = Provider<int>((ref) {
   return ref.watch(notificationStoreProvider).where((n) => !n.read).length;
@@ -178,7 +180,9 @@ class GoalStore extends Notifier<List<Goal>> {
       state = state.where((g) => g.id != id).toList(growable: false);
 }
 
-final goalStoreProvider = NotifierProvider<GoalStore, List<Goal>>(GoalStore.new);
+final goalStoreProvider = NotifierProvider<GoalStore, List<Goal>>(
+  GoalStore.new,
+);
 
 class AssignmentStore extends Notifier<List<Assignment>> {
   @override
@@ -249,14 +253,11 @@ class HighlightStore extends Notifier<List<Highlight>> {
 final highlightStoreProvider =
     NotifierProvider<HighlightStore, List<Highlight>>(HighlightStore.new);
 
-final playerProfileProvider =
-    Provider<PlayerProfile>((ref) => SeedData.player);
+final playerProfileProvider = Provider<PlayerProfile>((ref) => SeedData.player);
 
-final rosterProvider =
-    Provider<List<AthleteSummary>>((ref) => SeedData.roster);
+final rosterProvider = Provider<List<AthleteSummary>>((ref) => SeedData.roster);
 
-final athleteByIdProvider =
-    Provider.family<AthleteSummary, String>((ref, id) {
+final athleteByIdProvider = Provider.family<AthleteSummary, String>((ref, id) {
   final roster = ref.watch(rosterProvider);
   return roster.firstWhere((a) => a.id == id, orElse: () => roster.first);
 });
@@ -267,12 +268,16 @@ final progressProvider = Provider.family<List<ProgressPoint>, TrendRange>(
   (ref, range) => SeedData.progressFor(range),
 );
 
-final personalRecordsProvider =
-    Provider<List<PersonalRecord>>((ref) => SeedData.records);
+final personalRecordsProvider = Provider<List<PersonalRecord>>(
+  (ref) => SeedData.records,
+);
 
-final trendExplanationsProvider =
-    Provider<List<TrendExplanation>>((ref) => SeedData.explanations);
+final trendExplanationsProvider = Provider<List<TrendExplanation>>(
+  (ref) => SeedData.explanations,
+);
 
 final planOptionsProvider = Provider<List<PlanOption>>((ref) => SeedData.plans);
 
-final entitlementProvider = Provider<Entitlement>((ref) => SeedData.entitlement);
+final entitlementProvider = Provider<Entitlement>(
+  (ref) => SeedData.entitlement,
+);

@@ -314,14 +314,16 @@ class _AthleteHeader extends StatelessWidget {
               children: [
                 Text(
                   athlete.name,
-                  style:
-                      AvType.headingMedium.copyWith(color: AvColors.textOnInk),
+                  style: AvType.headingMedium.copyWith(
+                    color: AvColors.textOnInk,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   '${athlete.position.label} \u00B7 ${athlete.ageBand}',
-                  style:
-                      AvType.caption.copyWith(color: AvColors.textOnInkMuted),
+                  style: AvType.caption.copyWith(
+                    color: AvColors.textOnInkMuted,
+                  ),
                 ),
                 const SizedBox(height: AvSpace.sm),
                 Wrap(
@@ -384,9 +386,9 @@ class AssignmentCard extends StatelessWidget {
                     Text(
                       showAthlete
                           ? '${assignment.athleteName} \u00B7 due '
-                              '${Fmt.relative(assignment.dueAt)}'
+                                '${Fmt.relative(assignment.dueAt)}'
                           : 'Set by ${assignment.assignedBy} \u00B7 due '
-                              '${Fmt.relative(assignment.dueAt)}',
+                                '${Fmt.relative(assignment.dueAt)}',
                       style: AvType.caption.faint,
                     ),
                   ],
@@ -440,8 +442,7 @@ class AssignmentCard extends StatelessWidget {
                     label: 'Mark reviewed',
                     size: AvButtonSize.small,
                     expand: true,
-                    onPressed: () =>
-                        onStatusChange!(AssignmentStatus.reviewed),
+                    onPressed: () => onStatusChange!(AssignmentStatus.reviewed),
                   ),
                 ),
               ],

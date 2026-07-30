@@ -97,12 +97,11 @@ class _AvLineChartState extends State<AvLineChart> {
             builder: (context, constraints) {
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapDown: (d) => _updateActive(d.localPosition,
-                    constraints.maxWidth),
+                onTapDown: (d) =>
+                    _updateActive(d.localPosition, constraints.maxWidth),
                 onHorizontalDragUpdate: (d) =>
                     _updateActive(d.localPosition, constraints.maxWidth),
-                onHorizontalDragEnd: (_) =>
-                    setState(() => _activeIndex = null),
+                onHorizontalDragEnd: (_) => setState(() => _activeIndex = null),
                 onTapUp: (_) => setState(() => _activeIndex = null),
                 child: CustomPaint(
                   size: Size(constraints.maxWidth, widget.height),
@@ -132,9 +131,7 @@ class _AvLineChartState extends State<AvLineChart> {
             // Thin the ticks until they fit; a crowded axis reads as noise.
             final room = (constraints.maxWidth / 76).floor().clamp(2, 6);
             final step = (labels.length / room).ceil();
-            final kept = <int>[
-              for (var i = 0; i < labels.length; i += step) i,
-            ];
+            final kept = <int>[for (var i = 0; i < labels.length; i += step) i];
             if (kept.last != labels.length - 1) kept.add(labels.length - 1);
 
             return Row(
@@ -259,10 +256,9 @@ class _LineChartPainter extends CustomPainter {
         canvas,
         labelFormatter(value),
         Offset(plot.left - 6, y),
-        AvType.tabular(AvType.overline).copyWith(
-          color: AvColors.textFaint,
-          letterSpacing: 0,
-        ),
+        AvType.tabular(
+          AvType.overline,
+        ).copyWith(color: AvColors.textFaint, letterSpacing: 0),
         alignRight: true,
       );
     }
@@ -274,8 +270,11 @@ class _LineChartPainter extends CustomPainter {
         ..strokeWidth = 1.4;
       var x = plot.left;
       while (x < plot.right) {
-        canvas.drawLine(Offset(x, y), Offset(math.min(x + 5, plot.right), y),
-            dash);
+        canvas.drawLine(
+          Offset(x, y),
+          Offset(math.min(x + 5, plot.right), y),
+          dash,
+        );
         x += 9;
       }
       if (targetLabel != null) {
