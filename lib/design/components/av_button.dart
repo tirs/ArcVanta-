@@ -22,6 +22,7 @@ class AvButton extends StatelessWidget {
     this.trailingIcon,
     this.expand = false,
     this.busy = false,
+    this.onInk = false,
   });
 
   final String label;
@@ -32,6 +33,10 @@ class AvButton extends StatelessWidget {
   final IconData? trailingIcon;
   final bool expand;
   final bool busy;
+
+  /// Set on the dark brand surfaces. Only the variants that borrow the
+  /// foreground from the page need it; the filled ones already carry their own.
+  final bool onInk;
 
   double get _height => switch (size) {
     AvButtonSize.small => 38,
@@ -56,7 +61,7 @@ class AvButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spec = _spec(variant);
+    final spec = _spec(variant, onInk);
     final enabled = onPressed != null && !busy;
 
     final child = Row(
@@ -124,40 +129,41 @@ class AvButton extends StatelessWidget {
     );
   }
 
-  static _ButtonSpec _spec(AvButtonVariant variant) => switch (variant) {
-    AvButtonVariant.primary => const _ButtonSpec(
-      gradient: AvGradients.flare,
-      foreground: Colors.white,
-      glow: AvColors.flare,
-    ),
-    AvButtonVariant.insight => const _ButtonSpec(
-      gradient: AvGradients.insight,
-      foreground: Colors.white,
-      glow: AvColors.insight,
-    ),
-    AvButtonVariant.court => const _ButtonSpec(
-      gradient: AvGradients.court,
-      foreground: Colors.white,
-      glow: AvColors.court,
-    ),
-    AvButtonVariant.tonal => const _ButtonSpec(
-      background: AvColors.ink,
-      foreground: AvColors.textOnInk,
-    ),
-    AvButtonVariant.outline => const _ButtonSpec(
-      background: Colors.transparent,
-      foreground: AvColors.textPrimary,
-      borderColor: AvColors.hairlineStrong,
-    ),
-    AvButtonVariant.ghost => const _ButtonSpec(
-      background: Colors.transparent,
-      foreground: AvColors.insight,
-    ),
-    AvButtonVariant.danger => const _ButtonSpec(
-      background: AvColors.criticalSoft,
-      foreground: AvColors.critical,
-    ),
-  };
+  static _ButtonSpec _spec(AvButtonVariant variant, bool onInk) =>
+      switch (variant) {
+        AvButtonVariant.primary => const _ButtonSpec(
+          gradient: AvGradients.flare,
+          foreground: Colors.white,
+          glow: AvColors.flare,
+        ),
+        AvButtonVariant.insight => const _ButtonSpec(
+          gradient: AvGradients.insight,
+          foreground: Colors.white,
+          glow: AvColors.insight,
+        ),
+        AvButtonVariant.court => const _ButtonSpec(
+          gradient: AvGradients.court,
+          foreground: Colors.white,
+          glow: AvColors.court,
+        ),
+        AvButtonVariant.tonal => const _ButtonSpec(
+          background: AvColors.ink,
+          foreground: AvColors.textOnInk,
+        ),
+        AvButtonVariant.outline => _ButtonSpec(
+          background: Colors.transparent,
+          foreground: onInk ? AvColors.textOnInk : AvColors.textPrimary,
+          borderColor: onInk ? AvColors.hairlineOnInk : AvColors.hairlineStrong,
+        ),
+        AvButtonVariant.ghost => _ButtonSpec(
+          background: Colors.transparent,
+          foreground: onInk ? AvColors.textOnInk : AvColors.insight,
+        ),
+        AvButtonVariant.danger => const _ButtonSpec(
+          background: AvColors.criticalSoft,
+          foreground: AvColors.critical,
+        ),
+      };
 }
 
 class _ButtonSpec {

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/av_colors.dart';
@@ -203,6 +205,7 @@ class AvChip extends StatelessWidget {
     this.icon,
     this.accent = AvColors.insight,
     this.count,
+    this.onInk = false,
   });
 
   final String label;
@@ -211,6 +214,7 @@ class AvChip extends StatelessWidget {
   final IconData? icon;
   final Color accent;
   final int? count;
+  final bool onInk;
 
   @override
   Widget build(BuildContext context) {
@@ -222,10 +226,16 @@ class AvChip extends StatelessWidget {
         duration: AvMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? accent : AvColors.surface,
+          color: selected
+              ? accent
+              : (onInk
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : AvColors.surface),
           borderRadius: AvRadius.pill,
           border: Border.all(
-            color: selected ? accent : AvColors.hairline,
+            color: selected
+                ? accent
+                : (onInk ? AvColors.hairlineOnInk : AvColors.hairline),
             width: 1.2,
           ),
           boxShadow: selected ? AvShadow.glow(accent) : null,
@@ -237,7 +247,9 @@ class AvChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 15,
-                color: selected ? Colors.white : AvColors.textMuted,
+                color: selected
+                    ? Colors.white
+                    : (onInk ? AvColors.textOnInkMuted : AvColors.textMuted),
               ),
               const SizedBox(width: 6),
             ],
@@ -247,7 +259,9 @@ class AvChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AvType.titleSmall.copyWith(
-                  color: selected ? Colors.white : AvColors.textSecondary,
+                  color: selected
+                      ? Colors.white
+                      : (onInk ? AvColors.textOnInk : AvColors.textSecondary),
                 ),
               ),
             ),
@@ -258,7 +272,7 @@ class AvChip extends StatelessWidget {
                 style: AvType.tabular(AvType.label).copyWith(
                   color: selected
                       ? Colors.white.withValues(alpha: 0.75)
-                      : AvColors.textFaint,
+                      : (onInk ? AvColors.textOnInkMuted : AvColors.textFaint),
                 ),
               ),
             ],
@@ -279,6 +293,7 @@ class AvSegmented<T> extends StatelessWidget {
     required this.onChanged,
     this.accent = AvColors.ink,
     this.dense = false,
+    this.onInk = false,
   });
 
   final List<T> values;
@@ -287,49 +302,97 @@ class AvSegmented<T> extends StatelessWidget {
   final ValueChanged<T> onChanged;
   final Color accent;
   final bool dense;
+  final bool onInk;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: AvColors.canvasSunken,
-        borderRadius: AvRadius.pill,
-        border: Border.all(color: AvColors.hairline),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < values.length; i++)
-            Expanded(
-              child: AvPressable(
-                onTap: () => onChanged(values[i]),
-                borderRadius: AvRadius.pill,
-                scale: 1,
-                semanticLabel: labels[i],
-                child: AnimatedContainer(
-                  duration: AvMotion.fast,
-                  curve: AvMotion.enter,
-                  padding: EdgeInsets.symmetric(vertical: dense ? 7 : 10),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: values[i] == selected ? accent : Colors.transparent,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final style = _fittedStyle(context, constraints.maxWidth);
+
+        return Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: onInk
+                ? Colors.black.withValues(alpha: 0.28)
+                : AvColors.canvasSunken,
+            borderRadius: AvRadius.pill,
+            border: Border.all(
+              color: onInk ? AvColors.hairlineOnInk : AvColors.hairline,
+            ),
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < values.length; i++)
+                Expanded(
+                  child: AvPressable(
+                    onTap: () => onChanged(values[i]),
                     borderRadius: AvRadius.pill,
-                  ),
-                  child: Text(
-                    labels[i],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AvType.titleSmall.copyWith(
-                      color: values[i] == selected
-                          ? Colors.white
-                          : AvColors.textMuted,
+                    scale: 1,
+                    semanticLabel: labels[i],
+                    child: AnimatedContainer(
+                      duration: AvMotion.fast,
+                      curve: AvMotion.enter,
+                      padding: EdgeInsets.symmetric(vertical: dense ? 7 : 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: values[i] == selected
+                            ? accent
+                            : Colors.transparent,
+                        borderRadius: AvRadius.pill,
+                      ),
+                      child: Text(
+                        labels[i],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: style.copyWith(
+                          color: values[i] == selected
+                              ? Colors.white
+                              : (onInk
+                                    ? AvColors.textOnInkMuted
+                                    : AvColors.textMuted),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// One size for every segment, small enough that the longest label still
+  /// fits. Shrinking each label on its own would leave the control ragged, and
+  /// letting them ellipsise turns "Intermediate" into "Interme…".
+  TextStyle _fittedStyle(BuildContext context, double available) {
+    const base = 13.0;
+    const floor = 9.5;
+    final style = AvType.titleSmall;
+
+    if (!available.isFinite || values.isEmpty) return style;
+
+    final perSegment = (available - 6) / values.length - 14;
+    if (perSegment <= 0) return style.copyWith(fontSize: floor);
+
+    final scaler = MediaQuery.textScalerOf(context);
+    var widest = 0.0;
+    for (final label in labels) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: style.copyWith(fontSize: base),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+      )..layout();
+      widest = math.max(widest, painter.width);
+    }
+
+    if (widest <= perSegment) return style.copyWith(fontSize: base);
+    return style.copyWith(
+      fontSize: math.max(floor, base * perSegment / widest),
     );
   }
 }

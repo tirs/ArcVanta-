@@ -7,11 +7,15 @@ import 'package:arcvanta/data/models/confidence.dart';
 import 'package:arcvanta/data/seed/drill_catalog.dart';
 import 'package:arcvanta/data/seed/seed_data.dart';
 import 'package:arcvanta/state/live_session.dart';
+import 'package:arcvanta/features/auth/auth_screen.dart';
 import 'package:arcvanta/features/coach/coach_home_screen.dart';
 import 'package:arcvanta/features/drills/drill_library_screen.dart';
 import 'package:arcvanta/features/highlights/highlights_screen.dart';
 import 'package:arcvanta/features/home/home_screen.dart';
+import 'package:arcvanta/features/onboarding/guardian_consent_screen.dart';
 import 'package:arcvanta/features/onboarding/onboarding_screen.dart';
+import 'package:arcvanta/features/onboarding/player_setup_screen.dart';
+import 'package:arcvanta/features/onboarding/role_screen.dart';
 import 'package:arcvanta/features/plan/training_plan_screen.dart';
 import 'package:arcvanta/features/profile/profile_screen.dart';
 import 'package:arcvanta/features/progress/heatmap_screen.dart';
@@ -84,6 +88,10 @@ void main() {
 
   final surfaces = <String, Widget>{
     '02-onboarding': const OnboardingScreen(),
+    '02a-auth': const AuthScreen(),
+    '02b-role': const RoleScreen(),
+    '02c-player-setup': const PlayerSetupScreen(),
+    '02d-guardian-consent': const GuardianConsentScreen(),
     '03-home': const HomeScreen(),
     '04-drills': const DrillLibraryScreen(),
     '05-placement': PlacementGuideScreen(drillId: drill.id),

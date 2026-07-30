@@ -23,6 +23,80 @@ abstract final class AvTheme {
     systemNavigationBarIconBrightness: Brightness.light,
   );
 
+  /// The light theme restated for the dark ink surfaces.
+  ///
+  /// Only the Material widgets that carry their own colours need it: fields,
+  /// checkboxes, rules and icons. Everything drawn from `AvColors` already has
+  /// an on-ink variant and is chosen at the call site.
+  static ThemeData onInk(ThemeData base) {
+    const fill = Color(0x14FFFFFF);
+
+    return base.copyWith(
+      dividerTheme: const DividerThemeData(
+        color: AvColors.hairlineOnInk,
+        space: 1,
+        thickness: 1,
+      ),
+      iconTheme: const IconThemeData(color: AvColors.textOnInkMuted, size: 22),
+      checkboxTheme: base.checkboxTheme.copyWith(
+        side: const BorderSide(color: AvColors.textOnInkMuted, width: 1.6),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AvColors.flare
+              : AvColors.textOnInkMuted,
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AvColors.flare,
+        linearTrackColor: AvColors.hairlineOnInk,
+        circularTrackColor: AvColors.hairlineOnInk,
+      ),
+      sliderTheme: base.sliderTheme.copyWith(
+        inactiveTrackColor: const Color(0x33FFFFFF),
+        thumbColor: Colors.white,
+        valueIndicatorColor: AvColors.flare,
+        valueIndicatorTextStyle: AvType.label.copyWith(color: Colors.white),
+      ),
+      switchTheme: base.switchTheme.copyWith(
+        trackOutlineColor: const WidgetStatePropertyAll(AvColors.hairlineOnInk),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (!states.contains(WidgetState.selected)) {
+            return const Color(0x1FFFFFFF);
+          }
+          // A locked-on permission should not read as something you can change.
+          return states.contains(WidgetState.disabled)
+              ? AvColors.flare.withValues(alpha: 0.45)
+              : AvColors.flare;
+        }),
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        fillColor: fill,
+        hintStyle: AvType.body.copyWith(color: AvColors.textOnInkMuted),
+        labelStyle: AvType.label.copyWith(color: AvColors.textOnInkMuted),
+        floatingLabelStyle: AvType.label.copyWith(color: AvColors.flare),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: AvRadius.allMd,
+          borderSide: BorderSide(color: AvColors.hairlineOnInk, width: 1.2),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: AvRadius.allMd,
+          borderSide: BorderSide(color: AvColors.flare, width: 1.8),
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AvColors.flare,
+        selectionColor: AvColors.flare.withValues(alpha: 0.28),
+        selectionHandleColor: AvColors.flare,
+      ),
+      textTheme: base.textTheme.apply(
+        bodyColor: AvColors.textOnInk,
+        displayColor: AvColors.textOnInk,
+      ),
+    );
+  }
+
   static ThemeData build({bool highContrast = false}) {
     final scheme = ColorScheme(
       brightness: Brightness.light,

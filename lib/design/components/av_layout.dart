@@ -86,12 +86,14 @@ class AvPageHeader extends StatelessWidget {
     this.subtitle,
     this.actions = const [],
     this.leading,
+    this.onInk = false,
   });
 
   final String title;
   final String? subtitle;
   final List<Widget> actions;
   final Widget? leading;
+  final bool onInk;
 
   @override
   Widget build(BuildContext context) {
@@ -113,16 +115,20 @@ class AvPageHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AvType.headingLarge.primary,
-                  maxLines: 1,
+                  style: onInk
+                      ? AvType.headingLarge.onInk
+                      : AvType.headingLarge.primary,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: AvType.bodySmall.muted,
-                    maxLines: 1,
+                    style: onInk
+                        ? AvType.bodySmall.onInkMuted
+                        : AvType.bodySmall.muted,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -141,15 +147,21 @@ class AvPageHeader extends StatelessWidget {
 
 /// Back button used on pushed routes.
 class AvBackButton extends StatelessWidget {
-  const AvBackButton({super.key, this.onPressed});
+  const AvBackButton({super.key, this.onPressed, this.onInk = false});
 
   final VoidCallback? onPressed;
+  final bool onInk;
 
   @override
   Widget build(BuildContext context) {
     return AvIconButton(
       icon: Icons.arrow_back_rounded,
       tooltip: 'Back',
+      color: onInk ? AvColors.textOnInk : AvColors.textPrimary,
+      background: onInk
+          ? Colors.white.withValues(alpha: 0.06)
+          : AvColors.surface,
+      borderColor: onInk ? AvColors.hairlineOnInk : AvColors.hairline,
       onPressed: onPressed ?? () => Navigator.of(context).maybePop(),
     );
   }

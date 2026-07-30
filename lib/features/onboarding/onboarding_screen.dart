@@ -7,6 +7,7 @@ import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
 import '../../design/charts/av_court_map.dart';
 import '../../design/components/av_brand.dart';
+import '../../design/components/av_brand_scaffold.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_surface.dart';
 
@@ -82,85 +83,86 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final page = _pages[_page];
 
-    return Scaffold(
-      backgroundColor: AvColors.canvas,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AvSpace.gutter,
-                AvSpace.md,
-                AvSpace.gutter,
-                0,
-              ),
-              child: Row(
-                children: [
-                  const Flexible(
-                    child: AvBrandLockup(markSize: 34, fontSize: 17),
-                  ),
-                  const SizedBox(width: AvSpace.sm),
-                  const Spacer(),
-                  AvTextAction(
-                    label: 'Skip',
-                    icon: null,
-                    color: AvColors.textMuted,
-                    onPressed: () => context.go(AppRoute.auth),
-                  ),
-                ],
-              ),
+    return AvBrandScaffold(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AvSpace.gutter,
+              AvSpace.md,
+              AvSpace.gutter,
+              0,
             ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: _pages.length,
-                onPageChanged: (index) => setState(() => _page = index),
-                itemBuilder: (context, index) => _PageView(page: _pages[index]),
-              ),
+            child: Row(
+              children: [
+                const Flexible(
+                  child: AvBrandLockup(
+                    markSize: 34,
+                    fontSize: 17,
+                    onInk: true,
+                  ),
+                ),
+                const SizedBox(width: AvSpace.sm),
+                const Spacer(),
+                AvTextAction(
+                  label: 'Skip',
+                  icon: null,
+                  color: AvColors.textOnInkMuted,
+                  onPressed: () => context.go(AppRoute.auth),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AvSpace.gutter,
-                AvSpace.md,
-                AvSpace.gutter,
-                AvSpace.lg,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (var i = 0; i < _pages.length; i++)
-                        AnimatedContainer(
-                          duration: AvMotion.normal,
-                          curve: AvMotion.emphasized,
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          height: 6,
-                          width: i == _page ? 26 : 6,
-                          decoration: BoxDecoration(
-                            color: i == _page
-                                ? page.accent
-                                : AvColors.hairlineStrong,
-                            borderRadius: AvRadius.pill,
-                          ),
+          ),
+          Expanded(
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: _pages.length,
+              onPageChanged: (index) => setState(() => _page = index),
+              itemBuilder: (context, index) => _PageView(page: _pages[index]),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AvSpace.gutter,
+              AvSpace.md,
+              AvSpace.gutter,
+              AvSpace.lg,
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < _pages.length; i++)
+                      AnimatedContainer(
+                        duration: AvMotion.normal,
+                        curve: AvMotion.emphasized,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        height: 6,
+                        width: i == _page ? 26 : 6,
+                        decoration: BoxDecoration(
+                          color: i == _page
+                              ? page.accent
+                              : Colors.white.withValues(alpha: 0.24),
+                          borderRadius: AvRadius.pill,
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: AvSpace.lg),
-                  AvButton(
-                    label: _page == _pages.length - 1
-                        ? 'Create your account'
-                        : 'Continue',
-                    onPressed: _next,
-                    size: AvButtonSize.large,
-                    expand: true,
-                    trailingIcon: Icons.arrow_forward_rounded,
-                  ),
-                ],
-              ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AvSpace.lg),
+                AvButton(
+                  label: _page == _pages.length - 1
+                      ? 'Create your account'
+                      : 'Continue',
+                  onPressed: _next,
+                  size: AvButtonSize.large,
+                  expand: true,
+                  trailingIcon: Icons.arrow_forward_rounded,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -216,9 +218,9 @@ class _PageView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AvSpace.md),
-          Text(page.title, style: AvType.displayMedium.primary),
+          Text(page.title, style: AvType.displayMedium.onInk),
           const SizedBox(height: AvSpace.sm),
-          Text(page.body, style: AvType.body.secondary),
+          Text(page.body, style: AvType.body.onInkMuted),
         ],
       ),
     );
@@ -235,6 +237,7 @@ class _OnboardingArt extends StatelessWidget {
   Widget build(BuildContext context) {
     return AvInkCard(
       accent: accent,
+      raised: true,
       padding: const EdgeInsets.all(AvSpace.lg),
       child: SizedBox(
         height: 232,

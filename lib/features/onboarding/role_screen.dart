@@ -7,6 +7,7 @@ import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
 import '../../data/models/profile.dart';
+import '../../design/components/av_brand_scaffold.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
@@ -24,57 +25,55 @@ class _RoleScreenState extends ConsumerState<RoleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AvColors.canvas,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const AvPageHeader(
-              title: 'How will you use ArcVanta?',
-              subtitle:
-                  'This sets your default workspace. You can change it later.',
-            ),
-            Expanded(
-              child: ListView.separated(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AvSpace.gutter,
-                  AvSpace.xs,
-                  AvSpace.gutter,
-                  AvSpace.md,
-                ),
-                itemCount: AccountRole.values.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AvSpace.sm),
-                itemBuilder: (context, index) {
-                  final role = AccountRole.values[index];
-                  return _RoleCard(
-                    role: role,
-                    selected: role == _selected,
-                    onTap: () => setState(() => _selected = role),
-                  );
-                },
-              ),
-            ),
-            Padding(
+    return AvBrandScaffold(
+      child: Column(
+        children: [
+          const AvPageHeader(
+            onInk: true,
+            title: 'How will you use ArcVanta?',
+            subtitle:
+                'This sets your default workspace. You can change it later.',
+          ),
+          Expanded(
+            child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
                 AvSpace.gutter,
-                AvSpace.sm,
+                AvSpace.xs,
                 AvSpace.gutter,
-                AvSpace.lg,
+                AvSpace.md,
               ),
-              child: AvButton(
-                label: 'Continue',
-                size: AvButtonSize.large,
-                expand: true,
-                trailingIcon: Icons.arrow_forward_rounded,
-                onPressed: () {
-                  ref.read(appSettingsProvider.notifier).setRole(_selected);
-                  context.go(AppRoute.playerSetup);
-                },
-              ),
+              itemCount: AccountRole.values.length,
+              separatorBuilder: (_, __) => const SizedBox(height: AvSpace.sm),
+              itemBuilder: (context, index) {
+                final role = AccountRole.values[index];
+                return _RoleCard(
+                  role: role,
+                  selected: role == _selected,
+                  onTap: () => setState(() => _selected = role),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AvSpace.gutter,
+              AvSpace.sm,
+              AvSpace.gutter,
+              AvSpace.lg,
+            ),
+            child: AvButton(
+              label: 'Continue',
+              size: AvButtonSize.large,
+              expand: true,
+              trailingIcon: Icons.arrow_forward_rounded,
+              onPressed: () {
+                ref.read(appSettingsProvider.notifier).setRole(_selected);
+                context.go(AppRoute.playerSetup);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -102,14 +101,14 @@ class _RoleCard extends StatelessWidget {
         padding: const EdgeInsets.all(AvSpace.md),
         decoration: BoxDecoration(
           color: selected
-              ? role.color.withValues(alpha: 0.08)
-              : AvColors.surface,
+              ? role.color.withValues(alpha: 0.20)
+              : Colors.white.withValues(alpha: 0.05),
           borderRadius: AvRadius.allMd,
           border: Border.all(
-            color: selected ? role.color : AvColors.hairline,
+            color: selected ? role.color : AvColors.hairlineOnInk,
             width: selected ? 1.8 : 1,
           ),
-          boxShadow: selected ? AvShadow.glow(role.color) : AvShadow.level1,
+          boxShadow: selected ? AvShadow.glow(role.color) : AvShadow.onInk,
         ),
         child: Row(
           children: [
@@ -126,9 +125,9 @@ class _RoleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(role.label, style: AvType.headingSmall.primary),
+                  Text(role.label, style: AvType.headingSmall.onInk),
                   const SizedBox(height: 3),
-                  Text(role.description, style: AvType.bodySmall.muted),
+                  Text(role.description, style: AvType.bodySmall.onInkMuted),
                 ],
               ),
             ),
@@ -141,7 +140,7 @@ class _RoleCard extends StatelessWidget {
                 color: selected ? role.color : Colors.transparent,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: selected ? role.color : AvColors.hairlineStrong,
+                  color: selected ? role.color : AvColors.textOnInkMuted,
                   width: 1.8,
                 ),
               ),

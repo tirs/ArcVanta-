@@ -61,26 +61,33 @@ class AvInkCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AvSpace.lg),
     this.borderRadius = AvRadius.allLg,
-    this.gradient = AvGradients.ink,
+    this.gradient,
     this.onTap,
     this.showCourtLines = true,
     this.accent = AvColors.flare,
+    this.raised = false,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final BorderRadius borderRadius;
-  final Gradient gradient;
+  final Gradient? gradient;
   final VoidCallback? onTap;
   final bool showCourtLines;
   final Color accent;
+
+  /// Set when the panel sits on an ink background rather than the canvas. It
+  /// lifts a step and takes a hairline, because ink on ink has no edge.
+  final bool raised;
 
   @override
   Widget build(BuildContext context) {
     final content = DecoratedBox(
       decoration: BoxDecoration(
-        gradient: gradient,
+        gradient: gradient ??
+            (raised ? AvGradients.inkRaised : AvGradients.ink),
         borderRadius: borderRadius,
+        border: raised ? Border.all(color: AvColors.hairlineOnInk) : null,
         boxShadow: AvShadow.onInk,
       ),
       child: ClipRRect(

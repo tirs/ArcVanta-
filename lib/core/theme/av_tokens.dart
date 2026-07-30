@@ -116,6 +116,13 @@ abstract final class AvGradients {
     colors: [Color(0xFF232647), Color(0xFF15162B)],
   );
 
+  /// Ink panel set on an ink background, where the flat one would disappear.
+  static const LinearGradient inkRaised = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF2C2F52), Color(0xFF1E2039)],
+  );
+
   static const LinearGradient flare = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

@@ -53,6 +53,10 @@ abstract final class AvColors {
   static const insightSoft = Color(0xFFEBE6FF);
   static const insightTint = Color(0xFFF5F2FF);
 
+  /// Lifted off the dark surfaces, where [insight] itself falls below the
+  /// contrast floor for text.
+  static const insightOnInk = Color(0xFFA895FF);
+
   /// Court — calibration, geometry, camera and court-line graphics.
   static const court = Color(0xFF00A6C0);
   static const courtDeep = Color(0xFF00788C);
