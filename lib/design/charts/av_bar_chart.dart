@@ -45,7 +45,8 @@ class AvBarList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) return const SizedBox.shrink();
-    final max = maxValue ??
+    final max =
+        maxValue ??
         data
             .map((d) => math.max(d.value, d.secondaryValue ?? 0))
             .reduce(math.max);
@@ -176,6 +177,9 @@ class AvColumnChart extends StatelessWidget {
   final double height;
   final String valueSuffix;
 
+  /// Room a single axis label needs before neighbours have to be dropped.
+  static const _labelWidth = 42.0;
+
   @override
   Widget build(BuildContext context) {
     final max = values.isEmpty ? 1.0 : values.reduce(math.max);
@@ -185,84 +189,141 @@ class AvColumnChart extends StatelessWidget {
       children: [
         SizedBox(
           height: height,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              for (var i = 0; i < values.length; i++)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (values[i] > 0)
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              '${values[i].toStringAsFixed(0)}$valueSuffix',
-                              maxLines: 1,
-                              style: AvType.tabular(AvType.overline).copyWith(
-                                color: i == highlightIndex
-                                    ? highlightColor
-                                    : AvColors.textFaint,
-                                letterSpacing: 0,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final crowded =
+                  values.isNotEmpty &&
+                  constraints.maxWidth / values.length < 24;
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < values.length; i++)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (values[i] > 0 &&
+                                (!crowded || i == highlightIndex))
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '${values[i].toStringAsFixed(0)}$valueSuffix',
+                                  maxLines: 1,
+                                  style: AvType.tabular(AvType.overline)
+                                      .copyWith(
+                                        color: i == highlightIndex
+                                            ? highlightColor
+                                            : AvColors.textFaint,
+                                        letterSpacing: 0,
+                                      ),
+                                ),
+                              ),
+                            const SizedBox(height: 4),
+                            AnimatedContainer(
+                              duration: AvMotion.slow,
+                              curve: AvMotion.enter,
+                              height: math.max(
+                                3,
+                                (height - 28) *
+                                    (values[i] / safeMax).clamp(0, 1),
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: i == highlightIndex
+                                      ? [
+                                          highlightColor,
+                                          highlightColor.withValues(
+                                            alpha: 0.55,
+                                          ),
+                                        ]
+                                      : [
+                                          color.withValues(alpha: 0.85),
+                                          color.withValues(alpha: 0.32),
+                                        ],
+                                ),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(6),
+                                  bottom: Radius.circular(3),
+                                ),
                               ),
                             ),
-                          ),
-                        const SizedBox(height: 4),
-                        AnimatedContainer(
-                          duration: AvMotion.slow,
-                          curve: AvMotion.enter,
-                          height: math.max(
-                            3,
-                            (height - 28) * (values[i] / safeMax).clamp(0, 1),
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: i == highlightIndex
-                                  ? [
-                                      highlightColor,
-                                      highlightColor.withValues(alpha: 0.55),
-                                    ]
-                                  : [
-                                      color.withValues(alpha: 0.85),
-                                      color.withValues(alpha: 0.32),
-                                    ],
-                            ),
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(6),
-                              bottom: Radius.circular(3),
-                            ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 6),
-        Row(
-          children: [
-            for (var i = 0; i < labels.length; i++)
-              Expanded(
-                child: Text(
-                  labels[i],
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AvType.overline.copyWith(
-                    color: i == highlightIndex
-                        ? highlightColor
-                        : AvColors.textFaint,
-                    letterSpacing: 0.2,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final marks = <int>[
+              for (var i = 0; i < labels.length; i++)
+                if (labels[i].isNotEmpty) i,
+            ];
+            if (marks.isEmpty) return const SizedBox.shrink();
+
+            // Columns get narrower as the series grows, so drop ticks until the
+            // survivors have room to read rather than truncating them all.
+            // Walking back from the end keeps the latest column labelled.
+            final slot = constraints.maxWidth / labels.length;
+            final minSpan = (_labelWidth / slot).ceil().clamp(1, labels.length);
+            final kept = <int>[marks.last];
+            for (var i = marks.length - 2; i >= 0; i--) {
+              if (kept.last - marks[i] >= minSpan) kept.add(marks[i]);
+            }
+            final ticks = kept.reversed.toList(growable: false);
+
+            final spans = <int>[];
+            var consumed = 0;
+            for (var i = 0; i < ticks.length; i++) {
+              final end = i == ticks.length - 1 ? labels.length : ticks[i] + 1;
+              spans.add(end - consumed);
+              consumed = end;
+            }
+            // The opening tick sits at the chart origin, so let it borrow the
+            // width it needs from its neighbour instead of being clipped.
+            if (spans.length > 1 && spans.first < minSpan) {
+              final borrow = math.min(minSpan - spans.first, spans[1] - 1);
+              spans[0] += borrow;
+              spans[1] -= borrow;
+            }
+
+            return Row(
+              children: [
+                for (var i = 0; i < ticks.length; i++)
+                  Expanded(
+                    flex: spans[i],
+                    child: Align(
+                      // Sit each tick under its own column, not its group.
+                      alignment: switch (i) {
+                        0 => Alignment.centerLeft,
+                        _ when i == ticks.length - 1 => Alignment.centerRight,
+                        _ => Alignment(1 - 1 / spans[i], 0),
+                      },
+                      child: Text(
+                        labels[ticks[i]],
+                        maxLines: 1,
+                        softWrap: false,
+                        style: AvType.overline.copyWith(
+                          color: ticks[i] == highlightIndex
+                              ? highlightColor
+                              : AvColors.textFaint,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
         ),
       ],
     );
