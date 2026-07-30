@@ -43,6 +43,23 @@ RTMPose trained on basketball footage is the answer to both, and is the reason
 the second version exists. If top-down cost becomes the constraint with several
 players on court, RTMO is the one-stage alternative built for crowded scenes.
 
+## Upstream status, checked 29 July 2026
+
+The MMPose repository confirms the Apache 2.0 licence, and also that the
+project is effectively frozen. The newest entry in its release notes is v1.3.0,
+dated 4 January 2024. The main branch still advertises PyTorch 1.8 as its
+floor, and there are around three hundred open issues. That is two and a half
+years without a release.
+
+RTMPose, RTMO, RTMPose3D and RTMW3D all live under `projects/` rather than in
+the core tree, so they carry weaker API stability guarantees than core MMPose
+even within a single version.
+
+This does not change the decision. Apache 2.0 weights that we export once and
+ship do not need an actively developed trainer. It does change how we depend on
+it: MMPose and MMDetection are frozen, training-time tools, pinned and vendored,
+never a runtime dependency of anything we ship.
+
 ## What this obliges us to
 
 The licence of the training data propagates to the weights. A research-only
@@ -50,10 +67,16 @@ dataset cannot produce weights we deploy commercially, whatever the model
 licence says. Every dataset used for fine-tuning is recorded in this document
 with its licence before training starts.
 
-The OpenMMLab dependency chain (mmengine, mmcv) is version-pinned and its
-upstream pace has slowed. Pin exact versions, keep the exported artefacts in
-version control, and treat ONNX as the contract so the application is never
-coupled to the training stack.
+Pin the whole OpenMMLab chain. Exact versions come from the `requirements/`
+directory of the pinned MMPose and MMDetection checkouts, not from whatever pip
+resolves; mmcv in particular needs a prebuilt wheel matching the exact PyTorch
+and CUDA build, which is the usual point of failure. Keep the training
+environment in a Dockerfile so it survives its own dependencies ageing.
+
+Treat ONNX as the contract. Exported artefacts are versioned and the
+application is coupled to them, never to the training stack. That is what makes
+a frozen upstream acceptable, and what lets the model be replaced later without
+touching the app.
 
 Detector choice is not what decides whether shot counting works. A ball at
 three-point distance is ten to twenty-five pixels wide and motion-blurred
