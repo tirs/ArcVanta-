@@ -1,0 +1,1752 @@
+ARCVANTA AI
+ADVANCED BASKETBALL INTELLIGENCE PLATFORM
+FULL PRODUCT, ENGINEERING, AI, DESIGN, AND DELIVERY SCOPE
+
+Platforms: iOS and Android
+Document status: Implementation-ready product scope
+Working product name: ArcVanta AI
+Name status: Provisional. Complete trademark, domain, Apple App Store, and Google Play clearance before public launch.
+Document date: July 29, 2026
+
+===============================================================================
+1. EXECUTIVE SUMMARY
+===============================================================================
+
+ArcVanta AI is a mobile basketball intelligence and coaching platform that uses
+the phone camera to analyze shooting, movement, ball trajectory, player
+mechanics, consistency, and training progress in real time.
+
+The experience shown in the supplied reference video provides the starting
+concept:
+
+- Detect the player.
+- Draw body landmarks.
+- Detect the basketball and hoop.
+- trace the ball path.
+- Count made shots and total attempts.
+
+ArcVanta AI will expand this basic concept into a complete commercial product
+for individual players, parents, trainers, coaches, teams, and basketball
+facilities. It will combine real-time on-device computer vision with optional
+cloud analysis, personalized coaching, advanced biomechanics, training plans,
+automatic highlights, and long-term performance intelligence.
+
+The application will be developed once with a shared Flutter product layer for
+iOS and Android. Performance-critical camera and AI workloads will use native
+iOS and Android integrations.
+
+The core computer-vision architecture will use:
+
+- MediaPipe Pose for detailed full-body landmarks.
+- MediaPipe Hands for wrist, palm, finger, and release-hand analysis.
+- A custom RTMDet-Tiny model for basketball, hoop, rim, net, player, and court
+  object detection.
+- ByteTrack for persistent object identities across frames.
+- Kalman filtering for motion prediction and recovery from short occlusions.
+- OpenCV for geometry, trajectory reconstruction, calibration, shot-event
+  calculations, and visual overlays.
+- A basketball-trained RTMPose model as an advanced pose engine for fast
+  motion, multiple players, difficult angles, and high-performance analysis.
+
+The system must not depend on a generative AI model to calculate objective
+metrics. Shot counts, angles, release timing, trajectory, balance, and scoring
+must come from deterministic computer-vision and biomechanics pipelines.
+Generative AI may explain verified results in natural language, but it must
+never invent measurements.
+
+===============================================================================
+2. PRODUCT VISION
+===============================================================================
+
+Create the most useful camera-based basketball development system available on
+a normal phone, without requiring a dedicated tracking camera, wearable, smart
+ball, or sensor installation.
+
+The product must:
+
+- Work in indoor and outdoor courts.
+- Work with a single phone and standard tripod.
+- Provide useful live feedback without interrupting the workout.
+- Explain what the player should change and why.
+- Measure improvement over days, weeks, months, and seasons.
+- Support both individual training and coach-managed athletes.
+- Process sensitive video privately whenever possible.
+- Continue functioning when internet access is unavailable.
+- Produce trustworthy metrics with visible confidence indicators.
+- Avoid advertisements that interrupt training.
+
+The strategic advantage is not a single AI model. The advantage will come from
+combining:
+
+- Basketball-specific training data.
+- Multiple specialized computer-vision models.
+- A temporal shot-understanding engine.
+- Accurate calibration and confidence management.
+- A coaching system grounded in measured data.
+- High-quality live graphics.
+- A growing history of each player's mechanics and performance.
+
+===============================================================================
+3. PRODUCT GOALS
+===============================================================================
+
+3.1 Primary goals
+
+- Detect, track, and classify basketball shots automatically.
+- Count makes, misses, attempts, streaks, and shooting locations.
+- Analyze complete shooting mechanics from preparation through landing.
+- Track the ball from possession through release, flight, rim interaction, and
+  result.
+- Deliver immediate, understandable coaching feedback.
+- Create personalized drills based on actual weaknesses.
+- Provide professional session reports and progress trends.
+- Operate smoothly on supported iOS and Android devices.
+
+3.2 Commercial goals
+
+- Launch a subscription product without forced advertising.
+- Serve players, parents, independent trainers, teams, academies, and
+  facilities.
+- Create defensible intellectual property through basketball datasets,
+  calibration logic, temporal-event models, and coaching intelligence.
+- Support individual, coach, and organization plans.
+- Reduce cloud inference costs by processing live sessions on the device.
+
+3.3 Non-goals for the first public release
+
+- Replacing certified medical, rehabilitation, or injury-diagnosis services.
+- Claiming laboratory-grade 3D biomechanics from one uncalibrated camera.
+- Official referee decision-making.
+- Guaranteed recruiting, scholarship, or professional performance outcomes.
+- Full five-on-five tactical analysis from a single phone.
+- Support for desktop, web-camera, smart glasses, or game consoles.
+
+===============================================================================
+4. TARGET USERS
+===============================================================================
+
+4.1 Individual player
+
+- Youth, high-school, college, amateur, and professional players.
+- Wants automatic shot tracking and actionable form feedback.
+- Trains alone and may not have a coach present.
+
+4.2 Parent or guardian
+
+- Manages a minor's account and privacy permissions.
+- Reviews progress without manually recording every session.
+- Assigns safe, age-appropriate training goals.
+
+4.3 Skills trainer
+
+- Manages multiple athletes.
+- Assigns drills and compares sessions.
+- Reviews clips, annotates technique, and creates reports.
+
+4.4 Team coach
+
+- Creates rosters and role-based programs.
+- Tracks development outside formal practice.
+- Reviews player and team-level performance trends.
+
+4.5 Academy or facility
+
+- Operates shared devices or training stations.
+- Provides branded training experiences.
+- Needs organization administration, subscriptions, and usage reporting.
+
+===============================================================================
+5. CORE USER JOURNEYS
+===============================================================================
+
+5.1 First-time setup
+
+1. Install the application.
+2. Select player, parent, trainer, or coach account type.
+3. Create an account or continue in limited offline guest mode.
+4. Complete privacy, camera, microphone, storage, and analytics consent.
+5. Create the player profile, dominant hand, position, age band, height, skill
+   level, and goals.
+6. View a short camera-placement guide.
+7. Place the phone on a tripod and complete automatic court calibration.
+8. Run a three-shot calibration test.
+9. Receive a camera-quality and confidence confirmation.
+
+5.2 Live shooting session
+
+1. Select a drill or Quick Session.
+2. Choose front, side, rear, or diagonal camera placement.
+3. The app confirms player, ball, hoop, and floor visibility.
+4. Start a countdown using voice, gesture, remote button, or on-screen control.
+5. The app records shots without requiring manual interaction.
+6. Live graphics show makes, attempts, percentage, streak, zone, and one
+   prioritized coaching cue.
+7. Optional audio or haptic feedback is delivered between shots.
+8. The player pauses or ends the session using a gesture, voice command, or
+   button.
+9. The app generates a session summary and recommended next drill.
+
+5.3 Recorded-video analysis
+
+1. Import a video from the device or record inside the app.
+2. Select the player when multiple players appear.
+3. The app analyzes the video locally or uploads it with consent for advanced
+   cloud analysis.
+4. Detected shots and important moments appear on a timeline.
+5. The player reviews slow-motion clips, synchronized metrics, and coaching
+   recommendations.
+
+5.4 Coach-managed training
+
+1. Coach creates an athlete or team workspace.
+2. Athlete accepts an invitation or guardian approves access.
+3. Coach assigns drills, shot targets, and due dates.
+4. Athlete completes sessions on iOS or Android.
+5. Coach sees validated results, confidence, video clips, and progress.
+6. Coach adds timestamped visual or voice feedback.
+7. Athlete receives the next training assignment.
+
+===============================================================================
+6. FUNCTIONAL SCOPE
+===============================================================================
+
+6.1 Authentication and accounts
+
+- Email and password authentication.
+- Sign in with Apple on iOS.
+- Sign in with Google on iOS and Android.
+- Secure password reset and device-session management.
+- Optional guest mode with local-only data.
+- Player, guardian, trainer, coach, organization-admin, and support roles.
+- Multi-profile household accounts.
+- Minor-account guardian consent and access controls.
+- Account export and deletion.
+- Device transfer and encrypted cloud synchronization.
+
+6.2 Player profile
+
+- Name or display alias.
+- Profile image or generated avatar.
+- Date-of-birth or age-band controls.
+- Height, wingspan, dominant hand, position, and experience level.
+- Team, trainer, and organization relationships.
+- Training goals and weekly availability.
+- Baseline shooting assessment.
+- Accessibility and audio-feedback preferences.
+- Injury or limitation notes entered voluntarily, with clear non-medical
+  disclaimers and restricted visibility.
+
+6.3 Camera setup and intelligent calibration
+
+- Native camera preview with 30 FPS and supported 60 FPS capture modes.
+- Front and rear camera support where technically appropriate.
+- Automatic orientation handling.
+- Guided phone placement for front, side, rear, and diagonal analysis.
+- Hoop, rim, net, backboard, player, floor, and ball visibility validation.
+- Full-body framing validation.
+- Lighting, blur, obstruction, distance, and camera-shake warnings.
+- Court-plane estimation using visible court lines and known basketball
+  dimensions.
+- Rim-height and ball-size calibration when sufficient pixels are available.
+- Manual calibration fallback.
+- Calibration quality score.
+- Saved court profiles for frequently used gyms.
+- Automatic lens and camera-intrinsic correction when device data is available.
+- Tripod movement detection and recalibration prompt.
+
+6.4 Live player detection and pose tracking
+
+- MediaPipe Pose landmark inference.
+- MediaPipe Hands analysis for the shooting hand and guide hand.
+- Dominant-player locking.
+- Left-handed and right-handed shooting support.
+- Body visibility and landmark-confidence indicators.
+- Landmark smoothing without introducing unacceptable delay.
+- Temporary landmark recovery when wrists, elbows, knees, or ankles are
+  occluded.
+- Multiple-person rejection or selection to prevent another player from
+  contaminating metrics.
+- Advanced multi-player mode using RTMPose.
+- Biomechanical phase segmentation:
+  - Ready position.
+  - Ball pickup.
+  - Dip.
+  - Load.
+  - Upward motion.
+  - Set point.
+  - Release.
+  - Follow-through.
+  - Landing.
+  - Recovery.
+
+6.5 Ball, hoop, and court detection
+
+The custom RTMDet-Tiny model will detect:
+
+- Basketball.
+- Rim.
+- Hoop assembly.
+- Net.
+- Backboard.
+- Primary player.
+- Additional players.
+- Court boundary.
+- Key court lines where visible.
+- Relevant obstructions.
+
+The model must support:
+
+- Small-object detection for a distant basketball.
+- Motion-blurred ball detection.
+- Partially occluded rim and net.
+- Indoor and outdoor backgrounds.
+- Different ball colors and designs.
+- Glass, white, fan-shaped, and visually complex backboards.
+- Different lighting, skin tones, clothing, court colors, and device cameras.
+- Detection-confidence output for every object.
+
+6.6 Tracking and temporal understanding
+
+- ByteTrack identities for ball and players.
+- Kalman motion prediction between missed ball detections.
+- Optical-flow assistance for short high-speed ball motion.
+- Player-to-ball possession association.
+- Shooting-hand and guide-hand association.
+- Hoop and rim persistence.
+- Shot state machine:
+  - Idle.
+  - Possession.
+  - Gather.
+  - Shooting motion.
+  - Release candidate.
+  - Ball ascent.
+  - Apex.
+  - Ball descent.
+  - Rim interaction.
+  - Made, missed, blocked, invalid, or uncertain result.
+  - Rebound or reset.
+- Duplicate-shot suppression.
+- Pass, dribble, layup, dunk, toss, and non-shot filtering.
+- Confidence-aware recovery when the ball leaves the frame temporarily.
+
+6.7 Automatic make and miss detection
+
+- Detect clean makes.
+- Detect rim makes.
+- Detect backboard makes.
+- Detect front-rim, back-rim, left, right, short, long, and airball misses when
+  visual evidence supports the classification.
+- Detect blocked or interrupted attempts.
+- Mark uncertain results for optional user confirmation.
+- Allow fast correction without stopping the session.
+- Track makes, attempts, misses, percentage, streak, best streak, and swishes.
+- Maintain an audit trail of corrected classifications for model improvement.
+
+6.8 Shooting metrics
+
+Metrics must display a confidence score and camera-angle eligibility. The app
+must hide or qualify metrics that cannot be reliably calculated from the
+current camera placement.
+
+Shot-result metrics:
+
+- Makes.
+- Misses.
+- Attempts.
+- Field-goal percentage.
+- Swish rate.
+- Streaks.
+- Shot interval.
+- Time per attempt.
+- Consistency score.
+
+Ball-flight metrics:
+
+- Release point in normalized body and calibrated court coordinates.
+- Initial trajectory direction.
+- Release angle.
+- Estimated ball speed.
+- Apex height.
+- Horizontal and vertical displacement.
+- Entry angle.
+- Left-right deviation.
+- Arc consistency.
+- Depth consistency.
+- Time of flight.
+- Rim approach classification.
+
+Body-mechanics metrics:
+
+- Stance width.
+- Toe and foot alignment.
+- Knee flexion.
+- Hip flexion.
+- Shoulder alignment.
+- Elbow angle.
+- Elbow flare.
+- Forearm alignment.
+- Wrist extension and snap.
+- Shooting-hand position.
+- Guide-hand separation.
+- Ball set-point height.
+- Head stability.
+- Torso lean.
+- Center-of-mass approximation.
+- Upward force-sequence timing.
+- Knee-to-hip-to-shoulder-to-elbow-to-wrist sequencing.
+- Release timing relative to leg extension.
+- Jump height estimate when calibration supports it.
+- Forward, backward, and lateral landing displacement.
+- Landing balance.
+- Follow-through duration.
+- Hold quality.
+- Shot-to-shot mechanical variance.
+
+Footwork and movement metrics:
+
+- Ready-stance quality.
+- One-two footwork.
+- Hop footwork.
+- Left-right plant order.
+- Stop balance.
+- Pivot detection.
+- Lateral movement speed estimate.
+- Closeout, cut, and change-of-direction measurements in supported drills.
+
+6.9 Shot-location mapping
+
+- Automatic shot-location estimation from calibrated court geometry.
+- Manual location correction.
+- Half-court heatmap.
+- Court-zone percentages.
+- Midrange and three-point classification based on selected court standard.
+- NBA, NCAA, high-school, FIBA, youth, and custom court profiles.
+- Left, center, and right-side breakdowns.
+- Corner, wing, slot, elbow, paint, and free-throw zones.
+- Catch-and-shoot, off-dribble, pull-up, step-back, and movement-shot tags.
+- User-created tags.
+
+6.10 Live coaching
+
+- One prioritized coaching cue at a time.
+- Optional spoken feedback between attempts.
+- Optional sound, haptic, and visual confirmations.
+- Configurable feedback frequency.
+- Positive reinforcement for improvement.
+- Avoid repeated, distracting instructions during the shooting motion.
+- Coach mode allowing human-defined cues.
+- Confidence gating so low-confidence measurements never trigger authoritative
+  feedback.
+- Examples:
+  - Keep your elbow closer to the shooting line.
+  - Your release is later than your best makes.
+  - Your last five shots landed farther left than your session baseline.
+  - Your knee-to-release timing improved.
+  - Hold your follow-through slightly longer.
+
+6.11 AI coaching intelligence
+
+The coaching engine will use a layered architecture:
+
+Layer 1: Verified measurements
+
+- Computer-vision outputs.
+- Confidence values.
+- Shot phase timing.
+- User history.
+
+Layer 2: Basketball rules and scoring
+
+- Deterministic thresholds.
+- Camera-angle eligibility.
+- Age and skill-level ranges.
+- Trend detection.
+- Correlation between form changes and outcomes.
+
+Layer 3: Personalization
+
+- Compare the athlete primarily against their own successful baseline.
+- Identify the smallest high-impact change.
+- Avoid forcing every athlete into one universal shooting style.
+- Adapt goals as consistency improves.
+
+Layer 4: Natural-language explanation
+
+- Convert verified findings into concise coaching language.
+- Explain why a drill was selected.
+- Generate weekly progress summaries.
+- Never generate measurements that are missing from the verified data.
+
+6.12 Drill system
+
+- Quick Shooting.
+- Free Throws.
+- Form Shooting.
+- Spot Shooting.
+- Five-Spot Challenge.
+- Around the World.
+- Catch-and-Shoot.
+- Pull-Up Shooting.
+- Off-Dribble Shooting.
+- Midrange.
+- Three-Point.
+- Corner Three.
+- Fatigue Shooting.
+- Timed Shooting.
+- Streak Challenge.
+- Swish Challenge.
+- Custom drill builder.
+
+Each drill can define:
+
+- Locations.
+- Makes or attempts per location.
+- Time limit.
+- Rest period.
+- Movement pattern.
+- Required shot type.
+- Coaching focus.
+- Difficulty.
+- Success threshold.
+- Audio prompts.
+- Automatic progression.
+
+6.13 Personalized training plans
+
+- Initial skill assessment.
+- Player-selected goals.
+- Weekly plan generation.
+- Adaptive drill difficulty.
+- Weak-zone targeting.
+- Mechanics-focused sessions.
+- Accuracy, speed, range, and conditioning programs.
+- Recovery-aware scheduling entered by the user.
+- Missed-session rescheduling.
+- Coach-created plans.
+- Completion streaks without manipulative engagement mechanics.
+
+6.14 Session review
+
+- Session scorecard.
+- Makes, attempts, percentage, zones, streaks, and pace.
+- Best and weakest zones.
+- Best-mechanics shot.
+- Most representative miss.
+- Before-and-after comparison.
+- Shot timeline.
+- Filter by makes, misses, zone, shot type, confidence, or coaching issue.
+- Frame-by-frame playback.
+- 0.25x, 0.5x, 1x, and 2x playback.
+- Skeleton, hand, ball, trajectory, angle, and court overlays.
+- Side-by-side comparison.
+- Synchronized ghost overlay against a previous best shot.
+- Drawing and annotation tools for coaches.
+- Voice-note and text feedback.
+- Exportable session summary.
+
+6.15 Automatic video and highlights
+
+- Automatically clip every detected shot.
+- Remove dead time before and after attempts.
+- Generate best-makes compilation.
+- Generate progress comparison.
+- Generate coach-review reel.
+- Burn-in optional metrics and branded overlays.
+- Export vertical, square, and landscape formats.
+- Protect minors with private sharing by default.
+- No public posting without explicit action.
+
+6.16 Progress dashboard
+
+- Daily, weekly, monthly, season, and custom ranges.
+- Total makes and attempts.
+- Shooting percentage trend.
+- Zone heatmap changes.
+- Mechanics score trends.
+- Release-angle and entry-angle distribution.
+- Consistency and variance.
+- Training volume.
+- Goal completion.
+- Personal records.
+- Drill comparisons.
+- Camera-confidence trends.
+- Explain why a metric changed.
+- Separate true improvement from changes caused by camera setup or sample size.
+
+6.17 Coach and team features
+
+- Athlete roster.
+- Guardian-approved youth access.
+- Groups and teams.
+- Drill assignments.
+- Due dates and reminders.
+- Session-review queue.
+- Coach comments and annotations.
+- Athlete acknowledgements.
+- Progress reports.
+- Team-wide trends with minimum-data protections.
+- Role-based access.
+- Coach-to-athlete messaging limited to approved contexts.
+- Organization branding.
+- CSV and PDF report export.
+- Data retention controls.
+- Athlete transfer between organizations with permission.
+
+6.18 Challenges and social features
+
+- Private friend challenges.
+- Team challenges.
+- Accuracy, volume, streak, and drill challenges.
+- Verified results distinguished from manually entered results.
+- Privacy-safe leaderboards.
+- Age-appropriate defaults.
+- Blocking and reporting.
+- No open direct messaging for minors.
+- No automatic precise-location sharing.
+- Optional public profile for eligible adult users.
+
+6.19 Offline operation
+
+Available offline:
+
+- Camera calibration.
+- Live shot detection.
+- Make and attempt counting.
+- Core pose and ball tracking.
+- Standard drills.
+- Local session storage.
+- Basic reports and coaching rules.
+
+Requires synchronization or optional cloud processing:
+
+- Cross-device history.
+- Coach collaboration.
+- Organization dashboards.
+- Large-model advanced analysis.
+- Remote video backup.
+- Server-generated long-term reports.
+
+6.20 Notifications
+
+- Training reminders.
+- Coach assignment reminders.
+- Goal and streak progress.
+- Completed cloud-analysis notification.
+- Subscription and account notices.
+- Guardian and safety notices.
+- Granular opt-in controls.
+- Quiet hours.
+
+===============================================================================
+7. COMPUTER-VISION AND MACHINE-LEARNING ARCHITECTURE
+===============================================================================
+
+7.1 Live inference pipeline
+
+1. Capture camera frame and timestamp.
+2. Correct rotation and lens distortion.
+3. Evaluate frame quality.
+4. Run RTMDet-Tiny object detection at the selected adaptive interval.
+5. Update ByteTrack object identities.
+6. Run Kalman prediction between detector frames.
+7. Crop the primary-player region.
+8. Run MediaPipe Pose.
+9. Run MediaPipe Hands when hands are visible and the shot state requires it.
+10. Smooth landmarks using confidence-aware temporal filters.
+11. Associate hands, player, ball, and hoop.
+12. Update the shot-state machine.
+13. Calculate eligible metrics.
+14. Update the overlay renderer.
+15. Store compact session events and selected video frames.
+
+7.2 Adaptive inference
+
+- Use device capability, thermal state, battery level, resolution, and scene
+  complexity to choose the inference schedule.
+- Do not run every model on every frame when it is unnecessary.
+- Increase ball tracking frequency during gather, release, and flight.
+- Reduce pose frequency while the player is retrieving the ball.
+- Use regions of interest to reduce computation.
+- Degrade graphics before degrading critical shot counting.
+- Display a clear message when device limitations affect accuracy.
+
+7.3 Pose engines
+
+Primary mobile engine:
+
+- MediaPipe Pose.
+- MediaPipe Hands.
+- Optimized for on-device performance.
+- Used for single-player live sessions and detailed hand landmarks.
+
+Advanced engine:
+
+- RTMPose or RTMPose WholeBody.
+- Fine-tuned using basketball movement and occlusion data.
+- Used for multiple players, imported video, difficult viewpoints, and premium
+  analysis.
+- Exported to an approved mobile or server inference format.
+
+7.4 Object-detection engine
+
+- RTMDet-Tiny for supported live mobile devices.
+- Larger RTMDet model for cloud or high-performance offline analysis.
+- Custom basketball taxonomy.
+- Multi-scale training.
+- Motion blur, exposure, compression, occlusion, and background augmentation.
+- Hard-negative examples including heads, signs, lights, clocks, and circular
+  objects that resemble a basketball.
+
+7.5 Tracking
+
+- ByteTrack for identity association.
+- Kalman state including center, size, velocity, and acceleration estimates.
+- Optional optical flow during fast ball flight.
+- Trajectory-history buffer with timestamps.
+- Re-identification logic when a player or ball temporarily disappears.
+- Track termination and duplicate prevention rules.
+
+7.6 Geometry and calibration
+
+- Camera intrinsic estimation from device profiles where possible.
+- Perspective transform from detected or manually selected court points.
+- Known rim diameter, rim height, ball diameter, and court dimensions used only
+  when calibration confidence is sufficient.
+- Pixel-to-court coordinate mapping.
+- Camera-angle eligibility rules for each metric.
+- Uncertainty propagation from object and landmark confidence.
+- No false precision: values must use ranges or confidence bands when required.
+
+7.7 Shot-event engine
+
+The shot-event engine must combine:
+
+- Ball location, velocity, and acceleration.
+- Ball-to-hand distance.
+- Wrist, elbow, shoulder, hip, knee, and ankle motion.
+- Player-to-hoop orientation.
+- Ball ascent and descent.
+- Rim-plane crossing.
+- Net movement when visible.
+- Backboard and rim contacts.
+- Temporal continuity.
+
+The engine must distinguish:
+
+- Shot.
+- Pass.
+- Dribble.
+- Rebound.
+- Ball pickup.
+- Pump fake.
+- Layup.
+- Dunk.
+- Tip-in.
+- Blocked attempt.
+- Ball entering from another court.
+
+7.8 Confidence framework
+
+Every event and measurement must include:
+
+- Raw model confidence.
+- Tracking continuity.
+- Calibration confidence.
+- Camera-angle eligibility.
+- Occlusion status.
+- Final reliability level: high, medium, low, or unavailable.
+
+Low-confidence values must not:
+
+- Trigger strong coaching claims.
+- Enter verified leaderboards.
+- Distort player trend reports.
+- Be presented with misleading decimal precision.
+
+7.9 Model update system
+
+- Version every model and preprocessing pipeline.
+- Record model version with each analyzed session.
+- Support staged rollout and rollback.
+- Compare new and previous models on locked validation sets.
+- Prevent a model update from silently changing historical comparisons.
+- Reprocess selected sessions only with user consent and clear labeling.
+
+===============================================================================
+8. DATASET AND MODEL-TRAINING PROGRAM
+===============================================================================
+
+8.1 Required dataset coverage
+
+- Indoor and outdoor courts.
+- Day, night, bright, dim, mixed, and flickering lighting.
+- Different phone manufacturers and camera qualities.
+- Front, rear, side, diagonal, elevated, and low viewpoints.
+- Youth and adult players.
+- Broad representation of skin tones, body types, heights, clothing, and
+  mobility.
+- Left-handed and right-handed shooters.
+- Stationary and movement shots.
+- Makes, misses, blocks, airballs, passes, dribbles, and rebounds.
+- Multiple balls and players.
+- Partial occlusion and crowded backgrounds.
+- Regulation and non-regulation hoops.
+- Different video resolutions, frame rates, compression, and motion blur.
+
+8.2 Annotation taxonomy
+
+Object labels:
+
+- Ball.
+- Rim.
+- Net.
+- Backboard.
+- Primary player.
+- Secondary player.
+- Court lines.
+- Obstruction.
+
+Temporal labels:
+
+- Gather start.
+- Dip start.
+- Upward motion.
+- Set point.
+- Release.
+- Apex.
+- Rim contact.
+- Net crossing.
+- Make.
+- Miss.
+- Block.
+- Invalid attempt.
+
+Pose and technique labels:
+
+- Shooting hand.
+- Guide hand.
+- Footwork type.
+- Shot type.
+- Camera angle.
+- Visibility.
+- Occlusion.
+- Mechanical observations verified by qualified basketball reviewers.
+
+8.3 Dataset governance
+
+- Obtain explicit consent for model-training use.
+- Separate service-use consent from training-data consent.
+- Provide an opt-out.
+- Remove direct account identifiers from training media.
+- Blur faces where identity is unnecessary.
+- Apply stricter controls to data involving minors.
+- Track dataset origin, license, consent, labeling version, and deletion status.
+- Do not scrape private or copyrighted training footage without permission.
+- Maintain a deletion propagation process for eligible requests.
+
+8.4 Training workflow
+
+1. Ingest consented and properly licensed videos.
+2. Validate file integrity and metadata.
+3. Sample frames and clips based on motion and uncertainty.
+4. Pre-label with the current models.
+5. Human reviewers correct annotations.
+6. Run automated label-quality checks.
+7. Split by player, location, and recording session to prevent leakage.
+8. Train and tune models.
+9. Evaluate on fixed and challenge datasets.
+10. Conduct device benchmarks.
+11. Run shadow testing.
+12. Release through a staged model rollout.
+
+8.5 Active learning
+
+- Capture uncertain examples only with consent.
+- Prioritize failure cases rather than random footage.
+- Identify device, lighting, shot-type, and demographic coverage gaps.
+- Use corrected makes and misses as quality signals.
+- Require human validation before training.
+
+===============================================================================
+9. TARGET MODEL AND PRODUCT QUALITY
+===============================================================================
+
+Targets are acceptance objectives, not public guarantees. They must be measured
+on representative locked test sets.
+
+9.1 Detection targets
+
+- Ball detection mAP50 target: at least 0.90 on representative validation data.
+- Rim detection mAP50 target: at least 0.95.
+- Primary-player detection mAP50 target: at least 0.95.
+- Report mAP50-95 in addition to mAP50.
+- Maintain dedicated small-ball and motion-blur test subsets.
+
+9.2 Tracking targets
+
+- Shot-event ball-track continuity target: at least 95% on supported camera
+  setups.
+- Identity switches must be measured for multi-player scenes.
+- Temporary occlusions must not create duplicate attempts.
+
+9.3 Shot-recognition targets
+
+- Attempt-count accuracy target: at least 98% in supported single-player
+  conditions.
+- Make/miss F1 target: at least 95% in controlled supported conditions.
+- Make/miss F1 target: at least 90% across diverse real-world challenge sets.
+- Uncertain outcomes must be surfaced instead of forced into a wrong class.
+
+9.4 Biomechanics targets
+
+- Joint accuracy measured using PCK and pixel error.
+- Angle error measured against manually reviewed or higher-grade reference
+  capture.
+- Temporal release-point error target defined in frames and milliseconds.
+- Calibration-dependent measurements validated against known court dimensions.
+- Each metric must have its own approved validation threshold.
+
+9.5 Performance targets
+
+- Supported-device live experience: minimum 30 FPS camera preview.
+- AI updates: target 15 to 30 processed frames per second depending on device.
+- Overlay response target: under 100 milliseconds perceived latency.
+- Shot-result display target: within 750 milliseconds after sufficient visual
+  confirmation.
+- Cold launch target: under 3 seconds on supported devices.
+- Crash-free session target: at least 99.8%.
+- No unbounded memory growth during a 90-minute workout.
+
+===============================================================================
+10. MOBILE APPLICATION ARCHITECTURE
+===============================================================================
+
+10.1 Shared application layer
+
+- Flutter and Dart.
+- Feature-first modular architecture.
+- Riverpod or BLoC for predictable state management; select one during
+  technical design and use it consistently.
+- GoRouter for navigation and guarded routes.
+- Dio or an equivalent maintained HTTP client.
+- Freezed or an equivalent immutable model approach.
+- Drift or SQLite for structured local data.
+- Encrypted secure storage for tokens and secrets.
+
+10.2 Native iOS layer
+
+- Swift.
+- AVFoundation camera pipeline.
+- Core ML for compatible custom models.
+- Metal or Core ML acceleration.
+- MediaPipe Tasks for iOS.
+- Native video encoding and asset export.
+- StoreKit 2 for subscriptions.
+- Sign in with Apple.
+- Background upload under platform limits.
+
+10.3 Native Android layer
+
+- Kotlin.
+- CameraX.
+- MediaPipe Tasks for Android.
+- LiteRT/TensorFlow Lite, GPU delegate, or NNAPI based on validated model
+  compatibility.
+- MediaCodec for supported video processing.
+- Google Play Billing.
+- Credential Manager and Google sign-in.
+- WorkManager for reliable background synchronization.
+
+10.4 Flutter-to-native boundary
+
+- Use platform channels for low-frequency control and configuration.
+- Use FFI or native textures for performance-critical frame and overlay paths.
+- Do not copy full-resolution camera frames repeatedly through Dart.
+- Keep camera capture and live inference on native worker threads.
+- Send compact events and landmarks to Flutter.
+- Use a texture-based preview and synchronized overlay timestamps.
+
+10.5 Overlay rendering
+
+- Use Flutter CustomPainter, Impeller-compatible rendering, native GPU layers,
+  or a validated shader pipeline.
+- Draw body skeleton, hand landmarks, ball boxes, hoop boxes, trajectory, arc,
+  angles, shot zones, and counters.
+- Use temporal interpolation to prevent jumping graphics.
+- Scale correctly across resolutions and orientations.
+- Keep overlays optional for clean recording.
+- Do not purchase static overlay graphics to imitate live analysis; live
+  graphics must be generated from model output.
+
+===============================================================================
+11. BACKEND AND CLOUD ARCHITECTURE
+===============================================================================
+
+11.1 Core services
+
+- API gateway.
+- Authentication and authorization.
+- User and profile service.
+- Session and metrics service.
+- Drill and training-plan service.
+- Coach and team service.
+- Subscription and entitlement service.
+- Notification service.
+- Media upload and processing service.
+- Reporting service.
+- Model configuration and rollout service.
+- Audit and moderation service.
+
+11.2 Recommended technology
+
+- Python FastAPI for AI-adjacent APIs and processing orchestration.
+- PostgreSQL for transactional data.
+- Redis for caching, queues, rate limits, and temporary job state.
+- S3-compatible object storage for encrypted videos, thumbnails, and reports.
+- Background workers for video processing and report generation.
+- Docker for reproducible deployment.
+- Managed container orchestration appropriate to launch scale.
+- OpenTelemetry for traces and metrics.
+- Centralized structured logs.
+- Infrastructure as code.
+
+11.3 Data storage
+
+Primary entities:
+
+- User.
+- Player profile.
+- Guardian relationship.
+- Coach relationship.
+- Organization.
+- Team.
+- Drill.
+- Assignment.
+- Session.
+- Shot.
+- Detection confidence.
+- Mechanics metric.
+- Court location.
+- Video asset.
+- Annotation.
+- Coaching insight.
+- Training plan.
+- Subscription.
+- Consent record.
+- Model version.
+- Audit event.
+
+11.4 API principles
+
+- Versioned APIs.
+- Short-lived access tokens and secure refresh flow.
+- Object-level authorization on every private resource.
+- Idempotent upload and session-finalization endpoints.
+- Pagination for histories and rosters.
+- Signed, short-lived media access.
+- Rate limits.
+- Request validation.
+- Correlation identifiers.
+- Backward-compatible mobile release support.
+
+11.5 Media processing
+
+- Resumable uploads.
+- Background transcoding.
+- Thumbnail and shot-clip generation.
+- Advanced model inference.
+- Results linked to model and pipeline versions.
+- Automatic source-media expiration based on the selected retention setting.
+- User-controlled original-video deletion.
+- Malware and file-type validation.
+
+===============================================================================
+12. USER EXPERIENCE AND VISUAL DESIGN
+===============================================================================
+
+12.1 Design direction
+
+- Premium dark-glass visual system.
+- Deep graphite and near-black backgrounds.
+- Translucent panels with restrained blur.
+- High-contrast typography.
+- Electric court-line accent colors.
+- Green for verified makes.
+- Warm orange for the ball and trajectory.
+- Red reserved for errors and critical warnings.
+- Clear confidence states that do not rely on color alone.
+- Smooth motion without excessive visual noise.
+
+12.2 Live-session interface
+
+Required elements:
+
+- Full-screen camera.
+- Minimal top status area.
+- Calibration and confidence indicator.
+- Makes and attempts.
+- Shooting percentage.
+- Current streak.
+- Selected drill and target.
+- One coaching cue.
+- Pause and end controls.
+- Audio and overlay controls.
+
+The interface must:
+
+- Remain readable from tripod distance.
+- Support landscape and portrait where the selected drill allows it.
+- Keep the player and hoop unobstructed.
+- Avoid showing every available metric during live shooting.
+- Use large touch targets.
+- Support voice or gesture control.
+
+12.3 Main screens
+
+- Splash and update check.
+- Onboarding.
+- Authentication.
+- Role selection.
+- Player setup.
+- Guardian consent.
+- Home dashboard.
+- Quick Session.
+- Drill library.
+- Custom drill builder.
+- Camera placement guide.
+- Calibration.
+- Live session.
+- Session summary.
+- Shot timeline.
+- Shot detail.
+- Side-by-side comparison.
+- Progress analytics.
+- Court heatmap.
+- Training plan.
+- Goals.
+- Highlights.
+- Coach roster.
+- Athlete detail.
+- Assignment creator.
+- Review queue.
+- Team dashboard.
+- Notifications.
+- Subscription.
+- Profile.
+- Privacy and data controls.
+- Device and storage settings.
+- Help and diagnostic report.
+
+12.4 Accessibility
+
+- Dynamic text sizing.
+- Screen-reader labels.
+- High-contrast mode.
+- Reduced-motion mode.
+- Color-blind-safe metric states.
+- Captions and text alternatives for audio coaching.
+- Haptic alternatives.
+- Left-handed UI considerations.
+- Localization-ready strings and layouts.
+
+===============================================================================
+13. MONETIZATION
+===============================================================================
+
+The product will not rely on disruptive advertising.
+
+13.1 Free plan
+
+- Limited monthly live sessions.
+- Basic makes, attempts, and percentage.
+- Standard drills.
+- Limited history.
+- On-device processing.
+
+13.2 Player Pro
+
+- Unlimited supported sessions.
+- Advanced mechanics.
+- Full shot charts and trends.
+- Personalized training plans.
+- Video import and comparison.
+- Automatic highlights.
+- Extended history and synchronization.
+
+13.3 Coach Pro
+
+- Athlete roster.
+- Assignments.
+- Session review and annotations.
+- Athlete reports.
+- Coach dashboard.
+- Tiered athlete limits.
+
+13.4 Team or Academy
+
+- Multiple coaches and teams.
+- Organization administration.
+- Shared drill templates.
+- Team analytics.
+- Branded reports.
+- Central billing.
+- Configurable retention.
+
+13.5 Commerce requirements
+
+- Apple App Store and Google Play subscription compliance.
+- Monthly and annual plans.
+- Trials controlled by remote configuration.
+- Restore purchases.
+- Server-side entitlement verification.
+- Grace period and billing-retry handling.
+- No feature loss that corrupts or deletes existing user data.
+
+===============================================================================
+14. PRIVACY, SECURITY, AND SAFETY
+===============================================================================
+
+14.1 Privacy principles
+
+- Local processing by default for live analysis.
+- Upload video only when required and consented.
+- Separate cloud-backup consent from model-training consent.
+- Private profiles by default.
+- Minimal collection.
+- Clear retention controls.
+- Export and deletion.
+
+14.2 Youth safety
+
+- Age-screening flow.
+- Verifiable guardian consent where legally required.
+- No public profile by default for minors.
+- No open direct messaging.
+- No precise court-location exposure.
+- Guardian control over coach relationships.
+- Reporting and blocking tools.
+- Documented moderation and escalation workflow.
+- COPPA, applicable state privacy law, GDPR/UK GDPR, and other launch-market
+  requirements reviewed by qualified counsel.
+
+14.3 Application security
+
+- TLS for network traffic.
+- Platform secure storage for tokens.
+- Encryption at rest for sensitive cloud data.
+- Least-privilege service access.
+- Role-based and object-level authorization.
+- Secure media links.
+- Rate limiting.
+- Dependency and container scanning.
+- Secret management.
+- Audit logging.
+- Mobile application hardening.
+- Certificate pinning considered after evaluating operational risks.
+- Rooted or jailbroken device risk signals without blocking legitimate users
+  unnecessarily.
+- Incident-response and breach-notification procedures.
+
+14.4 AI safety and claims
+
+- No medical or injury diagnosis.
+- No guarantee that changing form will prevent injury.
+- Explain confidence and limitations.
+- Human coach feedback clearly distinguished from automated feedback.
+- Generated coaching text grounded in verified metrics.
+- No comparison to named professional players without licensed, validated
+  reference data.
+
+===============================================================================
+15. ANALYTICS AND OBSERVABILITY
+===============================================================================
+
+15.1 Product analytics
+
+- Onboarding completion.
+- Calibration success and failure reasons.
+- Session start and completion.
+- Shot-classification correction rate.
+- Drill usage.
+- Coaching-cue engagement.
+- Subscription conversion and churn.
+- Feature adoption.
+- Retention cohorts.
+
+15.2 AI quality telemetry
+
+- Device model and performance tier.
+- Model and pipeline version.
+- Confidence distributions.
+- Lost-track events.
+- Uncertain make/miss outcomes.
+- Manual corrections.
+- Thermal throttling.
+- Camera-placement failures.
+
+Raw video must not be included in analytics telemetry. Training or diagnostic
+media requires separate consent.
+
+15.3 Operational monitoring
+
+- API latency and errors.
+- Background-job failures.
+- Upload completion.
+- Storage growth.
+- Model-processing duration.
+- Mobile crash reporting.
+- Frame-rate and memory monitoring.
+- Subscription webhook failures.
+- Security events.
+
+===============================================================================
+16. TESTING AND QUALITY ASSURANCE
+===============================================================================
+
+16.1 Mobile testing
+
+- Unit tests.
+- Widget tests.
+- Native module tests.
+- Integration tests.
+- Golden visual tests for stable non-camera screens.
+- Camera lifecycle tests.
+- Orientation tests.
+- Background and foreground tests.
+- Low-storage and interrupted-upload tests.
+- Subscription sandbox tests.
+- Accessibility tests.
+- Localization tests.
+
+16.2 Computer-vision testing
+
+- Locked validation datasets.
+- Device-recorded test matrix.
+- Frame-by-frame event evaluation.
+- Dark, bright, motion-blur, and occlusion challenge sets.
+- Left-handed and right-handed coverage.
+- Multiple-player and multiple-ball tests.
+- Non-shot false-positive tests.
+- Calibration accuracy tests.
+- Long-session stability.
+- Model-regression testing.
+
+16.3 Device matrix
+
+iOS:
+
+- Supported recent iPhone generations.
+- Different camera systems and screen sizes.
+- Minimum supported iOS version defined after dependency validation.
+
+Android:
+
+- Representative Samsung, Google Pixel, Motorola, OnePlus, and other target
+  devices.
+- High, medium, and minimum supported performance tiers.
+- Different GPUs, NNAPI drivers, cameras, memory limits, and aspect ratios.
+
+16.4 Field testing
+
+- Controlled gym tests.
+- Outdoor court tests.
+- Trainer-led beta.
+- Youth testing with guardian consent.
+- Independent test participants not used in model training.
+- Comparison against manually labeled ground truth.
+- Structured feedback on coaching usefulness, not only detection accuracy.
+
+===============================================================================
+17. DEVOPS AND MLOPS
+===============================================================================
+
+- Separate development, staging, and production environments.
+- Automated linting, tests, security checks, and builds.
+- Signed iOS and Android build pipelines.
+- Internal distribution through TestFlight and Google Play testing tracks.
+- Infrastructure as code.
+- Database migrations with rollback plans.
+- Feature flags.
+- Remote configuration.
+- Model registry.
+- Dataset versioning.
+- Experiment tracking.
+- Reproducible training containers.
+- Canary model rollout.
+- Automated model benchmark gates.
+- Rapid rollback.
+- Backup and disaster-recovery testing.
+
+===============================================================================
+18. DELIVERY ROADMAP
+===============================================================================
+
+The roadmap describes one complete product program delivered in controlled
+stages. Features are not considered complete merely because a prototype can
+display a skeleton or bounding box.
+
+Stage 0: Product and technical validation
+Estimated duration: 3 to 4 weeks
+
+- Finalize supported use cases and target devices.
+- Review reference video and competitor workflows.
+- Validate MediaPipe, RTMDet, ByteTrack, Kalman, and OpenCV pipeline.
+- Capture initial basketball test dataset.
+- Prototype ball, rim, player, and pose inference.
+- Benchmark representative iOS and Android devices.
+- Define metric eligibility and ground-truth methodology.
+- Complete architecture and threat-model review.
+
+Exit criteria:
+
+- Live proof of concept tracks a player, ball, and rim.
+- Preliminary shot state machine counts representative attempts.
+- Target device feasibility is documented.
+- Dataset and licensing plan is approved.
+
+Stage 1: Mobile and platform foundation
+Estimated duration: 6 to 8 weeks
+
+- Flutter application foundation.
+- Native camera modules.
+- Authentication.
+- Player profiles.
+- Local database.
+- Basic backend.
+- Camera setup and calibration UX.
+- Shared design system.
+- CI/CD.
+
+Exit criteria:
+
+- Stable camera preview on supported iOS and Android devices.
+- Account and offline profile flows work.
+- Calibration data can be saved and reused.
+
+Stage 2: Core live shot intelligence
+Estimated duration: 10 to 14 weeks
+
+- Custom RTMDet model.
+- MediaPipe Pose and Hands.
+- ByteTrack and Kalman integration.
+- Shot-event state machine.
+- Makes, attempts, misses, percentage, and streak.
+- Live overlays.
+- Session storage.
+- Basic summary and shot clips.
+
+Exit criteria:
+
+- Shot-counting and make/miss targets achieved on the controlled validation set.
+- Minimum supported devices complete a 60-minute session without failure.
+- Low-confidence outcomes are handled correctly.
+
+Stage 3: Advanced mechanics and coaching
+Estimated duration: 10 to 14 weeks
+
+- Release, arc, entry, timing, alignment, balance, and landing metrics.
+- Camera-angle eligibility.
+- Coaching rules.
+- Personalized recommendations.
+- Drill library and builder.
+- Progress dashboards.
+- Shot-location heatmaps.
+- Recorded-video analysis.
+
+Exit criteria:
+
+- Each released metric meets its defined validation threshold.
+- Coaching statements remain grounded in eligible measurements.
+- Players can complete the complete setup-to-report journey.
+
+Stage 4: Coach, team, payments, and public beta
+Estimated duration: 8 to 12 weeks
+
+- Coach roster.
+- Assignments.
+- Reviews and annotations.
+- Guardian flows.
+- Subscriptions.
+- Notifications.
+- Cloud synchronization.
+- Privacy controls.
+- Beta operations and support workflows.
+
+Exit criteria:
+
+- Store purchase flows pass sandbox testing.
+- Role and permission testing passes.
+- Youth-safety requirements are implemented.
+- Public beta quality gates are met.
+
+Stage 5: Advanced competitive intelligence
+Estimated duration: 12 to 16 weeks
+
+- Basketball-trained RTMPose.
+- Improved multi-player handling.
+- Advanced automatic shot classification.
+- Best-shot ghost comparison.
+- Adaptive training plans.
+- Advanced cloud review.
+- Trainer and academy capabilities.
+- Automatic highlight studio.
+- Model active-learning pipeline.
+
+Exit criteria:
+
+- Advanced models outperform the baseline on locked challenge datasets.
+- Commercial privacy and model-governance reviews pass.
+- Coach and academy pilots demonstrate measurable workflow value.
+
+Expected schedule:
+
+- Controlled MVP: approximately 4 to 6 months.
+- Strong public commercial release: approximately 7 to 10 months.
+- Complete advanced scope: approximately 10 to 14 months.
+
+Schedule assumes parallel mobile, backend, computer-vision, design, and quality
+engineering. A single developer can build a prototype, but not the complete
+validated product within these timelines.
+
+===============================================================================
+19. RECOMMENDED DELIVERY TEAM
+===============================================================================
+
+- Product manager or product owner.
+- Basketball domain lead.
+- Senior Flutter engineer.
+- Native iOS/Swift engineer.
+- Native Android/Kotlin engineer.
+- Computer-vision lead.
+- ML/data engineer.
+- Backend engineer.
+- Product designer.
+- QA automation engineer.
+- MLOps/DevOps engineer.
+- Data annotators and annotation-quality reviewer.
+- Privacy/security advisor.
+- Qualified basketball trainers for metric and coaching validation.
+
+Some roles may be combined by experienced team members, but camera, AI,
+basketball validation, and production quality must each have clear ownership.
+
+===============================================================================
+20. DELIVERABLES
+===============================================================================
+
+Product:
+
+- Final product requirements.
+- Prioritized backlog.
+- User journeys.
+- Acceptance criteria.
+- Release plan.
+
+Design:
+
+- Brand direction.
+- Design system.
+- iOS and Android responsive screens.
+- Interactive prototypes.
+- Live-overlay specifications.
+- Accessibility specifications.
+- App Store and Google Play assets.
+
+Mobile:
+
+- Complete Flutter source.
+- Native Swift modules.
+- Native Kotlin modules.
+- Camera and inference integrations.
+- Local data and synchronization.
+- Subscription integration.
+- Automated tests.
+
+AI and data:
+
+- Dataset schema.
+- Consent and provenance records.
+- Annotation guidelines.
+- RTMDet training configuration and weights.
+- Pose and hand integration.
+- RTMPose advanced model when included.
+- Tracking and state-machine code.
+- Evaluation reports.
+- Device benchmarks.
+- Model cards and limitations.
+
+Backend:
+
+- API services.
+- Database schemas and migrations.
+- Background workers.
+- Media processing.
+- Authentication and permissions.
+- Subscription verification.
+- Notifications.
+- Admin operations.
+- Automated tests.
+
+Infrastructure:
+
+- Docker files.
+- Deployment definitions.
+- CI/CD.
+- Monitoring and alerts.
+- Backup and disaster-recovery procedures.
+- Model registry and rollout pipeline.
+
+Documentation:
+
+- Architecture documentation.
+- API documentation.
+- Setup and deployment instructions.
+- Model-training guide.
+- Privacy and retention behavior.
+- Support runbooks.
+- App Store and Google Play release checklist.
+
+===============================================================================
+21. ACCEPTANCE CRITERIA
+===============================================================================
+
+The product is ready for public release only when:
+
+- Core workflows operate on supported iOS and Android devices.
+- A user can configure the camera without technical assistance.
+- The app reliably identifies when setup quality is inadequate.
+- The app detects the selected player, ball, and hoop.
+- Shot counting and make/miss classification meet approved validation targets.
+- Released mechanics metrics meet their individual error thresholds.
+- Confidence and uncertainty are visible and enforced.
+- Live overlays remain synchronized and stable.
+- A 60-minute session completes without crash, overheating failure, or
+  unbounded resource usage on the minimum supported device tier.
+- Offline sessions persist and synchronize safely.
+- Purchases, restoration, entitlement changes, and billing failures work.
+- Coach, guardian, and organization permissions pass security testing.
+- Account export and deletion work.
+- Youth-safety and privacy requirements are approved.
+- Store review requirements are satisfied.
+- Operational monitoring and incident response are active.
+- No known critical or high-severity security issue remains open.
+
+===============================================================================
+22. RISKS AND MITIGATIONS
+===============================================================================
+
+Risk: The basketball is small and moves quickly.
+Mitigation: Multi-scale training, high-shutter camera guidance, adaptive
+inference, Kalman prediction, optical flow, and basketball-specific data.
+
+Risk: A single camera cannot provide perfect 3D measurements.
+Mitigation: Camera-angle eligibility, court calibration, uncertainty ranges,
+multi-angle recorded analysis, and no false precision.
+
+Risk: Pose landmarks become unstable during occlusion.
+Mitigation: Player ROI tracking, confidence-aware smoothing, temporal pose
+models, RTMPose upgrade, and hiding invalid metrics.
+
+Risk: Different gyms create false detections.
+Mitigation: Diverse hard-negative data, scene-quality checks, saved court
+profiles, and continuous challenge-set testing.
+
+Risk: Live AI drains battery or overheats devices.
+Mitigation: Adaptive inference, native acceleration, ROI processing, model
+quantization, resolution scaling, and thermal-aware feature degradation.
+
+Risk: Incorrect coaching damages trust.
+Mitigation: Deterministic metric validation, confidence gates, qualified coach
+review, limited claims, and correction feedback.
+
+Risk: Youth video creates privacy and safety exposure.
+Mitigation: Local-first processing, guardian controls, private defaults, strict
+retention, no open messaging, consent management, and legal review.
+
+Risk: Model licensing creates commercial obligations.
+Mitigation: Use MediaPipe, RTMDet/MMDetection, RTMPose/MMPose, ByteTrack, and
+OpenCV only after dependency-level license review. Do not introduce Ultralytics
+YOLO into the proprietary production product without an approved commercial
+license and legal review.
+
+Risk: Product tries to ship too many metrics before validation.
+Mitigation: Release only metrics that meet defined quality gates. Keep
+experimental metrics labeled and outside authoritative coaching.
+
+===============================================================================
+23. LICENSING AND INTELLECTUAL PROPERTY
+===============================================================================
+
+- Maintain a software bill of materials.
+- Review the license of every code dependency, pretrained weight, dataset,
+  font, sound, illustration, and video asset.
+- MediaPipe is intended as the initial pose and hand implementation, subject
+  to final dependency review.
+- RTMDet must be sourced and trained through an approved Apache 2.0-compatible
+  MMDetection path.
+- RTMPose must be sourced through the approved MMPose path.
+- Confirm licenses for pretrained checkpoints separately from framework code.
+- Do not assume that a public video or dataset is commercially reusable.
+- Own or license every training example.
+- Protect custom datasets, event logic, calibration, scoring, and coaching
+  systems as company intellectual property.
+- The working name ArcVanta AI requires professional trademark and marketplace
+  clearance before brand investment or release.
+
+===============================================================================
+24. COMPETITIVE DIFFERENTIATION
+===============================================================================
+
+ArcVanta AI should compete through validated product depth rather than a larger
+number of unverified metrics.
+
+Key differentiators:
+
+- Full body plus hand analysis.
+- Ball, rim, net, player, and court understanding.
+- Camera-angle-aware metrics.
+- Visible confidence and honest uncertainty.
+- Real-time local processing.
+- Basketball-trained temporal event engine.
+- Personalized comparison against the player's own best makes.
+- Shot mechanics connected to actual results.
+- Automatic drills selected from measured weaknesses.
+- Player, parent, coach, team, and academy workflows in one system.
+- Commercially deliberate open-source licensing strategy.
+- Private-by-default youth experience.
+- High-quality live GPU-generated graphics.
+- Offline training capability.
+- Dataset and model improvement program.
+
+The product must not claim to "beat every competitor" until independent
+benchmarks demonstrate it. The measurable objective is to outperform selected
+competitors on:
+
+- Shot-count accuracy.
+- Make/miss accuracy.
+- Ball-track continuity.
+- Pose stability.
+- Number of validated actionable metrics.
+- Time required to start a session.
+- On-device latency.
+- Coaching usefulness.
+- Privacy controls.
+- Coach workflow completion time.
+
+===============================================================================
+25. FINAL PRODUCT DEFINITION
+===============================================================================
+
+ArcVanta AI is complete when a player can place one iPhone or Android phone on
+a tripod, receive reliable setup guidance, complete an uninterrupted workout,
+obtain accurate shot results and eligible biomechanics, understand the most
+important improvement, follow a personalized drill, and demonstrate progress
+over time.
+
+The reference video's skeleton, ball box, hoop box, trajectory, and shot
+counter are the visual foundation. The commercial product is the complete
+system around them: calibration, tracking, temporal intelligence, validated
+metrics, coaching, progress, privacy, teams, monetization, and continuous model
+improvement.
+
+END OF SCOPE
