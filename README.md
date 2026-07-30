@@ -62,6 +62,14 @@ support it and how it is presented. Screens read from it rather than formatting
 metrics themselves, so a shot detail, a session summary and a coach review all
 describe the same measurement identically.
 
+## Decisions
+
+Architecture decisions live in `docs/adr`. The capture pipeline is simulated in
+this repository, but the models behind it are already chosen:
+[the vision model stack](docs/adr/0001-vision-model-stack.md) is RTMDet for
+detection with MediaPipe Pose first and basketball-trained RTMPose second, all
+Apache 2.0, so nothing in the analysis path constrains how the app is licensed.
+
 ## Testing
 
 ```bash
