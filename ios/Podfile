@@ -1,5 +1,5 @@
-# ONNX Runtime needs iOS 13 for the Core ML execution provider.
-platform :ios, '13.0'
+# ONNX Runtime Core ML provider and modern Flutter require iOS 16+.
+platform :ios, '16.0'
 
 # CocoaPods analytics sends network stats synchronously, which slows the build.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -52,7 +52,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
     end
   end
 end
