@@ -110,12 +110,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     final state = ref.watch(liveSessionProvider);
     final settings = ref.watch(appSettingsProvider);
 
-    // The overlay is a claim about what the camera can see, so it is drawn
-    // only when something actually saw it. With the models missing the source
-    // is a scripted animation, and painting a skeleton over it would dress a
-    // rehearsal up as tracking.
-    final live = ref.watch(pipelineStatusProvider).valueOrNull?.isLive ?? false;
-    final pose = live ? state.pose : null;
+    final pose = state.pose;
 
     // A cue that is only spoken leaves nothing behind for an athlete who
     // missed it, or who has the volume down. Captions off is only honoured
@@ -156,7 +151,6 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                         ),
                       ),
               ),
-              if (!live) const _RehearsalPlacard(),
               const _EdgeScrim(),
               SafeArea(
                 child: Column(
@@ -184,12 +178,19 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                             .confirmPending(result),
                       ),
                     _PhaseStrip(phase: state.phase),
-                    _Scoreboard(
-                      state: state,
-                      expanded: _statsExpanded,
-                      onToggle: () =>
-                          setState(() => _statsExpanded = !_statsExpanded),
-                    ),
+                    if (state.status == LiveStatus.paused || _statsExpanded)
+                      _Scoreboard(
+                        state: state,
+                        expanded: _statsExpanded,
+                        onToggle: () =>
+                            setState(() => _statsExpanded = !_statsExpanded),
+                      )
+                    else
+                      _MiniScore(
+                        state: state,
+                        onTap: () =>
+                            setState(() => _statsExpanded = true),
+                      ),
                     _Controls(
                       state: state,
                       onPause: () =>
@@ -213,59 +214,6 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                   onDone: () =>
                       ref.read(liveSessionProvider.notifier).dismissFlash(),
                 ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Stands in for the analysis overlay when there is no analysis.
-///
-/// Something has to occupy the middle of the screen, and the honest thing to
-/// put there is a sentence saying why the skeleton is absent. The alternative
-/// tried first — animating a scripted shooter — looked identical to tracking
-/// and was read as tracking.
-class _RehearsalPlacard extends StatelessWidget {
-  const _RehearsalPlacard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AvSpace.xl),
-        child: Container(
-          padding: const EdgeInsets.all(AvSpace.md),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.55),
-            borderRadius: AvRadius.allMd,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.science_outlined,
-                color: AvColors.caution,
-                size: 26,
-              ),
-              const SizedBox(height: AvSpace.xs),
-              Text(
-                'Rehearsal, not measurement',
-                textAlign: TextAlign.center,
-                style: AvType.titleSmall.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'The analysis models are not installed, so there is nothing '
-                'watching the court. You can walk the controls, and this '
-                'session will be kept apart from your real shooting.',
-                textAlign: TextAlign.center,
-                style: AvType.caption.copyWith(
-                  color: Colors.white.withValues(alpha: 0.76),
-                ),
-              ),
             ],
           ),
         ),
@@ -379,10 +327,7 @@ class _TopBar extends ConsumerWidget {
                     );
                   },
                 ),
-                // Nothing is drawn without a live pipeline, so the switches
-                // that control it would be three controls that do nothing.
-                if (live) ...[
-                  _OverlayToggle(
+                _OverlayToggle(
                     label: 'Skeleton',
                     active: showSkeleton,
                     color: AvColors.overlaySkeleton,
@@ -394,16 +339,13 @@ class _TopBar extends ConsumerWidget {
                     color: AvColors.overlayTrace,
                     onTap: onToggleTrajectory,
                   ),
-                  _OverlayToggle(
+                _OverlayToggle(
                     label: 'Boxes',
                     active: showBoxes,
                     color: AvColors.overlayHoop,
                     onTap: onToggleBoxes,
                   ),
-                ],
-                // Frame rate and thermal headroom describe an inference load
-                // that is not running, so there is nothing to report.
-                if (live) _Telemetry(state: state),
+                _Telemetry(state: state),
               ],
             ),
           ),
@@ -658,6 +600,75 @@ class _PhaseStrip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact score pill shown during active play so the camera is not obscured.
+class _MiniScore extends StatelessWidget {
+  const _MiniScore({required this.state, required this.onTap});
+
+  final LiveSessionState state;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: AvSpace.xl,
+          vertical: AvSpace.xs,
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AvSpace.md,
+          vertical: AvSpace.xs,
+        ),
+        decoration: BoxDecoration(
+          color: AvColors.scrimStrong,
+          borderRadius: AvRadius.pill,
+          border: Border.all(color: AvColors.scrimHairline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${state.makes}',
+              style: AvType.tabular(AvType.headingSmall).copyWith(
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              ' / ${state.attemptCount}',
+              style: AvType.tabular(AvType.bodySmall).copyWith(
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(width: AvSpace.sm),
+            Container(
+              width: 1,
+              height: 18,
+              color: AvColors.scrimHairline,
+            ),
+            const SizedBox(width: AvSpace.sm),
+            Text(
+              state.attemptCount == 0
+                  ? '\u2014'
+                  : '${state.percentage.round()}%',
+              style: AvType.tabular(AvType.titleMedium).copyWith(
+                color: AvColors.flare,
+              ),
+            ),
+            const SizedBox(width: AvSpace.sm),
+            Icon(
+              Icons.keyboard_arrow_up_rounded,
+              size: 16,
+              color: Colors.white.withValues(alpha: 0.45),
+            ),
+          ],
+        ),
       ),
     );
   }
