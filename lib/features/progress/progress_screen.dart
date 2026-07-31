@@ -84,6 +84,11 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     final explanations = ref.watch(trendExplanationsProvider);
     final sessions = ref.watch(sessionStoreProvider);
 
+    // Every panel below is a reading of recorded work. With nothing recorded
+    // the page is a grid of zeros and blank axes, which reads like a bug
+    // rather than a starting point.
+    if (sessions.isEmpty) return _awaitingHistory(context);
+
     final trained = points.where((p) => p.trained).toList(growable: false);
     final values = [for (final p in trained) _metric.read(p)];
     final labels = _axisLabels(trained);
@@ -312,6 +317,30 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     );
   }
 
+  Widget _awaitingHistory(BuildContext context) {
+    return AvScaffold(
+      title: 'Progress',
+      subtitle: 'What has actually changed, and why',
+      slivers: [
+        SliverGutter(
+          top: AvSpace.lg,
+          child: AvEmptyState(
+            icon: Icons.timeline_rounded,
+            title: 'Nothing to compare yet',
+            message:
+                'Trends need at least two recorded sessions. Run one, then '
+                'another, and this page will show what moved between them.',
+            action: AvButton(
+              label: 'Start a session',
+              icon: Icons.play_arrow_rounded,
+              onPressed: () => context.go(AppRoute.drills),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   double _changeOverRange(List<double> values) {
     if (values.length < 4) return 0;
     final half = values.length ~/ 2;
@@ -399,7 +428,7 @@ class _SummaryPanel extends StatelessWidget {
               ),
               const SizedBox(width: AvSpace.xs),
               AvPill(
-                label: '${points.length} sessions',
+                label: Fmt.count(points.length, 'session'),
                 color: AvColors.textOnInkMuted,
                 dense: true,
               ),

@@ -3,17 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
+import '../../core/platform/device_identity.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
 import '../../data/models/confidence.dart';
 import '../../data/models/profile.dart';
+import '../../data/models/subscription.dart';
 import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/app_settings.dart';
+import '../../state/entitlement.dart';
 import '../../state/stores.dart';
 
 /// Account home: who you are, how the app behaves for you, and the way out of
@@ -46,25 +49,28 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               children: [
                 AvKeyValue(label: 'Age band', value: profile.ageBand),
-                AvKeyValue(label: 'Height', value: profile.heightLabel),
-                AvKeyValue(
-                  label: 'Wingspan',
-                  value: '${profile.wingspanCm} cm',
-                ),
+                if (profile.heightCm > 0)
+                  AvKeyValue(label: 'Height', value: profile.heightLabel),
+                if (profile.wingspanCm > 0)
+                  AvKeyValue(
+                    label: 'Wingspan',
+                    value: '${profile.wingspanCm} cm',
+                  ),
                 AvKeyValue(
                   label: 'Shooting hand',
                   value: profile.dominantHand.label,
                 ),
                 AvKeyValue(label: 'Position', value: profile.position.label),
                 AvKeyValue(label: 'Level', value: profile.skillLevel.label),
-                AvKeyValue(label: 'Coach', value: profile.coachName),
+                if (profile.coachName.isNotEmpty)
+                  AvKeyValue(label: 'Coach', value: profile.coachName),
                 if (profile.isMinor && profile.guardianName != null)
                   AvKeyValue(
                     label: 'Guardian',
                     value: profile.guardianName!,
                     trailing: const AvPill(
-                      label: 'Approved',
-                      color: AvColors.made,
+                      label: 'On record',
+                      color: AvColors.court,
                       dense: true,
                     ),
                   ),
@@ -94,8 +100,10 @@ class ProfileScreen extends ConsumerWidget {
                         style: AvType.titleMedium.primary,
                       ),
                       Text(
-                        '${entitlement.state.label} \u00B7 '
-                        '${entitlement.period.label}',
+                        entitlement.tier == PlanTier.free
+                            ? 'Everything unlocked on this device'
+                            : '${entitlement.state.label} \u00B7 '
+                                  '${entitlement.period.label}',
                         style: AvType.caption.faint,
                       ),
                     ],
@@ -296,13 +304,13 @@ class ProfileScreen extends ConsumerWidget {
                 _NavRow(
                   icon: Icons.shield_rounded,
                   label: 'Privacy and data',
-                  detail: 'Processing, retention, sharing and deletion',
+                  detail: 'Where your data lives, and how to remove it',
                   onTap: () => context.push(AppRoute.privacy),
                 ),
                 _NavRow(
                   icon: Icons.phone_iphone_rounded,
                   label: 'Device and capture',
-                  detail: 'Frame rate, thermal guard, storage budget',
+                  detail: 'Frame rate, thermal guard, storage used',
                   onTap: () => context.push(AppRoute.device),
                 ),
                 _NavRow(
@@ -312,9 +320,9 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push(AppRoute.notifications),
                 ),
                 _NavRow(
-                  icon: Icons.movie_creation_rounded,
+                  icon: Icons.bookmark_added_rounded,
                   label: 'Highlights',
-                  detail: 'Saved reels and who can see them',
+                  detail: 'Moments you saved from a session',
                   onTap: () => context.push(AppRoute.highlights),
                 ),
                 _NavRow(
@@ -336,11 +344,11 @@ class ProfileScreen extends ConsumerWidget {
         SliverGutter(
           top: AvSpace.lg,
           child: AvButton(
-            label: 'Sign out',
+            label: 'Start over',
             variant: AvButtonVariant.outline,
-            icon: Icons.logout_rounded,
+            icon: Icons.restart_alt_rounded,
             expand: true,
-            onPressed: () => _confirmSignOut(context, ref),
+            onPressed: () => _confirmStartOver(context, ref),
           ),
         ),
         SliverGutter(
@@ -351,7 +359,7 @@ class ProfileScreen extends ConsumerWidget {
                 const AvBrandLockup(markSize: 28, fontSize: 15),
                 const SizedBox(height: AvSpace.xs),
                 Text(
-                  'Version 1.0.0 \u00B7 build 100',
+                  'Version ${DeviceIdentity.appVersion}',
                   style: AvType.caption.faint,
                 ),
               ],
@@ -362,14 +370,19 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmSignOut(BuildContext context, WidgetRef ref) {
+  /// There is no account to sign out of, so this returns the app to its
+  /// first-run settings and walks the setup again. Recorded sessions are
+  /// deliberately left alone; erasing them lives in Privacy, behind its own
+  /// confirmation, where someone looking to delete their data would go.
+  void _confirmStartOver(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign out'),
+        title: const Text('Start over'),
         content: const Text(
-          'Sessions stored on this device stay on this device. You will need '
-          'to sign in again to sync with your coach.',
+          'This resets your preferences and runs setup again. Your recorded '
+          'sessions are kept — to erase those, use Delete everything under '
+          'Privacy and data.',
         ),
         actions: [
           TextButton(
@@ -382,7 +395,7 @@ class ProfileScreen extends ConsumerWidget {
               Navigator.of(context).pop();
               context.go(AppRoute.splash);
             },
-            child: const Text('Sign out'),
+            child: const Text('Start over'),
           ),
         ],
       ),

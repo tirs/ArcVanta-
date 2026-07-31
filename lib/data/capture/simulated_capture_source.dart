@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/shot.dart';
 import '../seed/shot_factory.dart';
+import 'calibration_source.dart';
 import 'capture_source.dart';
 import 'live_scene.dart';
 import 'shot_cycle.dart';
 import 'simulated_pose.dart';
+import 'simulated_scene.dart';
 
 /// A [CaptureSource] that plays a plausible session without a camera.
 ///
@@ -13,7 +17,7 @@ import 'simulated_pose.dart';
 /// the inference bridge lands, and so the screens are never written against a
 /// pipeline that only works on a device. Timings come from [ShotCycle] and the
 /// measurements from [ShotFactory], both deterministic for a given drill.
-class SimulatedCaptureSource implements CaptureSource {
+class SimulatedCaptureSource implements CaptureSource, CalibrationSource {
   SimulatedCaptureSource({
     this.frameInterval = const Duration(milliseconds: 60),
   });
@@ -24,7 +28,10 @@ class SimulatedCaptureSource implements CaptureSource {
 
   final _frames = StreamController<CaptureFrame>.broadcast();
   final _shots = StreamController<Shot>.broadcast();
+  final _observations = StreamController<CalibrationObservation>.broadcast();
 
+  Timer? _preview;
+  int _previewFrame = 0;
   Timer? _clock;
   ShotFactory? _factory;
   CaptureRequest? _request;
@@ -39,7 +46,42 @@ class SimulatedCaptureSource implements CaptureSource {
   Stream<Shot> get shots => _shots.stream;
 
   @override
+  Stream<CalibrationObservation> get observations => _observations.stream;
+
+  /// Always null. A simulation has no camera, and saying so is what lets the
+  /// preview widget label the schematic honestly instead of dressing it up.
+  @override
+  ValueListenable<int?> get previewTexture => _noTexture;
+
+  static final ValueNotifier<int?> _noTexture = ValueNotifier<int?>(null);
+
+  @override
+  Future<void> startPreview({bool tripod = true}) async {
+    _previewFrame = 0;
+    _preview?.cancel();
+    // The ring takes a beat to appear, the way it does while the athlete is
+    // still lining the phone up.
+    _preview = Timer.periodic(frameInterval, (_) {
+      _previewFrame++;
+      if (_observations.isClosed) return;
+      _observations.add(
+        SimulatedScene.observation(
+          frame: _previewFrame,
+          rimVisible: _previewFrame > 3,
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<void> stopPreview() async {
+    _preview?.cancel();
+    _preview = null;
+  }
+
+  @override
   Future<void> start(CaptureRequest request) async {
+    await stopPreview();
     _request = request;
     _factory = ShotFactory(
       seed: request.drill.id.hashCode & 0xFFFF,
@@ -78,8 +120,10 @@ class SimulatedCaptureSource implements CaptureSource {
   @override
   Future<void> dispose() async {
     await stop();
+    await stopPreview();
     await _frames.close();
     await _shots.close();
+    await _observations.close();
   }
 
   void _startClock() {
@@ -153,12 +197,21 @@ class SimulatedCaptureSource implements CaptureSource {
 ///
 /// Screens under test mount against this and drive frames and shots explicitly,
 /// so no test depends on a timer or on wall-clock timing.
-class ScriptedCaptureSource implements CaptureSource {
+class ScriptedCaptureSource implements CaptureSource, CalibrationSource {
   final _frames = StreamController<CaptureFrame>.broadcast();
   final _shots = StreamController<Shot>.broadcast();
+  final _observations = StreamController<CalibrationObservation>.broadcast();
 
   CaptureRequest? request;
   bool running = false;
+  bool previewing = false;
+
+  /// Settable so a test can assert what the preview widget does with and
+  /// without a camera texture.
+  final ValueNotifier<int?> textureId = ValueNotifier<int?>(null);
+
+  @override
+  ValueListenable<int?> get previewTexture => textureId;
 
   @override
   Stream<CaptureFrame> get frames => _frames.stream;
@@ -166,9 +219,26 @@ class ScriptedCaptureSource implements CaptureSource {
   @override
   Stream<Shot> get shots => _shots.stream;
 
+  @override
+  Stream<CalibrationObservation> get observations => _observations.stream;
+
   void emitFrame(CaptureFrame frame) => _frames.add(frame);
 
   void emitShot(Shot shot) => _shots.add(shot);
+
+  void emitObservation(CalibrationObservation observation) =>
+      _observations.add(observation);
+
+  /// A scene the solver can actually calibrate against, for tests that need a
+  /// calibrated screen without driving the geometry themselves.
+  void emitSolvableScene({int frame = 12}) =>
+      _observations.add(SimulatedScene.observation(frame: frame));
+
+  @override
+  Future<void> startPreview({bool tripod = true}) async => previewing = true;
+
+  @override
+  Future<void> stopPreview() async => previewing = false;
 
   /// A representative frame at a point in the shot cycle, so a test can put the
   /// interface into a known state without waiting for anything.
@@ -207,5 +277,6 @@ class ScriptedCaptureSource implements CaptureSource {
   Future<void> dispose() async {
     await _frames.close();
     await _shots.close();
+    await _observations.close();
   }
 }

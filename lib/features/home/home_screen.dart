@@ -9,15 +9,17 @@ import '../../core/theme/av_typography.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/program.dart';
 import '../../data/models/progress.dart';
-import '../../data/seed/seed_data.dart';
 import '../../design/charts/av_court_map.dart';
 import '../../design/charts/av_line_chart.dart';
 import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_surface.dart';
+import '../../state/demo_mode.dart';
 import '../../state/stores.dart';
+import '../../state/team.dart';
 import '../shared/coaching_cue_card.dart';
 import '../shared/session_card.dart';
 
@@ -33,8 +35,9 @@ class HomeScreen extends ConsumerWidget {
     final assignments = ref.watch(assignmentStoreProvider);
     final unread = ref.watch(unreadNotificationCountProvider);
     final week = ref.watch(progressProvider(TrendRange.week));
+    final showingSample = ref.watch(showingSampleDataProvider);
 
-    final latest = sessions.first;
+    final latest = sessions.isEmpty ? null : sessions.first;
     final today = _todayPlanDay(plan);
     final myAssignments = assignments
         .where((a) => a.athleteId == profile.id)
@@ -87,84 +90,114 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            if (showingSample)
+              SliverGutter(
+                bottom: AvSpace.md,
+                child: AvSampleDataBanner(
+                  onTurnOff: () =>
+                      ref.read(demoModeProvider).setEnabled(false),
+                ),
+              ),
             SliverGutter(child: _StartCard(planDay: today)),
-            SliverGutter(
-              top: AvSpace.md,
-              child: _WeekStrip(points: week),
-            ),
-            if (latest.primaryCue != null)
+            if (latest == null)
               SliverGutter(
                 top: AvSpace.md,
-                child: CoachingCueCard(
-                  cue: latest.primaryCue!,
-                  onDrillTap: (drillId) =>
-                      context.push(AppRoute.drill(drillId)),
+                child: AvEmptyState(
+                  icon: Icons.sports_basketball_rounded,
+                  title: 'No sessions yet',
+                  message:
+                      'Set your phone down where it can see the ring, run a '
+                      'drill, and everything on this page fills in from what '
+                      'the camera measures.',
+                  accent: AvColors.flare,
+                  action: AvButton(
+                    label: 'Pick a drill',
+                    icon: Icons.arrow_forward_rounded,
+                    onPressed: () => context.go(AppRoute.drills),
+                  ),
+                ),
+              )
+            else ...[
+              SliverGutter(
+                top: AvSpace.md,
+                child: _WeekStrip(points: week),
+              ),
+              if (latest.primaryCue != null)
+                SliverGutter(
+                  top: AvSpace.md,
+                  child: CoachingCueCard(
+                    cue: latest.primaryCue!,
+                    onDrillTap: (drillId) =>
+                        context.push(AppRoute.drill(drillId)),
+                  ),
+                ),
+              SliverToBoxAdapter(
+                child: AvSectionHeader(
+                  title: 'Last session',
+                  subtitle:
+                      '${latest.drillName} \u00B7 ${Fmt.relative(latest.startedAt)}',
+                  accent: AvColors.flare,
+                  action: AvTextAction(
+                    label: 'All sessions',
+                    onPressed: () => context.push(AppRoute.sessions),
+                  ),
                 ),
               ),
-            SliverToBoxAdapter(
-              child: AvSectionHeader(
-                title: 'Last session',
-                subtitle:
-                    '${latest.drillName} \u00B7 ${Fmt.relative(latest.startedAt, now: SeedData.today.add(const Duration(hours: 11)))}',
-                accent: AvColors.flare,
-                action: AvTextAction(
-                  label: 'All sessions',
-                  onPressed: () => context.push(AppRoute.sessions),
+              SliverGutter(
+                child: SessionCard(
+                  session: latest,
+                  onTap: () => context.push(AppRoute.session(latest.id)),
                 ),
               ),
-            ),
-            SliverGutter(
-              child: SessionCard(
-                session: latest,
-                onTap: () => context.push(AppRoute.session(latest.id)),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: AvSectionHeader(
-                title: 'Where the shots fell',
-                subtitle: 'Zone accuracy from your last session',
-                accent: AvColors.court,
-                action: AvTextAction(
-                  label: 'Full chart',
-                  onPressed: () => context.push(AppRoute.heatmap),
+              SliverToBoxAdapter(
+                child: AvSectionHeader(
+                  title: 'Where the shots fell',
+                  subtitle: 'Zone accuracy from your last session',
+                  accent: AvColors.court,
+                  action: AvTextAction(
+                    label: 'Full chart',
+                    onPressed: () => context.push(AppRoute.heatmap),
+                  ),
                 ),
               ),
-            ),
-            SliverGutter(
-              child: AvCard(
-                child: Column(
+              SliverGutter(
+                child: AvCard(
+                  child: Column(
+                    children: [
+                      AvCourtMap(
+                        zones: latest.zoneBreakdown,
+                        onZoneTap: (_) => context.push(AppRoute.heatmap),
+                      ),
+                      const SizedBox(height: AvSpace.sm),
+                      const AvCourtLegend(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (goals.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: AvSectionHeader(
+                  title: 'Goals',
+                  subtitle:
+                      '${goals.where((g) => g.achieved).length} of ${goals.length} reached',
+                  accent: AvColors.insight,
+                  action: AvTextAction(
+                    label: 'Manage',
+                    onPressed: () => context.push(AppRoute.goals),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: AvCarousel(
+                  height: 148,
                   children: [
-                    AvCourtMap(
-                      zones: latest.zoneBreakdown,
-                      onZoneTap: (_) => context.push(AppRoute.heatmap),
-                    ),
-                    const SizedBox(height: AvSpace.sm),
-                    const AvCourtLegend(),
+                    for (final goal in goals)
+                      SizedBox(width: 224, child: _GoalCard(goal: goal)),
                   ],
                 ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: AvSectionHeader(
-                title: 'Goals',
-                subtitle:
-                    '${goals.where((g) => g.achieved).length} of ${goals.length} reached',
-                accent: AvColors.insight,
-                action: AvTextAction(
-                  label: 'Manage',
-                  onPressed: () => context.push(AppRoute.goals),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: AvCarousel(
-                height: 148,
-                children: [
-                  for (final goal in goals)
-                    SizedBox(width: 224, child: _GoalCard(goal: goal)),
-                ],
-              ),
-            ),
+            ],
             if (myAssignments.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: AvSectionHeader(
@@ -238,7 +271,8 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  static PlanDay? _todayPlanDay(TrainingPlan plan) {
+  static PlanDay? _todayPlanDay(TrainingPlan? plan) {
+    if (plan == null) return null;
     for (final day in plan.days) {
       if (!day.completed && day.kind != PlanDayKind.rest) return day;
     }
@@ -417,7 +451,10 @@ class _WeekStrip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AvSpace.xs),
-              Text('$sessions sessions', style: AvType.caption.faint),
+              Text(
+                Fmt.count(sessions, 'session'),
+                style: AvType.caption.faint,
+              ),
             ],
           ),
           const SizedBox(height: AvSpace.sm),
@@ -457,14 +494,18 @@ class _WeekStrip extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AvSpace.md),
-          AvSparkline(
-            values: points
-                .map((p) => p.trained ? p.percentage : double.nan)
-                .toList(growable: false),
-            color: AvColors.flare,
-            height: 40,
-          ),
+          // One session is a dot, not a trend. Reserving chart height for it
+          // leaves a conspicuous empty band under the numbers.
+          if (sessions > 1) ...[
+            const SizedBox(height: AvSpace.md),
+            AvSparkline(
+              values: points
+                  .map((p) => p.trained ? p.percentage : double.nan)
+                  .toList(growable: false),
+              color: AvColors.flare,
+              height: 40,
+            ),
+          ],
         ],
       ),
     );
@@ -575,13 +616,27 @@ class _GoalCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(
-                    '${goal.current.toStringAsFixed(goal.current % 1 == 0 ? 0 : 1)}${goal.unit}',
-                    style: AvType.metricMedium.copyWith(color: goal.kind.color),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${goal.current.toStringAsFixed(goal.current % 1 == 0 ? 0 : 1)}${goal.unit}',
+                        maxLines: 1,
+                        style: AvType.metricMedium.copyWith(
+                          color: goal.kind.color,
+                        ),
+                      ),
+                    ),
                   ),
-                  Text(
-                    '  of ${goal.target.toStringAsFixed(goal.target % 1 == 0 ? 0 : 1)}${goal.unit}',
-                    style: AvType.caption.faint,
+                  Flexible(
+                    child: Text(
+                      '  of ${goal.target.toStringAsFixed(goal.target % 1 == 0 ? 0 : 1)}${goal.unit}',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: AvType.caption.faint,
+                    ),
                   ),
                 ],
               ),
@@ -642,7 +697,7 @@ class _AssignmentCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   '${assignment.completedMakes} of ${assignment.targetMakes} makes \u00B7 due '
-                  '${Fmt.relative(assignment.dueAt, now: SeedData.today)}',
+                  '${Fmt.relative(assignment.dueAt)}',
                   style: AvType.caption.muted,
                 ),
               ],

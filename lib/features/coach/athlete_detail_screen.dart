@@ -17,9 +17,11 @@ import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_stats.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/stores.dart';
+import '../../state/team.dart';
 import '../shared/session_card.dart';
 
 /// Everything a coach needs on one athlete: trend, current work, open
@@ -32,6 +34,8 @@ class AthleteDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final athlete = ref.watch(athleteByIdProvider(athleteId));
+    if (athlete == null) return const _AthleteUnavailable();
+
     final assignments = ref
         .watch(assignmentStoreProvider)
         .where((a) => a.athleteId == athleteId)
@@ -53,15 +57,6 @@ class AthleteDetailScreen extends ConsumerWidget {
       title: athlete.name,
       subtitle: '${athlete.position.label} \u00B7 ${athlete.ageBand}',
       leading: const AvBackButton(),
-      actions: [
-        AvIconButton(
-          icon: Icons.chat_bubble_outline_rounded,
-          tooltip: 'Message',
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Messaging opens with the team app')),
-          ),
-        ),
-      ],
       bottomBar: AvBottomBar(
         children: [
           Expanded(
@@ -450,6 +445,35 @@ class AssignmentCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Shown when the roster cannot resolve the athlete.
+///
+/// Which is every time in this build: rosters live on a server that does not
+/// exist yet. The screen says that rather than rendering a profile for
+/// somebody made up.
+class _AthleteUnavailable extends StatelessWidget {
+  const _AthleteUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AvScaffold(
+      title: 'Athlete',
+      subtitle: 'Not available',
+      leading: AvBackButton(),
+      slivers: [
+        SliverGutter(
+          child: AvUnavailableFeature(
+            icon: Icons.groups_2_outlined,
+            headline: TeamFeatures.unavailableHeadline,
+            body: TeamFeatures.unavailableBody,
+            footnote:
+                'Your own sessions, measurements and history are unaffected.',
+          ),
+        ),
+      ],
     );
   }
 }

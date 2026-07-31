@@ -217,30 +217,34 @@ enum HighlightVisibility {
   };
 }
 
+/// A moment worth coming back to.
+///
+/// A bookmark into a stored session, not a video. No frames are written to
+/// disk anywhere in this build, so a highlight is the shots it points at and
+/// the measurements already held against them.
 class Highlight {
   const Highlight({
     required this.id,
     required this.title,
     required this.kind,
     required this.createdAt,
-    required this.duration,
-    required this.clipCount,
+    required this.shotCount,
     required this.sessionId,
     required this.visibility,
     required this.accent,
-    required this.metricsBurnedIn,
   });
 
   final String id;
   final String title;
   final HighlightKind kind;
   final DateTime createdAt;
-  final Duration duration;
-  final int clipCount;
+
+  /// How many shots the moment covers.
+  final int shotCount;
+
   final String sessionId;
   final HighlightVisibility visibility;
   final Color accent;
-  final bool metricsBurnedIn;
 }
 
 enum NotificationKind {
@@ -255,7 +259,7 @@ enum NotificationKind {
     NotificationKind.training => 'Training reminder',
     NotificationKind.assignment => 'Coach assignment',
     NotificationKind.progress => 'Goal and streak',
-    NotificationKind.analysis => 'Cloud analysis',
+    NotificationKind.analysis => 'Session measured',
     NotificationKind.account => 'Account and billing',
     NotificationKind.safety => 'Guardian and safety',
   };
@@ -264,7 +268,7 @@ enum NotificationKind {
     NotificationKind.training => Icons.alarm_rounded,
     NotificationKind.assignment => Icons.assignment_rounded,
     NotificationKind.progress => Icons.trending_up_rounded,
-    NotificationKind.analysis => Icons.cloud_done_rounded,
+    NotificationKind.analysis => Icons.insights_rounded,
     NotificationKind.account => Icons.credit_card_rounded,
     NotificationKind.safety => Icons.shield_moon_rounded,
   };

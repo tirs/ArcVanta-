@@ -6,15 +6,17 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../../core/utils/formatters.dart';
 import '../../data/models/profile.dart';
 import '../../design/charts/av_bar_chart.dart';
 import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_stats.dart';
 import '../../design/components/av_surface.dart';
-import '../../state/stores.dart';
+import '../../state/team.dart';
 
 /// Team-level view. Leaderboards are opt-in and only ever list verified work,
 /// which the scope makes a hard requirement rather than a setting.
@@ -31,6 +33,8 @@ class _TeamDashboardScreenState extends ConsumerState<TeamDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!TeamFeatures.isAvailable) return const _TeamUnavailable();
+
     final roster = ref.watch(rosterProvider);
     final sessions = roster.fold<int>(0, (s, a) => s + a.sessionsThisWeek);
     final averageAccuracy = roster.isEmpty
@@ -53,7 +57,7 @@ class _TeamDashboardScreenState extends ConsumerState<TeamDashboardScreen> {
 
     return AvScaffold(
       title: 'Team',
-      subtitle: 'Northgate Prep \u00B7 ${roster.length} athletes',
+      subtitle: Fmt.count(roster.length, 'athlete'),
       leading: const AvBackButton(),
       slivers: [
         SliverGutter(
@@ -148,7 +152,7 @@ class _TeamDashboardScreenState extends ConsumerState<TeamDashboardScreen> {
                     label: athlete.name,
                     value: athlete.percentage,
                     color: athlete.accentColor,
-                    caption: '${athlete.sessionsThisWeek} sessions',
+                    caption: Fmt.count(athlete.sessionsThisWeek, 'session'),
                   ),
               ],
               maxValue: 70,
@@ -328,6 +332,30 @@ class _LeaderRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Team aggregates describe a group of athletes. With no roster there is no group, and averaging fabricated players would be meaningless.
+class _TeamUnavailable extends StatelessWidget {
+  const _TeamUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AvScaffold(
+      title: 'Team',
+      subtitle: 'Not available in this build',
+      leading: AvBackButton(),
+      slivers: [
+        SliverGutter(
+          child: AvUnavailableFeature(
+            icon: Icons.insights_outlined,
+            headline: TeamFeatures.unavailableHeadline,
+            body: TeamFeatures.unavailableBody,
+            footnote: 'Team analytics aggregate several athletes, which needs several accounts.',
+          ),
+        ),
+      ],
     );
   }
 }

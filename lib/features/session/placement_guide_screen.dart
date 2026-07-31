@@ -15,6 +15,7 @@ import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
+import '../../state/capture_pipeline.dart';
 import '../../state/live_session.dart';
 
 /// Teaches the athlete where to put the phone before capture begins.
@@ -34,7 +35,7 @@ class PlacementGuideScreen extends ConsumerStatefulWidget {
 class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
   late Drill _drill;
   late CameraAngle _angle;
-  bool _stabilised = true;
+  late bool _stabilised = ref.read(tripodDeclaredProvider);
 
   @override
   void initState() {
@@ -165,7 +166,10 @@ class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
                 ),
                 Switch(
                   value: _stabilised,
-                  onChanged: (value) => setState(() => _stabilised = value),
+                  onChanged: (value) {
+                    setState(() => _stabilised = value);
+                    ref.read(tripodDeclaredProvider.notifier).set(value);
+                  },
                 ),
               ],
             ),

@@ -130,19 +130,32 @@ class _AvLineChartState extends State<AvLineChart> {
 
             // Thin the ticks until they fit; a crowded axis reads as noise.
             final room = (constraints.maxWidth / 76).floor().clamp(2, 6);
-            final step = (labels.length / room).ceil();
+            final step = (labels.length / room).ceil().clamp(1, labels.length);
             final kept = <int>[for (var i = 0; i < labels.length; i += step) i];
+            // The last tick anchors the axis to the newest data, so it is
+            // always drawn. Thinning can leave it next to its neighbour, which
+            // is why each label below gets an equal share of the width rather
+            // than its natural size.
             if (kept.last != labels.length - 1) kept.add(labels.length - 1);
 
             return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                for (final index in kept)
-                  Text(
-                    labels[index],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AvType.caption.faint,
+                for (var slot = 0; slot < kept.length; slot++)
+                  Expanded(
+                    child: Align(
+                      alignment: switch (slot) {
+                        0 => Alignment.centerLeft,
+                        _ when slot == kept.length - 1 => Alignment.centerRight,
+                        _ => Alignment.center,
+                      },
+                      child: Text(
+                        labels[kept[slot]],
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: AvType.caption.faint,
+                      ),
+                    ),
                   ),
               ],
             );

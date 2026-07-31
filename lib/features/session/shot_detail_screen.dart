@@ -462,7 +462,7 @@ class _CorrectionCard extends StatelessWidget {
           const SizedBox(height: AvSpace.xs),
           Text(
             'Corrections are kept separate from model output. They update your '
-            'totals and, with your permission, help improve detection.',
+            'totals on this device and stay here.',
             style: AvType.caption.muted,
           ),
           const SizedBox(height: AvSpace.sm),

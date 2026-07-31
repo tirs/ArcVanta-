@@ -83,7 +83,7 @@ class DrillTile extends StatelessWidget {
                   ),
                   _Meta(
                     icon: Icons.adjust_rounded,
-                    label: '${drill.targetMakes} of ${drill.targetAttempts}',
+                    label: 'Goal ${drill.targetMakes}/${drill.targetAttempts}',
                   ),
                   _Meta(
                     icon: drill.recommendedAngle.icon,

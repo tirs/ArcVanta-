@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../../core/utils/formatters.dart';
 import '../../data/models/session.dart';
 import '../../data/models/shot.dart';
 import '../../design/charts/av_court_map.dart';
@@ -61,7 +62,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
     return AvScaffold(
       title: 'Court map',
-      subtitle: '${shots.length} attempts across ${sessions.length} sessions',
+      subtitle:
+          '${Fmt.count(shots.length, 'attempt')} across '
+          '${Fmt.count(sessions.length, 'session')}',
       leading: const AvBackButton(),
       slivers: [
         SliverGutter(

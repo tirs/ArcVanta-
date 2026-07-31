@@ -11,6 +11,7 @@ import '../../design/components/av_button.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/app_settings.dart';
+import '../../state/stores.dart';
 
 class GuardianConsentScreen extends ConsumerStatefulWidget {
   const GuardianConsentScreen({super.key});
@@ -27,50 +28,20 @@ class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
   final _permissions = <_Permission>[
     const _Permission(
       key: 'camera',
-      title: 'Camera and microphone during sessions',
+      title: 'Camera during sessions',
       detail:
-          'Required for shot detection. Frames are processed on the device and '
-          'are not stored unless a clip is saved.',
+          'Required for shot detection. Frames are measured on the device and '
+          'discarded. No video or audio is recorded.',
       required: true,
       granted: true,
     ),
     const _Permission(
       key: 'local',
       title: 'Store sessions on this device',
-      detail: 'Results, clips and settings stay in encrypted local storage.',
+      detail:
+          'Measurements and settings are held in the app\'s private storage '
+          'on this phone. Deleting the app deletes them.',
       required: true,
-      granted: true,
-    ),
-    const _Permission(
-      key: 'coach',
-      title: 'Allow a named coach to see results',
-      detail:
-          'The guardian approves each coach individually and can revoke access '
-          'at any time.',
-      granted: true,
-    ),
-    const _Permission(
-      key: 'cloud',
-      title: 'Encrypted cloud backup and sync',
-      detail:
-          'Enables history across devices. Source video expires on the schedule '
-          'set in privacy controls.',
-      granted: false,
-    ),
-    const _Permission(
-      key: 'training',
-      title: 'Contribute anonymised video to model training',
-      detail:
-          'Separate from service use. Faces are blurred, identifiers removed, '
-          'and consent can be withdrawn with deletion propagation.',
-      granted: false,
-    ),
-    const _Permission(
-      key: 'analytics',
-      title: 'Product and reliability analytics',
-      detail:
-          'Device tier, model version and confidence distributions. Never raw '
-          'video.',
       granted: true,
     ),
   ];
@@ -85,6 +56,28 @@ class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
   bool get _canContinue =>
       _guardianName.text.trim().length > 1 && _guardianEmail.text.contains('@');
 
+  /// Attaches the guardian to the athlete's profile before finishing.
+  ///
+  /// The name entered here is the record of who approved the account, so it
+  /// belongs on the profile rather than in a form that closes.
+  Future<void> _recordConsent() async {
+    final profile = ref.read(profileStoreProvider);
+    if (profile != null) {
+      await ref
+          .read(profileStoreProvider.notifier)
+          .save(
+            profile.copyWith(
+              guardianName: _guardianName.text.trim(),
+              guardianEmail: _guardianEmail.text.trim(),
+            ),
+          );
+    }
+
+    if (!mounted) return;
+    ref.read(appSettingsProvider.notifier).completeOnboarding();
+    context.go(AppRoute.home);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AvBrandScaffold(
@@ -93,7 +86,7 @@ class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
           AvPageHeader(
             onInk: true,
             title: 'Guardian consent',
-            subtitle: 'Required before a minor account can share anything.',
+            subtitle: 'Who is responsible for this account.',
             leading: AvBackButton(
               onInk: true,
               onPressed: () => context.go(AppRoute.playerSetup),
@@ -163,8 +156,10 @@ class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Guardian email address',
                           prefixIcon: Icon(Icons.alternate_email_rounded),
+                          helperMaxLines: 2,
                           helperText:
-                              'A verification message is sent to this address.',
+                              'Kept on this device as the record of who '
+                              'approved the account.',
                         ),
                       ),
                     ],
@@ -174,8 +169,9 @@ class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
                 Text('Permissions', style: AvType.headingSmall.onInk),
                 const SizedBox(height: AvSpace.xs),
                 Text(
-                  'Each item is a separate decision and can be changed later '
-                  'in privacy controls.',
+                  'This build records and measures on the phone only, so '
+                  'these two are the whole list. Coach sharing and backup '
+                  'ask separately, if they are ever switched on.',
                   style: AvType.bodySmall.onInkMuted,
                 ),
                 const SizedBox(height: AvSpace.sm),
@@ -226,14 +222,7 @@ class _GuardianConsentScreenState extends ConsumerState<GuardianConsentScreen> {
               label: 'Record consent and finish',
               size: AvButtonSize.large,
               expand: true,
-              onPressed: _canContinue
-                  ? () {
-                      ref
-                          .read(appSettingsProvider.notifier)
-                          .completeOnboarding();
-                      context.go(AppRoute.home);
-                    }
-                  : null,
+              onPressed: _canContinue ? _recordConsent : null,
             ),
           ),
         ],

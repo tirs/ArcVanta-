@@ -68,7 +68,9 @@ class _ShotTimelineScreenState extends ConsumerState<ShotTimelineScreen> {
 
     return AvScaffold(
       title: 'Shot by shot',
-      subtitle: '${session.drillName} \u00B7 ${session.attemptCount} attempts',
+      subtitle:
+          '${session.drillName} \u00B7 '
+          '${Fmt.count(session.attemptCount, 'attempt')}',
       leading: const AvBackButton(),
       slivers: [
         SliverGutter(
@@ -96,10 +98,11 @@ class _ShotTimelineScreenState extends ConsumerState<ShotTimelineScreen> {
                   const SizedBox(height: AvSpace.sm),
                   const AvSeparator(),
                   const SizedBox(height: AvSpace.sm),
-                  SizedBox(
-                    height: 30,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
+                  // Sized by the chips rather than a fixed height, so a larger
+                  // text scale grows the row instead of slicing the labels.
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
                       children: [
                         AvChip(
                           label: 'Every spot',
@@ -305,6 +308,10 @@ class _ShotRow extends StatelessWidget {
                           child: Text(
                             shot.outcomeDetail.label,
                             style: AvType.titleSmall.primary,
+                            // Two lines rather than one, because the longer
+                            // outcomes are the informative ones and clipping
+                            // "Backboard make" loses the part that matters.
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),

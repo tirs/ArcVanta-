@@ -14,9 +14,11 @@ import '../../design/charts/av_shot_graphics.dart';
 import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_stats.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/stores.dart';
+import '../../state/team.dart';
 import 'athlete_detail_screen.dart';
 
 /// Work queue for a coach: submitted assignments and the clips athletes flagged
@@ -38,11 +40,13 @@ class _ReviewQueueScreenState extends ConsumerState<ReviewQueueScreen> {
     final sessions = ref.watch(sessionStoreProvider).take(3).toList();
     final roster = ref.watch(rosterProvider);
 
+    if (!TeamFeatures.isAvailable) return const _ReviewQueueUnavailable();
+
     return AvScaffold(
       title: 'Review queue',
       subtitle:
           '${assignments.length} submissions \u00B7 '
-          '${sessions.length} sessions to comment on',
+          '${Fmt.count(sessions.length, 'session')} to comment on',
       leading: const AvBackButton(),
       slivers: [
         if (assignments.isEmpty && sessions.isEmpty)
@@ -285,6 +289,30 @@ class _ReviewCardState extends State<_ReviewCard> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// A review queue holds work submitted by other people. Without a server there is nothing to receive, so the screen says so rather than listing invented submissions.
+class _ReviewQueueUnavailable extends StatelessWidget {
+  const _ReviewQueueUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AvScaffold(
+      title: 'Review queue',
+      subtitle: 'Not available in this build',
+      leading: AvBackButton(),
+      slivers: [
+        SliverGutter(
+          child: AvUnavailableFeature(
+            icon: Icons.rate_review_outlined,
+            headline: TeamFeatures.unavailableHeadline,
+            body: TeamFeatures.unavailableBody,
+            footnote: 'Reviewing a session means receiving it from another device first.',
+          ),
+        ),
+      ],
     );
   }
 }

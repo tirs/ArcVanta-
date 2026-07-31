@@ -7,11 +7,18 @@ Accepted, 29 July 2026.
 | Stage | Choice | Licence |
 | --- | --- | --- |
 | Object detection (ball, rim, players) | RTMDet, from MMDetection | Apache 2.0 |
-| Pose, first version | MediaPipe Pose (BlazePose) | Apache 2.0 |
-| Pose, second version | Basketball-trained RTMPose, from MMPose | Apache 2.0 |
+| Pose | Basketball-trained RTMPose, from MMPose | Apache 2.0 |
 
 Ultralytics YOLO is rejected. Monocular 3D pose is rejected for the
 single-camera product.
+
+Amended 29 July 2026: MediaPipe is no longer the first-version pose model. The
+staging existed to get something shipped before a fine-tune existed, and it
+bought that at the cost of two preprocessing paths, two landmark topologies and
+two sets of accuracy characteristics to reason about. Since both bridges load
+ONNX through the same runtime, carrying RTMPose from the start is less work
+than carrying both, and it means the numbers never change underneath a user
+when the second version lands.
 
 ## Why not Ultralytics YOLO
 
@@ -32,16 +39,19 @@ Acceptable substitutes under equivalent terms, if RTMDet does not fit: YOLOX,
 RT-DETR, D-FINE, PP-YOLOE. Excluded on licence grounds: YOLOv6, YOLOv7 and
 YOLOv9 (GPL-3.0) and YOLO-NAS (restrictive weights licence).
 
-## Why MediaPipe first and RTMPose second
+## Why RTMPose
 
-MediaPipe is already Apache 2.0, so this sequencing is about accuracy, not
-licensing. MediaPipe is turnkey on both platforms and gets the first version
-shipped. It degrades in the two conditions that define a real gym: motion blur
-through the release, and other players in frame.
+MediaPipe is also Apache 2.0, so this is about accuracy, not licensing. It is
+turnkey on both platforms, and it degrades in the two conditions that define a
+real gym: motion blur through the release, and other players in frame. Those
+are not edge cases here; the release is the single frame every arc metric is
+taken from.
 
-RTMPose trained on basketball footage is the answer to both, and is the reason
-the second version exists. If top-down cost becomes the constraint with several
-players on court, RTMO is the one-stage alternative built for crowded scenes.
+RTMPose fine-tuned on basketball footage answers both. It is top-down, so it
+costs one pose inference per person rather than one per frame, which is the
+right trade when the product only ever measures one shooter. If several players
+on court makes that cost bite, RTMO is the one-stage alternative built for
+crowded scenes and it fits the same contract.
 
 ## Upstream status, checked 29 July 2026
 
@@ -62,10 +72,46 @@ never a runtime dependency of anything we ship.
 
 ## What this obliges us to
 
-The licence of the training data propagates to the weights. A research-only
-dataset cannot produce weights we deploy commercially, whatever the model
-licence says. Every dataset used for fine-tuning is recorded in this document
-with its licence before training starts.
+Every dataset used for fine-tuning is recorded in this document with its
+licence before training starts.
+
+### Amended 30 July 2026: the pretrained weights carry research-only data
+
+This document originally said that a research-only dataset cannot produce
+weights we deploy commercially. Auditing the actual checkpoints showed that
+rule would disqualify the entire OpenMMLab pose model zoo, so it has been
+weighed rather than applied.
+
+What the audit found, read out of the checkpoints' own embedded configs rather
+than from documentation:
+
+| Checkpoint | Trained on | Commercial use |
+| --- | --- | --- |
+| `rtmdet_m_8xb32-300e_coco` | COCO | Annotations CC-BY-4.0; images are Flickr, mixed |
+| `rtmpose-m_simcc-aic-coco_pt-aic-coco` | COCO + AI Challenger | AI Challenger is research-only |
+| `rtmw3d-x_cocktail14` | 14 sets incl. Human3.6M, UBody, InterHand, MPII | Several explicitly non-commercial |
+
+There is no published RTMPose-m checkpoint free of this: the `body7` variant
+also includes AI Challenger, `ucoco` uses UBody, and `coco-wholebody` is
+pretrained from `aic-coco`. Training our own on a licence-filtered COCO subset
+was costed and is feasible — roughly 60% of COCO survives the filter — but was
+not chosen.
+
+**Decision: ship the published OpenMMLab weights, with attribution.** The
+reasoning is that OpenMMLab distributes its model zoo under Apache-2.0, that
+whether trained weights are a derivative work of their training data is legally
+unsettled and unlitigated, and that the industry ships ImageNet-derived weights
+on the same basis. That last point is not rhetorical: the CSPNeXt backbone
+under both models is ImageNet-pretrained, and ImageNet's own terms are
+research-only, so no realistic option cuts every strand.
+
+This is a judgement about an unsettled question, not a finding that there is no
+question. It should be reviewed by a lawyer before the app is sold, and the
+route back is cheap: training on filtered COCO changes only the weights, not
+the contract, the graphs or either native bridge.
+
+RTMW3D is excluded on separate grounds — see "On 3D" — so the Human3.6M and
+UBody exposure in that row is not taken on.
 
 Pin the whole OpenMMLab chain. Exact versions come from the `requirements/`
 directory of the pinned MMPose and MMDetection checkouts, not from whatever pip
@@ -93,6 +139,15 @@ Monocular 3D lifting, whether MotionBERT or RTMW3D, introduces depth error
 larger than the effects being measured. Elbow angle, release angle and knee
 flexion do not survive it.
 
+RTMW3D-X was evaluated directly on 30 July 2026 and rejected. Its own authors
+put a person's nose-to-ankle span anywhere between 1.5 and 3.0 metres depending
+on camera distance, which is a two-fold scale ambiguity in exactly the quantity
+release height depends on. The court solve already supplies real metric scale
+from the rim ellipse and the known 3.048 m ring height, so 3D lifting would
+replace a measurement with a guess. It is also 92.4M parameters and 370 MB
+against 13.6M and 54 MB for RTMPose-m, and spends 110 of its 133 keypoints on
+faces and hands.
+
 The supported approach is 2D pose combined with known court geometry and the
 calibrated camera placement. That is already how the product reasons: metric
 eligibility is a function of `CameraAngle`, so side placement measures release
@@ -103,10 +158,29 @@ rather than inferred.
 
 ## Consequences for this repository
 
-Nothing under `lib/` changes today. The capture pipeline is simulated and the
-model stack sits behind a contract that is already fixed:
-`lib/data/metrics/metric_catalog.dart` defines what may be measured and from
-which placements, and `lib/data/models/confidence.dart` requires every emitted
-value to carry a confidence level that governs its precision and whether it may
-drive coaching. Any model stack that satisfies that contract is substitutable;
-this decision records which one we build first and why.
+The contract this decision anticipated is now written down and enforced.
+`vision/contract/model_contract.json` fixes tensor names, shapes, normalisation
+and class ids; `tool/vision/verify_contract.py` rejects any export that does not
+satisfy it; and both native bridges re-check the loaded graph against their
+mirror of it before the first frame runs. The pins live in `vision/pins.lock`
+and `tool/vision/setup.sh` refuses to advance a vendored checkout that has
+drifted off one.
+
+The older constraints still hold. `lib/data/metrics/metric_catalog.dart`
+defines what may be measured from which placements, and
+`lib/data/models/confidence.dart` requires every emitted value to carry a
+confidence level governing its precision and whether it may drive coaching. Any
+model stack satisfying both contracts is substitutable.
+
+What runs without the models is deliberate rather than incidental. The bridge
+reports `modelsMissing`, `lib/state/capture_pipeline.dart` falls back to the
+simulated source, and the interface says on screen that the session is
+simulated. The geometry is solved for real either way, against a synthetic
+scene, so `CalibrationSolver` and `ShotTracker` are exercised on every run and
+in CI rather than only on a device.
+
+Rim detection is per frame during calibration and locked afterwards, as this
+document required. `CalibrationController` requires a run of consistent solves
+before it will hand a court frame to a session, so a ring caught in a blur or
+during the second a tripod is still settling cannot become the reference every
+later measurement is taken against.

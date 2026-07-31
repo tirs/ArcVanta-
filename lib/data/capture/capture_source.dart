@@ -1,5 +1,7 @@
 import 'dart:ui' show Offset, Rect;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
+
 import '../models/confidence.dart';
 import '../models/drill.dart';
 import '../models/pose.dart';
@@ -55,11 +57,26 @@ class CaptureRequest {
     required this.drill,
     required this.angle,
     required this.calibrationQuality,
+    this.highFrameRate = true,
+    this.thermalGuard = true,
+    this.tripod = true,
   });
 
   final Drill drill;
   final CameraAngle angle;
   final double calibrationQuality;
+
+  /// Ask the camera for 60 fps rather than 30. Sharper release timing, more
+  /// heat, and not every device will honour it.
+  final bool highFrameRate;
+
+  /// Let the pipeline shed work before it sheds accuracy when the phone gets
+  /// hot, rather than pushing until the frame rate collapses mid-session.
+  final bool thermalGuard;
+
+  /// Whether the athlete said the phone is mounted. Caps the stability grade
+  /// rather than being trusted outright.
+  final bool tripod;
 }
 
 /// The analysis pipeline as the product layer sees it.
@@ -71,6 +88,13 @@ class CaptureRequest {
 abstract interface class CaptureSource {
   /// Per-frame geometry and telemetry, at whatever rate the pipeline sustains.
   Stream<CaptureFrame> get frames;
+
+  /// The platform texture the camera is drawing into, once one exists.
+  ///
+  /// Null while nothing is open, and null for the whole life of a simulated
+  /// source, which is how the preview widget knows to draw the schematic scene
+  /// and label it as one rather than passing a drawing off as a camera feed.
+  ValueListenable<int?> get previewTexture;
 
   /// Completed shots, emitted once the result is decided. A shot whose result
   /// could not be classified with enough evidence arrives with

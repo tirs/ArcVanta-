@@ -8,15 +8,20 @@ import '../models/progress.dart';
 import '../models/session.dart';
 import '../models/shot.dart';
 import '../models/subscription.dart';
-import 'drill_catalog.dart';
-import 'shot_factory.dart';
+import '../seed/drill_catalog.dart';
+import '../seed/shot_factory.dart';
 
-/// Deterministic starting state for the application.
+/// A fabricated season, used to demonstrate the interface.
 ///
-/// Everything here is shaped exactly like the payloads the session, coach and
-/// subscription services return, so the presentation layer never needs to know
-/// whether it is reading a live response or a locally restored snapshot.
-abstract final class SeedData {
+/// None of this was measured. It exists so the app can be shown, reviewed and
+/// screenshotted without somebody first shooting four hundred jumpers, and it
+/// is off unless the user turns it on in Settings.
+///
+/// Two properties keep it from being a lie. Every session carries
+/// `isDemo: true`, which follows it into storage and out again, so no total or
+/// personal record can quietly absorb it. And whenever any of it is on screen
+/// the app shows a banner saying so.
+abstract final class DemoData {
   static final DateTime today = _atNine(DateTime(2026, 7, 29));
 
   static DateTime _atNine(DateTime day) =>
@@ -136,7 +141,7 @@ abstract final class SeedData {
         angle: CameraAngle.diagonal,
         court: 'Northgate Prep — Main Gym',
         device: 'iPhone 17 Pro',
-        onDevice: false,
+        onDevice: true,
       ),
       _SessionSpec(
         id: 'session-2026-07-16',
@@ -208,6 +213,7 @@ abstract final class SeedData {
       modelVersion: 'det-1.4.2 / pose-2.1.0 / event-3.0.1',
       deviceName: spec.device,
       processedOnDevice: spec.onDevice,
+      isDemo: true,
     );
   }
 
@@ -571,48 +577,40 @@ abstract final class SeedData {
       title: 'Best makes — Three-Point',
       kind: HighlightKind.bestMakes,
       createdAt: today.add(const Duration(hours: 9, minutes: 12)),
-      duration: const Duration(seconds: 48),
-      clipCount: 12,
+      shotCount: 12,
       sessionId: 'session-2026-07-29',
       visibility: HighlightVisibility.coachAndGuardian,
       accent: AvColors.flare,
-      metricsBurnedIn: true,
     ),
     Highlight(
       id: 'hl-progress-july',
       title: 'July release comparison',
       kind: HighlightKind.progressComparison,
       createdAt: daysAgo(1),
-      duration: const Duration(seconds: 36),
-      clipCount: 6,
+      shotCount: 6,
       sessionId: 'session-2026-07-29',
       visibility: HighlightVisibility.privateOnly,
       accent: AvColors.insight,
-      metricsBurnedIn: true,
     ),
     Highlight(
       id: 'hl-coach-review-0727',
       title: 'Coach review — Free Throws',
       kind: HighlightKind.coachReview,
       createdAt: daysAgo(2),
-      duration: const Duration(minutes: 2, seconds: 14),
-      clipCount: 9,
+      shotCount: 9,
       sessionId: 'session-2026-07-27',
       visibility: HighlightVisibility.coachAndGuardian,
       accent: AvColors.court,
-      metricsBurnedIn: false,
     ),
     Highlight(
       id: 'hl-recap-0725',
       title: 'Session recap — Catch-and-Shoot',
       kind: HighlightKind.sessionRecap,
       createdAt: daysAgo(4),
-      duration: const Duration(minutes: 1, seconds: 5),
-      clipCount: 18,
+      shotCount: 18,
       sessionId: 'session-2026-07-25',
       visibility: HighlightVisibility.privateOnly,
       accent: AvColors.made,
-      metricsBurnedIn: true,
     ),
   ];
 

@@ -8,6 +8,7 @@ import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/program.dart';
+import '../../data/plan/plan_builder.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
@@ -30,8 +31,11 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
   Widget build(BuildContext context) {
     final plan = ref.watch(trainingPlanProvider);
     final drills = ref.watch(drillStoreProvider);
-    final day = plan.days[_selectedDay.clamp(0, plan.days.length - 1)];
     final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
+
+    if (plan == null) return _buildAwaitingHistory(context, ref);
+
+    final day = plan.days[_selectedDay.clamp(0, plan.days.length - 1)];
 
     return AvScaffold(
       title: 'Training plan',
@@ -243,20 +247,56 @@ class _TrainingPlanScreenState extends ConsumerState<TrainingPlanScreen> {
             ),
           ),
         ),
-        SliverGutter(
+        const SliverGutter(
           top: AvSpace.lg,
-          child: AvButton(
-            label: 'Regenerate next week',
-            variant: AvButtonVariant.outline,
-            icon: Icons.refresh_rounded,
-            expand: true,
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Next week rebuilds automatically once this block finishes',
-                ),
-              ),
+          child: Text(
+            'This plan rebuilds itself from your sessions. Record more and it '
+            'will follow whatever the shots say.',
+            style: AvType.caption,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Shown until there are enough recorded shots to justify a plan.
+  ///
+  /// A training plan is a claim about what the athlete should work on. With no
+  /// history behind it that claim would be fabricated, so the screen asks for
+  /// the shots instead of inventing a week.
+  Widget _buildAwaitingHistory(BuildContext context, WidgetRef ref) {
+    final totals = ref.watch(lifetimeTotalsProvider);
+    final remaining = PlanBuilder.minimumAttempts - totals.attempts;
+
+    return AvScaffold(
+      title: 'Training plan',
+      subtitle: 'Not enough history yet',
+      leading: const AvBackButton(),
+      slivers: [
+        SliverGutter(
+          child: AvEmptyState(
+            icon: Icons.event_note_rounded,
+            title: 'Your plan builds itself',
+            message: totals.attempts == 0
+                ? 'Record a session and this page will lay out the week '
+                      'around whichever part of your shooting needs it most.'
+                : 'You have ${totals.attempts} recorded '
+                      '${totals.attempts == 1 ? "attempt" : "attempts"}. '
+                      'About $remaining more and there is enough to point at '
+                      'a real weakness rather than guess at one.',
+            action: AvButton(
+              label: 'Start a session',
+              icon: Icons.sports_basketball_rounded,
+              onPressed: () => context.go(AppRoute.drills),
             ),
+          ),
+        ),
+        const SliverGutter(
+          top: AvSpace.md,
+          child: Text(
+            'Plans are built from your zone breakdown, your goals and how many '
+            'days a week you said you can train. Nothing is pre-written.',
+            style: AvType.caption,
           ),
         ),
       ],

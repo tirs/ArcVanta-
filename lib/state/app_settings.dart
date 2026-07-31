@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/confidence.dart';
 import '../data/models/profile.dart';
+import '../data/store/repository.dart';
+import '../data/store/settings_codec.dart';
+import 'bootstrap.dart';
 
 enum FeedbackFrequency {
   off,
@@ -14,6 +17,18 @@ enum FeedbackFrequency {
     FeedbackFrequency.sparse => 'Only between sets',
     FeedbackFrequency.balanced => 'Every few attempts',
     FeedbackFrequency.detailed => 'Every attempt',
+  };
+
+  /// How many attempts have to pass before another cue is allowed.
+  ///
+  /// A cue during the shot before last is noise: the athlete has already
+  /// changed something by the time they hear it. The gap is what turns a
+  /// stream of measurements into coaching.
+  int get attemptsBetweenCues => switch (this) {
+    FeedbackFrequency.off => 1 << 30,
+    FeedbackFrequency.sparse => 10,
+    FeedbackFrequency.balanced => 4,
+    FeedbackFrequency.detailed => 1,
   };
 }
 
@@ -67,6 +82,8 @@ class AppSettings {
     this.highFrameRateCapture = true,
     this.thermalGuard = true,
     this.storageBudgetGb = 12,
+    this.demoDataEnabled = false,
+    this.courtName = '',
   });
 
   final bool onboardingComplete;
@@ -103,6 +120,17 @@ class AppSettings {
   final bool thermalGuard;
   final int storageBudgetGb;
 
+  /// Whether the sample history is loaded alongside the user's own.
+  ///
+  /// Off unless the user turns it on in Settings. Demo sessions are marked in
+  /// storage and never counted into a real total, so this can never quietly
+  /// inflate what someone thinks they shot.
+  final bool demoDataEnabled;
+
+  /// What the athlete calls the place they shoot. Empty until they name it;
+  /// sessions recorded before then say so rather than inventing a venue.
+  final String courtName;
+
   bool get isCoachRole =>
       role == AccountRole.coach ||
       role == AccountRole.trainer ||
@@ -136,6 +164,8 @@ class AppSettings {
     bool? highFrameRateCapture,
     bool? thermalGuard,
     int? storageBudgetGb,
+    bool? demoDataEnabled,
+    String? courtName,
   }) {
     return AppSettings(
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
@@ -166,36 +196,55 @@ class AppSettings {
       highFrameRateCapture: highFrameRateCapture ?? this.highFrameRateCapture,
       thermalGuard: thermalGuard ?? this.thermalGuard,
       storageBudgetGb: storageBudgetGb ?? this.storageBudgetGb,
+      demoDataEnabled: demoDataEnabled ?? this.demoDataEnabled,
+      courtName: courtName ?? this.courtName,
     );
   }
 }
 
 class AppSettingsController extends Notifier<AppSettings> {
   @override
-  AppSettings build() => const AppSettings();
+  AppSettings build() => ref.watch(appSnapshotProvider).settings;
 
-  void completeOnboarding() => state = state.copyWith(onboardingComplete: true);
+  void completeOnboarding() => _set(state.copyWith(onboardingComplete: true));
 
-  void setRole(AccountRole role) => state = state.copyWith(role: role);
+  void setRole(AccountRole role) => _set(state.copyWith(role: role));
 
-  void setGuestMode(bool value) => state = state.copyWith(guestMode: value);
+  void setGuestMode(bool value) => _set(state.copyWith(guestMode: value));
 
   void setPreferredAngle(CameraAngle angle) =>
-      state = state.copyWith(preferredAngle: angle);
+      _set(state.copyWith(preferredAngle: angle));
 
   void update(AppSettings Function(AppSettings current) transform) =>
-      state = transform(state);
+      _set(transform(state));
 
   void setNotificationOptIn(String key, bool value) {
     final next = Map<String, bool>.from(state.notificationOptIns);
     next[key] = value;
-    state = state.copyWith(notificationOptIns: next);
+    _set(state.copyWith(notificationOptIns: next));
   }
 
-  void reset() => state = const AppSettings();
+  void reset() => _set(const AppSettings());
+
+  void _set(AppSettings next) {
+    state = next;
+    ref
+        .read(repositoryProvider)
+        .writeDocument(DocumentKey.settings, SettingsCodec.toJson(next));
+  }
 }
 
 final appSettingsProvider =
     NotifierProvider<AppSettingsController, AppSettings>(
       AppSettingsController.new,
     );
+
+/// What to label a session's venue with.
+///
+/// Falls back to a plain statement of ignorance rather than a placeholder that
+/// reads like a real gym, because a stored session is evidence and a made-up
+/// location is the kind of detail nobody thinks to question later.
+final courtNameProvider = Provider<String>((ref) {
+  final name = ref.watch(appSettingsProvider).courtName.trim();
+  return name.isEmpty ? 'Unnamed court' : name;
+});

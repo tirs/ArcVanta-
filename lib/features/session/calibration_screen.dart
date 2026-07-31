@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_theme.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../../data/calibration/calibration_solver.dart';
 import '../../data/models/confidence.dart';
 import '../../data/models/drill.dart';
 import '../../data/seed/drill_catalog.dart';
@@ -18,6 +18,9 @@ import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
 import '../../data/capture/live_scene.dart';
+import '../../state/calibration.dart';
+import '../../data/capture/native_capture_source.dart';
+import '../../state/capture_pipeline.dart';
 import '../../state/live_session.dart';
 import 'camera_stage.dart';
 
@@ -38,7 +41,18 @@ class CalibrationScreen extends ConsumerStatefulWidget {
   ConsumerState<CalibrationScreen> createState() => _CalibrationScreenState();
 }
 
-enum _CalibrationStage { idle, scanning, complete }
+/// The icon shown beside each factor the solver reports.
+///
+/// The labels come from `CalibrationSolver`, which owns what is measured. This
+/// map only decides what it looks like, so a new factor appears in the list
+/// with a neutral icon rather than not appearing at all.
+const _factorIcons = <String, IconData>{
+  'Court plane': Icons.grid_on_rounded,
+  'Rim reference': Icons.adjust_rounded,
+  'Lighting': Icons.wb_iridescent_rounded,
+  'Stability': Icons.vibration_rounded,
+  'Framing': Icons.crop_free_rounded,
+};
 
 class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
     with SingleTickerProviderStateMixin {
@@ -48,82 +62,108 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
     duration: const Duration(milliseconds: 2200),
   )..repeat();
 
-  _CalibrationStage _stage = _CalibrationStage.idle;
-  Timer? _timer;
-  int _step = 0;
-
-  static const _steps = <_CalibrationStep>[
-    _CalibrationStep(
-      label: 'Locking court plane',
-      detail: 'Three baseline and key lines matched against the court model.',
-      icon: Icons.grid_on_rounded,
-    ),
-    _CalibrationStep(
-      label: 'Locating rim and backboard',
-      detail: 'Rim ellipse solved at 3.05 m and used as the height reference.',
-      icon: Icons.adjust_rounded,
-    ),
-    _CalibrationStep(
-      label: 'Measuring exposure',
-      detail: 'Frame brightness and contrast checked across the shooting area.',
-      icon: Icons.wb_iridescent_rounded,
-    ),
-    _CalibrationStep(
-      label: 'Checking stability',
-      detail: 'Motion in the static background sampled over three seconds.',
-      icon: Icons.vibration_rounded,
-    ),
-    _CalibrationStep(
-      label: 'Verifying framing',
-      detail: 'Full body and rim confirmed inside the frame through the jump.',
-      icon: Icons.crop_free_rounded,
-    ),
-  ];
-
-  static const _quality = <String, double>{
-    'Court plane': 0.96,
-    'Rim reference': 0.94,
-    'Lighting': 0.88,
-    'Stability': 0.93,
-    'Framing': 0.90,
-  };
-
-  double get _overall =>
-      _quality.values.reduce((a, b) => a + b) / _quality.length;
-
   @override
   void dispose() {
-    _timer?.cancel();
     _sweep.dispose();
     super.dispose();
   }
 
   void _start() {
-    setState(() {
-      _stage = _CalibrationStage.scanning;
-      _step = 0;
-    });
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 720), (timer) {
-      if (!mounted) return;
-      if (_step >= _steps.length - 1) {
-        timer.cancel();
-        setState(() => _stage = _CalibrationStage.complete);
-        _sweep.stop();
-      } else {
-        setState(() => _step++);
-      }
-    });
+    ref.read(calibrationProvider.notifier).start();
+    if (!_sweep.isAnimating) _sweep.repeat();
+  }
+
+  /// Asks for the camera, and says what to do when asking is no longer enough.
+  Future<void> _requestCamera() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final status = await ref.read(cameraPermissionRequestProvider)();
+    if (!mounted) return;
+
+    switch (status) {
+      case CameraPermissionStatus.granted:
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Camera connected. Calibrate to start measuring.'),
+          ),
+        );
+      case CameraPermissionStatus.permanentlyDenied:
+        // The system will not show the dialog again, so pointing at it would
+        // send the user in a circle.
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Camera access is off. Turn it on in your device settings '
+              'under Apps, ArcVanta, Permissions.',
+            ),
+            duration: Duration(seconds: 6),
+          ),
+        );
+      case CameraPermissionStatus.denied:
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Without the camera, sessions stay simulated.'),
+          ),
+        );
+      case CameraPermissionStatus.unsupported:
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('This build has no camera pipeline.'),
+          ),
+        );
+    }
   }
 
   void _startSession() {
+    // The solved frame is what every measured angle is taken against, so it is
+    // handed over before the session is configured rather than after.
+    ref.read(calibrationProvider.notifier).commit();
     ref.read(liveSessionProvider.notifier).configure(_drill, widget.angle);
     context.pushReplacement(AppRoute.live(_drill.id, widget.angle));
   }
 
+  /// What the athlete should do about a scene that will not solve.
+  ///
+  /// Every one of these is fixable by moving the phone, which is why the
+  /// failure is named rather than reported as a generic error.
+  (String, String) _blockedAdvice(CalibrationFailure failure) =>
+      switch (failure) {
+        CalibrationFailure.noRim => (
+          'No ring in view',
+          'Point the camera at the basket. The whole ring needs to be inside '
+              'the frame, not just the front edge.',
+        ),
+        CalibrationFailure.rimTooSmall => (
+          'Too far from the basket',
+          'The ring is only a few pixels across, which is not enough to solve '
+              'the court plane. Move closer or zoom in.',
+        ),
+        CalibrationFailure.degenerateEllipse => (
+          'Ring seen edge-on',
+          'From directly level with the rim the ellipse collapses to a line '
+              'and the height reference is lost. Lower the phone or step back.',
+        ),
+        CalibrationFailure.poseUnsolvable => (
+          'Cannot place the ring in space',
+          'The ring outline is not clean enough to solve. Check for glare on '
+              'the backboard and wipe the lens.',
+        ),
+        CalibrationFailure.implausibleGeometry => (
+          'Solved to an impossible position',
+          'The geometry puts the ring somewhere a basket cannot be, usually a '
+              'reflection or a second hoop. Reframe on one basket.',
+        ),
+      };
+
   @override
   Widget build(BuildContext context) {
-    final complete = _stage == _CalibrationStage.complete;
+    final calibration = ref.watch(calibrationProvider);
+    final pipeline = ref.watch(pipelineStatusProvider).valueOrNull;
+    final solved = calibration.isSolved;
+    final solution = calibration.solution;
+    final overall = calibration.overall;
+    final level = ConfidenceLevel.fromScore(overall);
+
+    if (solved && _sweep.isAnimating) _sweep.stop();
 
     return AvScaffold(
       title: 'Calibration',
@@ -131,20 +171,15 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
       leading: const AvBackButton(),
       overlayStyle: AvTheme.lightOverlay,
       bottomBar: AvBottomBar(
-        note: complete
+        note: solved
             ? Row(
                 children: [
-                  Icon(
-                    ConfidenceLevel.fromScore(_overall).icon,
-                    size: 15,
-                    color: ConfidenceLevel.fromScore(_overall).color,
-                  ),
+                  Icon(level.icon, size: 15, color: level.color),
                   const SizedBox(width: AvSpace.xs),
                   Expanded(
                     child: Text(
-                      'Capture quality '
-                      '${(_overall * 100).round()} of 100. Metrics recorded '
-                      'this session inherit this grade.',
+                      'Capture quality ${(overall * 100).round()} of 100. '
+                      'Metrics recorded this session inherit this grade.',
                       style: AvType.caption.muted,
                     ),
                   ),
@@ -152,13 +187,24 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
               )
             : null,
         children: [
-          if (complete) ...[
-            AvButton(
-              label: 'Recalibrate',
-              variant: AvButtonVariant.outline,
-              size: AvButtonSize.large,
-              onPressed: _start,
-            ),
+          if (solved) ...[
+            // Starting the session is the action that matters here, so when
+            // both will not fit, recalibrating gives up its label rather than
+            // squeezing the primary button.
+            if (_roomForTwoLabels(context))
+              AvButton(
+                label: 'Recalibrate',
+                variant: AvButtonVariant.outline,
+                size: AvButtonSize.large,
+                onPressed: _start,
+              )
+            else
+              AvIconButton(
+                icon: Icons.refresh_rounded,
+                tooltip: 'Recalibrate',
+                size: 48,
+                onPressed: _start,
+              ),
             Expanded(
               child: AvButton(
                 label: 'Start session',
@@ -171,13 +217,16 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
           ] else
             Expanded(
               child: AvButton(
-                label: _stage == _CalibrationStage.scanning
-                    ? 'Calibrating'
-                    : 'Calibrate court',
+                label: switch (calibration.stage) {
+                  CalibrationStage.searching => 'Looking for the ring',
+                  CalibrationStage.settling => 'Holding steady',
+                  CalibrationStage.blocked => 'Try again',
+                  _ => 'Calibrate court',
+                },
                 size: AvButtonSize.large,
                 expand: true,
-                busy: _stage == _CalibrationStage.scanning,
-                onPressed: _stage == _CalibrationStage.scanning ? null : _start,
+                busy: calibration.isRunning,
+                onPressed: calibration.isRunning ? null : _start,
               ),
             ),
         ],
@@ -194,8 +243,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
                   builder: (context, _) => CustomPaint(
                     painter: _CalibrationOverlayPainter(
                       progress: _sweep.value,
-                      stage: _stage,
-                      step: _step,
+                      stage: calibration.stage,
+                      settleProgress: calibration.settleProgress,
                     ),
                   ),
                 ),
@@ -203,34 +252,95 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
             ),
           ),
         ),
-        SliverGutter(
-          top: AvSpace.md,
-          child: AvCard(
-            padding: const EdgeInsets.all(AvSpace.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var i = 0; i < _steps.length; i++) ...[
-                  if (i > 0) const SizedBox(height: AvSpace.sm),
-                  _StepRow(
-                    step: _steps[i],
-                    state: switch (_stage) {
-                      _CalibrationStage.idle => _StepState.waiting,
-                      _CalibrationStage.complete => _StepState.done,
-                      _CalibrationStage.scanning =>
-                        i < _step
-                            ? _StepState.done
-                            : i == _step
-                            ? _StepState.active
-                            : _StepState.waiting,
-                    },
+        if (pipeline != null && !pipeline.isLive)
+          SliverGutter(
+            top: AvSpace.md,
+            child: AvTintCard(
+              tint: AvColors.flareSoft,
+              borderColor: AvColors.flare,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AvGlyph(
+                    icon: Icons.science_rounded,
+                    color: AvColors.ink,
+                    background: AvColors.flareSoft,
+                    size: 36,
+                  ),
+                  const SizedBox(width: AvSpace.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Simulated capture',
+                          style: AvType.titleSmall.primary,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${pipeline.explanation}. The geometry below is '
+                          'solved for real, but from a generated scene.',
+                          style: AvType.caption.muted,
+                        ),
+                        if (pipeline.fallbackReason ==
+                            CaptureUnavailableReason
+                                .cameraPermissionDenied) ...[
+                          const SizedBox(height: AvSpace.sm),
+                          AvButton(
+                            label: 'Allow camera access',
+                            size: AvButtonSize.small,
+                            icon: Icons.photo_camera_outlined,
+                            onPressed: _requestCamera,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
+        SliverGutter(
+          top: AvSpace.md,
+          child: _ProgressCard(state: calibration),
         ),
-        if (complete) ...[
+        if (calibration.stage == CalibrationStage.blocked &&
+            calibration.failure != null)
+          SliverGutter(
+            top: AvSpace.sm,
+            child: Builder(
+              builder: (context) {
+                final (title, advice) = _blockedAdvice(calibration.failure!);
+                return AvTintCard(
+                  tint: AvColors.missSoft,
+                  borderColor: AvColors.miss,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const AvGlyph(
+                        icon: Icons.error_outline_rounded,
+                        color: AvColors.miss,
+                        background: AvColors.missSoft,
+                        size: 36,
+                      ),
+                      const SizedBox(width: AvSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(title, style: AvType.titleSmall.primary),
+                            const SizedBox(height: 2),
+                            Text(advice, style: AvType.caption.muted),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        if (solved && solution != null) ...[
           const SliverGutter(
             top: AvSpace.lg,
             child: AvSectionHeader(
@@ -246,12 +356,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
                   Row(
                     children: [
                       AvProgressRing(
-                        value: _overall,
+                        value: overall,
                         size: 62,
                         strokeWidth: 6,
-                        color: ConfidenceLevel.fromScore(_overall).color,
+                        color: level.color,
                         child: Text(
-                          '${(_overall * 100).round()}',
+                          '${(overall * 100).round()}',
                           style: AvType.tabular(
                             AvType.metricMedium,
                           ).copyWith(fontSize: 19),
@@ -263,13 +373,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Good capture setup',
+                              _verdict(overall),
                               style: AvType.headingSmall.primary,
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              'Arc, release angle and knee flexion will be '
-                              'graded at high confidence from this angle.',
+                              _measuredSummary(solution),
                               style: AvType.caption.muted,
                             ),
                           ],
@@ -280,8 +389,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
                   const SizedBox(height: AvSpace.md),
                   const AvSeparator(),
                   const SizedBox(height: AvSpace.sm),
-                  for (final entry in _quality.entries)
-                    _QualityRow(label: entry.key, value: entry.value),
+                  for (final factor in solution.factors)
+                    _QualityRow(
+                      label: factor.label,
+                      value: factor.score,
+                      detail: factor.detail,
+                    ),
                 ],
               ),
             ),
@@ -293,46 +406,95 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
               reason: _unavailableReason,
             ),
           ),
-          SliverGutter(
-            top: AvSpace.sm,
-            child: AvTintCard(
-              tint: AvColors.courtTint,
-              borderColor: AvColors.courtSoft,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AvGlyph(
-                    icon: Icons.save_rounded,
-                    color: AvColors.courtDeep,
-                    background: AvColors.courtSoft,
-                    size: 36,
-                  ),
-                  const SizedBox(width: AvSpace.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Saved as a court profile',
-                          style: AvType.titleSmall.primary,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Northgate Prep, Main Gym. Next session at this '
-                          'court reuses the plane and skips straight to the '
-                          'framing check.',
-                          style: AvType.caption.muted,
-                        ),
-                      ],
+          if (solution.rimHeightAssumed)
+            SliverGutter(
+              top: AvSpace.sm,
+              child: AvTintCard(
+                tint: AvColors.canvasSunken,
+                borderColor: AvColors.hairline,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AvGlyph(
+                      icon: Icons.straighten_rounded,
+                      color: AvColors.textMuted,
+                      background: AvColors.canvasSunken,
+                      size: 36,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: AvSpace.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Rim height assumed, not measured',
+                            style: AvType.titleSmall.primary,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Every height on this court is taken from the '
+                            'regulation 3.05 m. On an adjustable hoop set '
+                            'lower than that, release and apex heights will '
+                            'read high by the difference.',
+                            style: AvType.caption.muted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ],
     );
+  }
+
+  /// Whether the action bar can hold two labelled buttons side by side.
+  ///
+  /// Both the viewport and the text scale move this, and a 320 pt phone at the
+  /// largest accessibility scale cannot hold either label at full size.
+  bool _roomForTwoLabels(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    // 380 is where 'Recalibrate' and 'Start session' stop fitting together at
+    // the large button size, measured rather than guessed: a 360 pt phone at
+    // scale 1 overflows by six pixels.
+    return width / scale > 380;
+  }
+
+  String _verdict(double overall) {
+    if (overall >= 0.85) return 'Good capture setup';
+    if (overall >= 0.65) return 'Usable capture setup';
+    return 'Weak capture setup';
+  }
+
+  /// The one-line summary under the score.
+  ///
+  /// Built from what the solver actually measured rather than written in
+  /// advance, so it cannot promise high confidence for a setup that did not
+  /// earn it.
+  String _measuredSummary(CalibrationSolution solution) {
+    final distance = solution.frame?.rimCentre.length.toStringAsFixed(1);
+    final error = solution.reprojectionErrorPx.isNaN
+        ? null
+        : solution.reprojectionErrorPx.toStringAsFixed(1);
+
+    final weakest = solution.factors.isEmpty
+        ? null
+        : solution.factors.reduce((a, b) => a.score <= b.score ? a : b);
+
+    final parts = <String>[
+      if (distance != null) 'Ring solved $distance m out',
+      if (error != null) 'reprojecting to $error px',
+    ];
+    final measured = parts.isEmpty ? 'Geometry solved' : parts.join(', ');
+
+    if (weakest != null && weakest.score < 0.7) {
+      return '$measured. ${weakest.label} is the limit here: '
+          '${weakest.detail.toLowerCase()}.';
+    }
+    return '$measured.';
   }
 
   String get _unavailableMetric => switch (widget.angle) {
@@ -362,32 +524,71 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen>
 }
 
 class _QualityRow extends StatelessWidget {
-  const _QualityRow({required this.label, required this.value});
+  const _QualityRow({
+    required this.label,
+    required this.value,
+    required this.detail,
+  });
 
   final String label;
   final double value;
 
+  /// What the solver measured to arrive at this score.
+  final String detail;
+
   @override
   Widget build(BuildContext context) {
     final level = ConfidenceLevel.fromScore(value);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 104, child: Text(label, style: AvType.caption.muted)),
-          Expanded(
-            child: AvMeter(value: value, color: level.color),
+          Row(
+            children: [
+              Icon(
+                _factorIcons[label] ?? Icons.tune_rounded,
+                size: 14,
+                color: AvColors.textFaint,
+              ),
+              const SizedBox(width: AvSpace.xs),
+              SizedBox(
+                width: 90 * textScale.clamp(1.0, 1.6),
+                child: Text(
+                  label,
+                  style: AvType.caption.muted,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Expanded(child: AvMeter(value: value, color: level.color)),
+              const SizedBox(width: AvSpace.sm),
+              SizedBox(
+                // Wide enough for a perfect 100, which is the one value that
+                // needs three digits and the one most likely to be clipped.
+                width: 34 * textScale.clamp(1.0, 1.5),
+                child: Text(
+                  '${(value * 100).round()}',
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  style: AvType.tabular(
+                    AvType.metricSmall,
+                  ).copyWith(color: AvColors.textPrimary),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AvSpace.sm),
-          SizedBox(
-            width: 26,
-            child: Text(
-              '${(value * 100).round()}',
-              textAlign: TextAlign.right,
-              style: AvType.tabular(
-                AvType.metricSmall,
-              ).copyWith(color: AvColors.textPrimary),
+          const SizedBox(height: 3),
+          Text(
+            detail,
+            style: AvType.caption.copyWith(
+              color: AvColors.textFaint,
+              fontSize: 11,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -395,78 +596,186 @@ class _QualityRow extends StatelessWidget {
   }
 }
 
-class _CalibrationStep {
-  const _CalibrationStep({
-    required this.label,
-    required this.detail,
-    required this.icon,
-  });
+/// What the calibration is doing right now, and how far through it is.
+///
+/// Replaces the five scripted steps that used to tick over on a timer. There
+/// is only one thing actually happening — solving the same scene repeatedly
+/// until the answer stops moving — so that is what is shown.
+class _ProgressCard extends StatelessWidget {
+  const _ProgressCard({required this.state});
 
-  final String label;
-  final String detail;
-  final IconData icon;
-}
-
-enum _StepState { waiting, active, done }
-
-class _StepRow extends StatelessWidget {
-  const _StepRow({required this.step, required this.state});
-
-  final _CalibrationStep step;
-  final _StepState state;
+  final CalibrationState state;
 
   @override
   Widget build(BuildContext context) {
-    final (color, background) = switch (state) {
-      _StepState.waiting => (AvColors.textFaint, AvColors.canvasSunken),
-      _StepState.active => (AvColors.flare, AvColors.flareSoft),
-      _StepState.done => (AvColors.made, AvColors.madeSoft),
-    };
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AnimatedContainer(
-          duration: AvMotion.normal,
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-          child: Center(
-            child: state == _StepState.active
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(color),
-                    ),
-                  )
-                : Icon(
-                    state == _StepState.done ? Icons.check_rounded : step.icon,
-                    size: 15,
-                    color: color,
-                  ),
-          ),
-        ),
-        const SizedBox(width: AvSpace.sm),
-        Expanded(
-          child: Column(
+    return AvCard(
+      padding: const EdgeInsets.all(AvSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                step.label,
-                style: AvType.titleSmall.copyWith(
-                  color: state == _StepState.waiting
-                      ? AvColors.textMuted
-                      : AvColors.textPrimary,
+              _StageGlyph(stage: state.stage),
+              const SizedBox(width: AvSpace.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_title, style: AvType.titleSmall.primary),
+                    const SizedBox(height: 1),
+                    Text(_detail, style: AvType.caption.muted),
+                  ],
                 ),
               ),
-              const SizedBox(height: 1),
-              Text(step.detail, style: AvType.caption.muted),
             ],
           ),
+          if (state.stage == CalibrationStage.settling) ...[
+            const SizedBox(height: AvSpace.sm),
+            AvMeter(value: state.settleProgress, color: AvColors.flare),
+          ],
+          if (state.solution != null && state.stage != CalibrationStage.idle)
+            ...[
+              const SizedBox(height: AvSpace.sm),
+              const AvSeparator(),
+              const SizedBox(height: AvSpace.sm),
+              Wrap(
+                spacing: AvSpace.md,
+                runSpacing: AvSpace.xs,
+                children: [
+                  for (final (label, value) in _readings)
+                    _Reading(label: label, value: value),
+                ],
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+
+  String get _title => switch (state.stage) {
+    CalibrationStage.idle => 'Ready to calibrate',
+    CalibrationStage.searching => 'Looking for the ring',
+    CalibrationStage.settling => 'Solving the court plane',
+    CalibrationStage.solved => 'Court plane locked',
+    CalibrationStage.blocked => 'Cannot solve this view',
+  };
+
+  String get _detail => switch (state.stage) {
+    CalibrationStage.idle =>
+      'The ring is the height reference. Everything measured this session is '
+          'taken against it.',
+    CalibrationStage.searching =>
+      'Frame the whole basket. ${state.framesSeen} frames checked so far.',
+    CalibrationStage.settling =>
+      'Same answer needed from a run of frames before it is trusted. Keep the '
+          'phone still.',
+    CalibrationStage.solved =>
+      'Solved from ${state.framesWithRim} frames with the ring in view.',
+    CalibrationStage.blocked =>
+      'The geometry does not resolve from here.',
+  };
+
+  List<(String, String)> get _readings {
+    final frame = state.solution?.frame;
+    final error = state.solution?.reprojectionErrorPx;
+    return [
+      if (frame != null)
+        ('Ring distance', '${frame.rimCentre.length.toStringAsFixed(2)} m'),
+      if (error != null && !error.isNaN)
+        ('Reprojection', '${error.toStringAsFixed(1)} px'),
+      ('Mount drift', '${state.jitterPx.toStringAsFixed(1)} cm'),
+    ];
+  }
+}
+
+class _Reading extends StatelessWidget {
+  const _Reading({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: AvType.overline.copyWith(color: AvColors.textFaint),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          style: AvType.tabular(
+            AvType.metricSmall,
+          ).copyWith(color: AvColors.textPrimary),
+          maxLines: 1,
         ),
       ],
+    );
+  }
+}
+
+class _StageGlyph extends StatelessWidget {
+  const _StageGlyph({required this.stage});
+
+  final CalibrationStage stage;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color, background) = switch (stage) {
+      CalibrationStage.idle => (
+        Icons.grid_on_rounded,
+        AvColors.textFaint,
+        AvColors.canvasSunken,
+      ),
+      CalibrationStage.searching => (
+        Icons.search_rounded,
+        AvColors.flare,
+        AvColors.flareSoft,
+      ),
+      CalibrationStage.settling => (
+        Icons.adjust_rounded,
+        AvColors.flare,
+        AvColors.flareSoft,
+      ),
+      CalibrationStage.solved => (
+        Icons.check_rounded,
+        AvColors.made,
+        AvColors.madeSoft,
+      ),
+      CalibrationStage.blocked => (
+        Icons.close_rounded,
+        AvColors.miss,
+        AvColors.missSoft,
+      ),
+    };
+
+    final busy =
+        stage == CalibrationStage.searching ||
+        stage == CalibrationStage.settling;
+
+    return AnimatedContainer(
+      duration: AvMotion.normal,
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+      child: Center(
+        child: busy
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(color),
+                ),
+              )
+            : Icon(icon, size: 15, color: color),
+      ),
     );
   }
 }
@@ -475,17 +784,20 @@ class _CalibrationOverlayPainter extends CustomPainter {
   const _CalibrationOverlayPainter({
     required this.progress,
     required this.stage,
-    required this.step,
+    required this.settleProgress,
   });
 
   final double progress;
-  final _CalibrationStage stage;
-  final int step;
+  final CalibrationStage stage;
+  final double settleProgress;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final scanning = stage == _CalibrationStage.scanning;
-    final complete = stage == _CalibrationStage.complete;
+    final scanning =
+        stage == CalibrationStage.searching ||
+        stage == CalibrationStage.settling;
+    final complete = stage == CalibrationStage.solved;
+    final found = complete || stage == CalibrationStage.settling;
 
     // Court plane mesh.
     final mesh = Paint()
@@ -540,8 +852,10 @@ class _CalibrationOverlayPainter extends CustomPainter {
       LiveScene.hoop.width * size.width,
       LiveScene.hoop.height * size.height,
     );
-    final rimColor = complete || step >= 1
+    final rimColor = found
         ? AvColors.overlayHoop
+        : stage == CalibrationStage.blocked
+        ? AvColors.miss
         : Colors.white;
     canvas.drawOval(
       rim.inflate(6),
@@ -550,10 +864,33 @@ class _CalibrationOverlayPainter extends CustomPainter {
         ..strokeWidth = 2
         ..color = rimColor.withValues(alpha: 0.9),
     );
+
+    // The ring fills in as the run of consistent solves builds, so the athlete
+    // can see that holding still is what finishes it.
+    if (stage == CalibrationStage.settling && settleProgress > 0) {
+      canvas.drawArc(
+        rim.inflate(6),
+        -math.pi / 2,
+        2 * math.pi * settleProgress,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.5
+          ..strokeCap = StrokeCap.round
+          ..color = AvColors.flare,
+      );
+    }
+
     _tag(
       canvas,
       Offset(rim.left, rim.top - 20),
-      complete || step >= 1 ? 'RIM 3.05 m' : 'SEARCHING',
+      switch (stage) {
+        CalibrationStage.solved => 'RIM 3.05 m',
+        CalibrationStage.settling =>
+          'LOCKING ${(settleProgress * 100).round()}%',
+        CalibrationStage.blocked => 'NO SOLVE',
+        _ => 'SEARCHING',
+      },
       rimColor,
     );
 
@@ -628,5 +965,5 @@ class _CalibrationOverlayPainter extends CustomPainter {
   bool shouldRepaint(_CalibrationOverlayPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.stage != stage ||
-      oldDelegate.step != step;
+      oldDelegate.settleProgress != settleProgress;
 }

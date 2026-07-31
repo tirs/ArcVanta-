@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Measuring a session means watching one. Nothing is recorded to disk:
+         frames are analysed and dropped, and only the derived geometry leaves
+         the native layer. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
     <application
         android:label="ArcVanta AI"
         android:name="${applicationName}"

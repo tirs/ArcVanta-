@@ -20,7 +20,9 @@ import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/painters/overlay_painter.dart';
 import '../../state/app_settings.dart';
+import '../../state/capture_pipeline.dart';
 import '../../state/live_session.dart';
+import '../../state/session_events.dart';
 import '../../state/stores.dart';
 import 'camera_stage.dart';
 
@@ -75,9 +77,17 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     final controller = ref.read(liveSessionProvider.notifier);
     controller.end();
     final session = controller.finalise();
-    ref.read(sessionStoreProvider.notifier).addSession(session);
+    // Committed before navigating: the summary screen reads the session back
+    // out of the store, and losing a session someone just shot is the one
+    // failure this app cannot have.
+    await ref.read(sessionStoreProvider.notifier).addSession(session);
+    await ref.read(sessionEventsProvider).recordCompleted(session);
     if (!mounted) return;
-    context.pushReplacement(AppRoute.session(session.id));
+    // Placement and calibration are setup steps, not places to go back to once
+    // the session is in the book. Reset to the drill list, then show the
+    // summary on top of it so Back lands somewhere that makes sense.
+    context.go(AppRoute.drills);
+    context.push(AppRoute.session(session.id));
   }
 
   Future<void> _confirmDiscard() async {
@@ -98,7 +108,20 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(liveSessionProvider);
-    final pose = state.pose;
+    final settings = ref.watch(appSettingsProvider);
+
+    // The overlay is a claim about what the camera can see, so it is drawn
+    // only when something actually saw it. With the models missing the source
+    // is a scripted animation, and painting a skeleton over it would dress a
+    // rehearsal up as tracking.
+    final live = ref.watch(pipelineStatusProvider).valueOrNull?.isLive ?? false;
+    final pose = live ? state.pose : null;
+
+    // A cue that is only spoken leaves nothing behind for an athlete who
+    // missed it, or who has the volume down. Captions off is only honoured
+    // when the voice is actually delivering the cue some other way.
+    final showCaptions =
+        settings.captionsForAudioCoaching || !settings.spokenFeedback;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AvTheme.inkOverlay,
@@ -126,13 +149,14 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                           showSkeleton: _showSkeleton,
                           showTrajectory: _showTrajectory,
                           showBoxes: _showBoxes,
-                          trackingConfidence: state.trackingConfidence,
+                          trackingConfidence: state.trackingConfidence ?? 0,
                           textDirection: Directionality.of(context),
                           highlightRelease:
                               state.phase == ShotPhaseKind.release,
                         ),
                       ),
               ),
+              if (!live) const _RehearsalPlacard(),
               const _EdgeScrim(),
               SafeArea(
                 child: Column(
@@ -151,7 +175,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                           setState(() => _showBoxes = !_showBoxes),
                     ),
                     const Spacer(),
-                    if (state.activeCue != null)
+                    if (state.activeCue != null && showCaptions)
                       _LiveCueBanner(cue: state.activeCue!),
                     if (state.pendingConfirmation != null)
                       _ConfirmationPrompt(
@@ -197,6 +221,59 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   }
 }
 
+/// Stands in for the analysis overlay when there is no analysis.
+///
+/// Something has to occupy the middle of the screen, and the honest thing to
+/// put there is a sentence saying why the skeleton is absent. The alternative
+/// tried first — animating a scripted shooter — looked identical to tracking
+/// and was read as tracking.
+class _RehearsalPlacard extends StatelessWidget {
+  const _RehearsalPlacard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AvSpace.xl),
+        child: Container(
+          padding: const EdgeInsets.all(AvSpace.md),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: AvRadius.allMd,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.science_outlined,
+                color: AvColors.caution,
+                size: 26,
+              ),
+              const SizedBox(height: AvSpace.xs),
+              Text(
+                'Rehearsal, not measurement',
+                textAlign: TextAlign.center,
+                style: AvType.titleSmall.copyWith(color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'The analysis models are not installed, so there is nothing '
+                'watching the court. You can walk the controls, and this '
+                'session will be kept apart from your real shooting.',
+                textAlign: TextAlign.center,
+                style: AvType.caption.copyWith(
+                  color: Colors.white.withValues(alpha: 0.76),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EdgeScrim extends StatelessWidget {
   const _EdgeScrim();
 
@@ -222,7 +299,7 @@ class _EdgeScrim extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
+class _TopBar extends ConsumerWidget {
   const _TopBar({
     required this.state,
     required this.onClose,
@@ -244,7 +321,9 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onToggleBoxes;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final live = ref.watch(pipelineStatusProvider).valueOrNull?.isLive ?? false;
+    final texture = ref.watch(previewTextureProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(AvSpace.md, AvSpace.sm, AvSpace.md, 0),
       child: Column(
@@ -277,35 +356,97 @@ class _TopBar extends StatelessWidget {
                   ],
                 ),
               ),
-              _TrackingChip(state: state),
+              _TrackingChip(state: state, live: live),
             ],
           ),
           const SizedBox(height: AvSpace.sm),
-          Wrap(
-            spacing: AvSpace.xs,
-            runSpacing: AvSpace.xs,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _OverlayToggle(
-                label: 'Skeleton',
-                active: showSkeleton,
-                color: AvColors.overlaySkeleton,
-                onTap: onToggleSkeleton,
-              ),
-              _OverlayToggle(
-                label: 'Arc',
-                active: showTrajectory,
-                color: AvColors.overlayTrace,
-                onTap: onToggleTrajectory,
-              ),
-              _OverlayToggle(
-                label: 'Boxes',
-                active: showBoxes,
-                color: AvColors.overlayHoop,
-                onTap: onToggleBoxes,
-              ),
-              _Telemetry(state: state),
-            ],
+          // Scrolls rather than wraps: a second row of chips is what pushes
+          // the controls off the bottom of a phone held sideways, and the HUD
+          // has to stay one line tall whatever is in it.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              spacing: AvSpace.xs,
+              children: [
+                // First in the row so it can never be the chip that scrolls
+                // out of sight. It is the one the athlete has to see.
+                ValueListenableBuilder<int?>(
+                  valueListenable: texture,
+                  builder: (context, id, _) {
+                    if (live && id != null) return const SizedBox.shrink();
+                    return _SourceChip(
+                      label: live ? 'NO PREVIEW' : 'SIMULATED',
+                    );
+                  },
+                ),
+                // Nothing is drawn without a live pipeline, so the switches
+                // that control it would be three controls that do nothing.
+                if (live) ...[
+                  _OverlayToggle(
+                    label: 'Skeleton',
+                    active: showSkeleton,
+                    color: AvColors.overlaySkeleton,
+                    onTap: onToggleSkeleton,
+                  ),
+                  _OverlayToggle(
+                    label: 'Arc',
+                    active: showTrajectory,
+                    color: AvColors.overlayTrace,
+                    onTap: onToggleTrajectory,
+                  ),
+                  _OverlayToggle(
+                    label: 'Boxes',
+                    active: showBoxes,
+                    color: AvColors.overlayHoop,
+                    onTap: onToggleBoxes,
+                  ),
+                ],
+                // Frame rate and thermal headroom describe an inference load
+                // that is not running, so there is nothing to report.
+                if (live) _Telemetry(state: state),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Says plainly where what is on screen came from.
+///
+/// Two different admissions share one chip: the measurements are generated,
+/// or they are real but the picture behind them is not the camera. Both mean
+/// the athlete should not read the scene literally.
+class _SourceChip extends StatelessWidget {
+  const _SourceChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AvColors.caution.withValues(alpha: 0.22),
+        borderRadius: AvRadius.pill,
+        border: Border.all(color: AvColors.caution.withValues(alpha: 0.65)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.science_rounded,
+            size: 11,
+            color: AvColors.caution,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AvType.overline.copyWith(
+              color: AvColors.caution,
+              fontSize: 9,
+            ),
           ),
         ],
       ),
@@ -314,13 +455,21 @@ class _TopBar extends StatelessWidget {
 }
 
 class _TrackingChip extends StatelessWidget {
-  const _TrackingChip({required this.state});
+  const _TrackingChip({required this.state, required this.live});
 
   final LiveSessionState state;
 
+  /// Whether anything is actually tracking. A confidence score is a claim
+  /// about how well the models can see the athlete, so with no models the
+  /// chip has to say that rather than report the simulator's own number.
+  final bool live;
+
   @override
   Widget build(BuildContext context) {
-    final level = ConfidenceLevel.fromScore(state.trackingConfidence);
+    final confidence = live ? state.trackingConfidence : null;
+    final level = confidence == null
+        ? ConfidenceLevel.low
+        : ConfidenceLevel.fromScore(confidence);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -341,7 +490,11 @@ class _TrackingChip extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            'TRACKING ${(state.trackingConfidence * 100).round()}',
+            live
+                ? (confidence == null
+                      ? 'TRACKING —'
+                      : 'TRACKING ${(confidence * 100).round()}')
+                : 'NOT TRACKING',
             style: AvType.tabular(
               AvType.overline,
             ).copyWith(color: Colors.white, fontSize: 9),
@@ -363,7 +516,7 @@ class _Telemetry extends StatelessWidget {
     return Row(
       children: [
         Text(
-          '${state.processedFps} FPS',
+          state.processedFps == null ? '— FPS' : '${state.processedFps} FPS',
           style: AvType.tabular(
             AvType.overline,
           ).copyWith(color: Colors.white.withValues(alpha: 0.7), fontSize: 9),
@@ -822,7 +975,7 @@ class _BigFigure extends StatelessWidget {
   }
 }
 
-class _Controls extends StatelessWidget {
+class _Controls extends ConsumerWidget {
   const _Controls({
     required this.state,
     required this.onPause,
@@ -838,8 +991,43 @@ class _Controls extends StatelessWidget {
   final VoidCallback onFinish;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final paused = state.status == LiveStatus.paused;
+    final leftHanded = ref.watch(
+      appSettingsProvider.select((s) => s.leftHandedLayout),
+    );
+
+    final corrections = [
+      _GlassButton(
+        icon: Icons.undo_rounded,
+        semanticLabel: 'Mark last shot as a miss',
+        enabled: state.shots.isNotEmpty,
+        onTap: () => onCorrect(ShotResult.missed),
+        caption: 'Miss',
+      ),
+      const SizedBox(width: AvSpace.sm),
+      _GlassButton(
+        icon: Icons.check_rounded,
+        semanticLabel: 'Mark last shot as a make',
+        enabled: state.shots.isNotEmpty,
+        onTap: () => onCorrect(ShotResult.made),
+        caption: 'Make',
+      ),
+    ];
+
+    final finish = _GlassButton(
+      icon: Icons.flag_rounded,
+      semanticLabel: 'Finish session',
+      onTap: onFinish,
+      caption: 'Finish',
+      highlight: true,
+    );
+
+    // Mirrored so the shot corrections sit under the thumb that is free. A
+    // left-handed shooter holds the phone in the right hand between reps.
+    final leading = leftHanded ? [finish] : corrections;
+    final trailing = leftHanded ? corrections.reversed.toList() : [finish];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AvSpace.md,
@@ -849,21 +1037,7 @@ class _Controls extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _GlassButton(
-            icon: Icons.undo_rounded,
-            semanticLabel: 'Mark last shot as a miss',
-            enabled: state.shots.isNotEmpty,
-            onTap: () => onCorrect(ShotResult.missed),
-            caption: 'Miss',
-          ),
-          const SizedBox(width: AvSpace.sm),
-          _GlassButton(
-            icon: Icons.check_rounded,
-            semanticLabel: 'Mark last shot as a make',
-            enabled: state.shots.isNotEmpty,
-            onTap: () => onCorrect(ShotResult.made),
-            caption: 'Make',
-          ),
+          ...leading,
           const Spacer(),
           _PrimaryControl(
             icon: paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
@@ -871,13 +1045,7 @@ class _Controls extends StatelessWidget {
             onTap: paused ? onResume : onPause,
           ),
           const Spacer(),
-          _GlassButton(
-            icon: Icons.flag_rounded,
-            semanticLabel: 'Finish session',
-            onTap: onFinish,
-            caption: 'Finish',
-            highlight: true,
-          ),
+          ...trailing,
         ],
       ),
     );

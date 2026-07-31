@@ -10,7 +10,7 @@ import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
-import '../../state/stores.dart';
+import '../../state/entitlement.dart';
 
 /// Plans and entitlement. Prices, limits and what happens when a subscription
 /// lapses are all stated on one screen; nothing about billing is implied.
@@ -37,38 +37,77 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
       leading: const AvBackButton(),
       bottomBar: AvBottomBar(
         note: Text(
-          'Billed through ${entitlement.store}. Cancel any time from your '
-          'store account; access continues to the end of the paid period.',
+          BillingAvailability.isAvailable
+              ? 'Billed through ${entitlement.store}. Cancel any time from '
+                    'your store account; access continues to the end of the '
+                    'paid period.'
+              : BillingAvailability.unavailableReason,
           style: AvType.caption.faint,
         ),
         children: [
           Expanded(
             child: AvButton(
-              label: selected == entitlement.tier
-                  ? 'Manage this plan'
-                  : 'Switch to ${selected.label}',
-              variant: selected == entitlement.tier
+              label: BillingAvailability.isAvailable
+                  ? (selected == entitlement.tier
+                        ? 'Manage this plan'
+                        : 'Switch to ${selected.label}')
+                  : 'Purchasing not available yet',
+              variant:
+                  !BillingAvailability.isAvailable ||
+                      selected == entitlement.tier
                   ? AvButtonVariant.outline
                   : AvButtonVariant.primary,
               size: AvButtonSize.large,
               expand: true,
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    selected == entitlement.tier
-                        ? 'Opening ${entitlement.store} to manage '
-                              '${selected.label}'
-                        : 'Opening ${entitlement.store} to confirm the '
-                              'change to ${selected.label}',
-                  ),
-                ),
-              ),
+              // A store button that opens nothing is worse than no button, so
+              // it stays disabled until receipts are real.
+              onPressed: BillingAvailability.isAvailable
+                  ? () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          selected == entitlement.tier
+                              ? 'Opening ${entitlement.store} to manage '
+                                    '${selected.label}'
+                              : 'Opening ${entitlement.store} to confirm the '
+                                    'change to ${selected.label}',
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           ),
         ],
       ),
       slivers: [
         SliverGutter(child: _EntitlementCard(entitlement: entitlement)),
+        if (!BillingAvailability.isAvailable)
+          const SliverGutter(
+            top: AvSpace.md,
+            child: AvTintCard(
+              tint: AvColors.cautionSoft,
+              borderColor: AvColors.cautionSoft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AvGlyph(
+                    icon: Icons.sell_outlined,
+                    color: AvColors.cautionDeep,
+                    background: AvColors.cautionSoft,
+                    size: 36,
+                  ),
+                  SizedBox(width: AvSpace.md),
+                  Expanded(
+                    child: Text(
+                      'None of these limits are switched on. The tiers below '
+                      'describe where pricing is headed; today every feature '
+                      'is unlocked and nothing can be bought.',
+                      style: AvType.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SliverGutter(
           top: AvSpace.md,
           child: AvSegmented<BillingPeriod>(
@@ -129,45 +168,46 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   icon: Icons.receipt_long_rounded,
                   title: 'No usage-based surprises',
                   detail:
-                      'Cloud analysis credits are shown before each run '
-                      'and never billed automatically.',
+                      'Sessions are measured on your phone, so recording more '
+                      'of them never costs more.',
                 ),
               ],
             ),
           ),
         ),
-        SliverGutter(
-          top: AvSpace.md,
-          child: Row(
-            children: [
-              Expanded(
-                child: AvButton(
-                  label: 'Restore purchases',
-                  variant: AvButtonVariant.outline,
-                  size: AvButtonSize.small,
-                  expand: true,
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Checking your store account'),
+        if (BillingAvailability.isAvailable)
+          SliverGutter(
+            top: AvSpace.md,
+            child: Row(
+              children: [
+                Expanded(
+                  child: AvButton(
+                    label: 'Restore purchases',
+                    variant: AvButtonVariant.outline,
+                    size: AvButtonSize.small,
+                    expand: true,
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Checking your store account'),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AvSpace.xs),
-              Expanded(
-                child: AvButton(
-                  label: 'Manage billing',
-                  variant: AvButtonVariant.ghost,
-                  size: AvButtonSize.small,
-                  expand: true,
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Opening ${entitlement.store}')),
+                const SizedBox(width: AvSpace.xs),
+                Expanded(
+                  child: AvButton(
+                    label: 'Manage billing',
+                    variant: AvButtonVariant.ghost,
+                    size: AvButtonSize.small,
+                    expand: true,
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Opening ${entitlement.store}')),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -214,8 +254,12 @@ class _EntitlementCard extends StatelessWidget {
           ),
           const SizedBox(height: AvSpace.xs),
           Text(
-            '${entitlement.period.label} \u00B7 renews '
-            '${Fmt.fullDate(entitlement.renewsAt)}',
+            // A free tier has no billing period and no renewal, and printing
+            // one anyway is how the epoch date used to reach the screen.
+            entitlement.tier == PlanTier.free
+                ? 'No payment, no expiry'
+                : '${entitlement.period.label} \u00B7 renews '
+                      '${Fmt.fullDate(entitlement.renewsAt)}',
             style: AvType.bodySmall.copyWith(color: AvColors.textOnInkMuted),
           ),
           const SizedBox(height: AvSpace.md),
@@ -224,19 +268,19 @@ class _EntitlementCard extends StatelessWidget {
               Icon(
                 entitlement.verifiedServerSide
                     ? Icons.verified_user_rounded
-                    : Icons.gpp_maybe_rounded,
+                    : Icons.smartphone_rounded,
                 size: 15,
                 color: entitlement.verifiedServerSide
                     ? AvColors.made
-                    : AvColors.caution,
+                    : AvColors.textOnInkMuted,
               ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   entitlement.verifiedServerSide
                       ? 'Receipt verified with ${entitlement.store}.'
-                      : 'Waiting on receipt verification from '
-                            '${entitlement.store}.',
+                      : 'Every feature in this build runs on your device '
+                            'with nothing locked.',
                   style: AvType.caption.copyWith(
                     color: AvColors.textOnInkMuted,
                   ),

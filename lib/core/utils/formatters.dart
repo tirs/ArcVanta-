@@ -39,6 +39,18 @@ abstract final class Fmt {
     return '${seconds}s';
   }
 
+  /// A running total narrow enough for a stat tile.
+  ///
+  /// Whole hours would round a first session down to "0h" and read as though
+  /// nothing had been recorded, so anything under an hour stays in minutes and
+  /// the hour range carries a decimal until it is long enough not to need one.
+  static String spanShort(Duration value) {
+    if (value.inMinutes < 60) return '${value.inMinutes}m';
+    final hours = value.inMinutes / 60;
+    if (hours < 10) return '${hours.toStringAsFixed(1)}h';
+    return '${hours.round()}h';
+  }
+
   static String clock(Duration value) {
     final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
@@ -63,9 +75,17 @@ abstract final class Fmt {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays == 1) return 'yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
-    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()} weeks ago';
+    if (diff.inDays < 30) {
+      return '${count((diff.inDays / 7).floor(), 'week')} ago';
+    }
     return date(value);
   }
+
+  /// `3 sessions`, `1 session`. English only, and only for the regular `-s`
+  /// case or an explicit [plural]; anything harder should be spelled out at
+  /// the call site rather than guessed at here.
+  static String count(int value, String singular, [String? plural]) =>
+      '$value ${value == 1 ? singular : (plural ?? '${singular}s')}';
 
   static String percent(double value, {int decimals = 1}) =>
       '${value.toStringAsFixed(decimals)}%';

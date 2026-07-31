@@ -103,6 +103,8 @@ class TrainingSession {
     required this.processedOnDevice,
     this.assignmentId,
     this.coachComment,
+    this.isDemo = false,
+    this.isSimulated = false,
   });
 
   final String id;
@@ -118,6 +120,54 @@ class TrainingSession {
   final bool processedOnDevice;
   final String? assignmentId;
   final String? coachComment;
+
+  /// Marks a session that came from the sample data rather than a camera.
+  ///
+  /// Carried on the model, not just in storage, so that any screen holding a
+  /// session can tell whether it is looking at something the user actually
+  /// shot. Totals and records are free to exclude these.
+  final bool isDemo;
+
+  /// Marks a session the athlete ran themselves, but with no models loaded.
+  ///
+  /// Distinct from [isDemo]: the athlete did start this one, so deleting it
+  /// behind their back would be surprising and it stays in the history. What
+  /// it must not do is set a personal best or bend a trend line, because the
+  /// numbers in it came from a scripted animation rather than a camera.
+  final bool isSimulated;
+
+  /// Whether the numbers in this session came from watching a real court.
+  ///
+  /// The single predicate every total, record and trend should filter on, so
+  /// that a new flavour of not-real data only has to be excluded once.
+  bool get isMeasured => !isDemo && !isSimulated;
+
+  TrainingSession copyWith({
+    List<Shot>? shots,
+    List<CoachingCue>? cues,
+    Duration? duration,
+    String? coachComment,
+  }) {
+    return TrainingSession(
+      id: id,
+      drillId: drillId,
+      drillName: drillName,
+      startedAt: startedAt,
+      duration: duration ?? this.duration,
+      shots: shots ?? this.shots,
+      calibration: calibration,
+      cues: cues ?? this.cues,
+      modelVersion: modelVersion,
+      deviceName: deviceName,
+      processedOnDevice: processedOnDevice,
+      assignmentId: assignmentId,
+      coachComment: coachComment ?? this.coachComment,
+      isDemo: isDemo,
+      isSimulated: isSimulated,
+    );
+  }
+
+  DateTime get endedAt => startedAt.add(duration);
 
   List<Shot> get attempts =>
       shots.where((s) => s.result.countsAsAttempt).toList(growable: false);

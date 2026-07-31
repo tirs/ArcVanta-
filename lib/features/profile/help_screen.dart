@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/router/app_router.dart';
+import '../../core/platform/device_identity.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
@@ -11,6 +15,13 @@ import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
+import '../../state/app_settings.dart';
+import '../../state/capture_pipeline.dart';
+import '../../state/stores.dart';
+
+/// Where support mail goes. A single constant so it cannot drift between the
+/// mail link and the copied fallback.
+const String _supportAddress = 'support@arcvanta.ai';
 
 class _Article {
   const _Article({
@@ -116,14 +127,17 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
           'full charge at 60 fps, longer at 30.',
     ),
     _Article(
-      title: 'Sharing with a coach or guardian',
+      title: 'Getting a session to someone else',
       icon: Icons.shield_rounded,
       accent: AvColors.court,
       body:
-          'Nothing is shared until you send it. Coaches see summaries and '
-          'the clips you send them. On accounts under sixteen, a guardian '
-          'approves coach access before any shot-level data or video is '
-          'visible, and public sharing is never available.',
+          'There is no coach account or team service in this build, so '
+          'nothing is shared automatically and nothing ever leaves on its '
+          'own. What you can do is export: the share button on a session '
+          'writes a file and hands it to whichever app you pick, and you '
+          'choose whether the mechanics and shot locations go with it. '
+          'Everything under Privacy and data does the same for your whole '
+          'history.',
     ),
   ];
 
@@ -316,9 +330,9 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                 ),
                 const SizedBox(height: AvSpace.xs),
                 Text(
-                  'Send a diagnostic report with your last session. It '
-                  'includes calibration scores and model versions, and never '
-                  'includes video unless you attach it.',
+                  'Email opens with a short report attached in the body: app '
+                  'version, device, which capture pipeline ran and how many '
+                  'sessions you have. No video, and nothing that names you.',
                   style: AvType.caption.muted,
                 ),
                 const SizedBox(height: AvSpace.md),
@@ -326,31 +340,21 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                   children: [
                     Expanded(
                       child: AvButton(
-                        label: 'Contact support',
+                        label: 'Email support',
                         variant: AvButtonVariant.insight,
                         size: AvButtonSize.small,
                         expand: true,
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Opening a support conversation'),
-                              ),
-                            ),
+                        onPressed: () => _emailSupport(context),
                       ),
                     ),
                     const SizedBox(width: AvSpace.xs),
                     Expanded(
                       child: AvButton(
-                        label: 'Send diagnostics',
+                        label: 'Copy report',
                         variant: AvButtonVariant.outline,
                         size: AvButtonSize.small,
                         expand: true,
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Diagnostic report prepared'),
-                              ),
-                            ),
+                        onPressed: () => _copyReport(context),
                       ),
                     ),
                   ],
@@ -361,14 +365,83 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
         ),
         SliverGutter(
           top: AvSpace.md,
-          child: Center(
-            child: Text(
-              'Terms of service \u00B7 Privacy policy \u00B7 Licences',
-              style: AvType.caption.faint,
-            ),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AvSpace.xs,
+            children: [
+              _LegalLink(
+                label: 'Terms of service',
+                onTap: () => context.push(AppRoute.terms),
+              ),
+              Text('\u00B7', style: AvType.caption.faint),
+              _LegalLink(
+                label: 'Privacy policy',
+                onTap: () => context.push(AppRoute.privacyPolicy),
+              ),
+              Text('\u00B7', style: AvType.caption.faint),
+              _LegalLink(
+                label: 'Licences',
+                onTap: () => showLicensePage(
+                  context: context,
+                  applicationName: 'ArcVanta AI',
+                  applicationVersion: DeviceIdentity.appVersion,
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  /// Facts about this install that make a bug report actionable.
+  ///
+  /// Deliberately short and readable: the user can see everything they are
+  /// about to send, which is the only reason to trust a "send diagnostics"
+  /// button at all.
+  String _diagnosticReport() {
+    final pipeline = ref.read(pipelineStatusProvider).valueOrNull;
+    final sessions = ref.read(sessionStoreProvider);
+    return [
+      'ArcVanta AI diagnostic report',
+      'App: ${DeviceIdentity.appVersion}',
+      'Platform: ${defaultTargetPlatform.name}',
+      'Capture: ${pipeline?.signature ?? 'unknown'}',
+      'Sessions recorded: ${sessions.where((s) => s.isMeasured).length}',
+      'Sample data loaded: ${ref.read(appSettingsProvider).demoDataEnabled}',
+    ].join('\n');
+  }
+
+  Future<void> _emailSupport(BuildContext context) async {
+    final report = _diagnosticReport();
+    final uri = Uri(
+      scheme: 'mailto',
+      path: _supportAddress,
+      queryParameters: {
+        'subject': 'ArcVanta AI support',
+        'body': '\n\n---\n$report',
+      },
+    );
+
+    if (await launchUrl(uri)) return;
+    if (!context.mounted) return;
+    // No mail client is a normal state on a fresh device, so fall back to
+    // something the user can still act on rather than failing silently.
+    await Clipboard.setData(ClipboardData(text: '$_supportAddress\n\n$report'));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No mail app found. Address and report copied instead.'),
+      ),
+    );
+  }
+
+  Future<void> _copyReport(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: _diagnosticReport()));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Diagnostic report copied to clipboard')),
     );
   }
 }
@@ -428,6 +501,34 @@ class _ArticleTileState extends State<_ArticleTile> {
                 : const SizedBox(width: double.infinity),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A footer link. Underlined rather than merely tinted, because at caption size
+/// on a warm background colour alone is not a reliable affordance.
+class _LegalLink extends StatelessWidget {
+  const _LegalLink({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AvSpace.xs),
+        child: Text(
+          label,
+          style: AvType.caption.copyWith(
+            color: AvColors.insight,
+            decoration: TextDecoration.underline,
+            decorationColor: AvColors.insight,
+          ),
+        ),
       ),
     );
   }

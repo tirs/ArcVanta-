@@ -1,0 +1,72 @@
+# Training-time pins for the ArcVanta vision stack.
+#
+# Every line here is a commit, never a tag and never a branch. The reason is
+# specific rather than general: MMPose has had no release since January 2024
+# and RTMPose lives under projects/, which upstream explicitly holds to a
+# weaker API-stability bar than the main package. A `pip install mmpose` today
+# and the same command in six months are not the same software, and the
+# difference would show up as landmarks in slightly different places, which is
+# to say as a different measured elbow angle for the same shot.
+#
+# So none of this is a runtime dependency. These tools run once, on a
+# workstation, to produce two .onnx files. Those files are the contract; the
+# app never imports mmpose, mmdet, mmcv or torch. If upstream is archived
+# tomorrow, nothing shipped stops working.
+#
+# Read by tool/vision/setup.sh and tool/vision/export_onnx.py. Format is
+# `key<space>value`, comments start with #.
+
+# --- Frameworks ------------------------------------------------------------
+
+# openmmlab/mmengine v0.10.5
+mmengine        https://github.com/open-mmlab/mmengine.git
+mmengine.commit c9b59962d679484245d4b867da57326602904bcf
+
+# openmmlab/mmcv v2.1.0. The last version mmdet 3.x accepts; 2.2 tightens the
+# version gate and mmdet refuses to import.
+mmcv            https://github.com/open-mmlab/mmcv.git
+mmcv.commit     57c4e25e06e2d4f8a9357c84bcd24089a284dc88
+
+# openmmlab/mmdetection v3.3.0
+mmdet           https://github.com/open-mmlab/mmdetection.git
+mmdet.commit    44ebd17b145c2372c4b700bfb9cb20dbd28ab64a
+
+# openmmlab/mmpose v1.3.2, the last tagged release. RTMPose is at
+# projects/rtmpose within it.
+mmpose          https://github.com/open-mmlab/mmpose.git
+mmpose.commit   5408bc76f5b848cf925a0d1857899011d8c5b497
+
+# --- Export ----------------------------------------------------------------
+
+# torch and onnx are pinned because the exporter's output graph depends on
+# both: a different torch traces different ops, and a different onnx writes a
+# different graph for the same trace.
+torch           2.1.2
+torchvision     0.16.2
+onnx            1.16.2
+onnxruntime     1.22.0
+onnxsim         0.4.36
+numpy           1.26.4
+
+# setuptools 81 removed pkg_resources, which every setup.py in the OpenMMLab
+# tree imports at the top. Without this pin the build fails before it compiles
+# anything, and the failure reads as a pip bug rather than a version one.
+setuptools      69.5.1
+
+# torch 2.1.2 is built against the numpy 1 C ABI, and opencv 5 requires numpy
+# 2. Left to resolve freely pip installs both and torch loses its array
+# interop, which surfaces as a warning at import and a crash at the first
+# tensor-from-array call rather than as a version conflict.
+opencv          4.10.0.84
+
+# --- Checkpoints -----------------------------------------------------------
+#
+# The starting weights for the fine-tune. The detector is trained on to four
+# classes because COCO has person and sports ball but no rim and no backboard,
+# and those two are exactly what the court solve depends on.
+
+rtmdet.checkpoint  https://download.openmmlab.com/mmdetection/v3.0/rtmdet/rtmdet_m_8xb32-300e_coco/rtmdet_m_8xb32-300e_coco_20220719_112220-229f527c.pth
+rtmdet.sha256      229f527c
+
+rtmpose.checkpoint https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-aic-coco_pt-aic-coco_420e-256x192-63eb25f7_20230126.pth
+rtmpose.sha256     63eb25f7

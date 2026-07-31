@@ -234,7 +234,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     NotificationKind.training => 'Scheduled sessions and plan reminders',
     NotificationKind.assignment => 'New work and feedback from a coach',
     NotificationKind.progress => 'Goals reached and records broken',
-    NotificationKind.analysis => 'When a cloud analysis finishes',
+    NotificationKind.analysis => 'When a recorded session finishes processing',
     NotificationKind.account => 'Billing, plan and device changes',
     NotificationKind.safety =>
       'Guardian approvals and safety notices, always on',

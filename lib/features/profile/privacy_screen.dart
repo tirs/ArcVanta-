@@ -1,14 +1,22 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../../data/store/export.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/app_settings.dart';
+import '../../state/bootstrap.dart';
+import '../../state/cloud.dart';
+import '../../state/demo_mode.dart';
 import '../../state/stores.dart';
 
 /// Privacy controls stated as decisions rather than legal text: what leaves the
@@ -19,7 +27,6 @@ class PrivacyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final controller = ref.read(appSettingsProvider.notifier);
     final profile = ref.watch(playerProfileProvider);
 
     return AvScaffold(
@@ -46,20 +53,16 @@ class PrivacyScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        settings.localProcessingOnly
-                            ? 'Everything is processed on this device'
-                            : 'Some analysis runs in the cloud',
+                        'Everything is processed on this device',
                         style: AvType.headingSmall.copyWith(
                           color: AvColors.textOnInk,
                         ),
                       ),
                       const SizedBox(height: AvSpace.xs),
                       Text(
-                        settings.localProcessingOnly
-                            ? 'Video never leaves the phone. Detection, pose '
-                                  'and shot events all run locally.'
-                            : 'Selected clips are uploaded for deeper '
-                                  'analysis and deleted after processing.',
+                        'No video is written at all. Detection, pose and shot '
+                        'events are measured here and stay here, because '
+                        'there is nowhere configured to send them.',
                         style: AvType.bodySmall.copyWith(
                           color: AvColors.textOnInkMuted,
                         ),
@@ -83,35 +86,29 @@ class PrivacyScreen extends ConsumerWidget {
           child: AvCard(
             child: Column(
               children: [
-                _ConsentRow(
+                const _ConsentRow(
                   title: 'Process on device only',
                   detail:
-                      'Turning this off allows selected clips to be sent '
-                      'for cloud analysis, one clip at a time, with a prompt '
-                      'each time.',
-                  value: settings.localProcessingOnly,
-                  onChanged: (v) => controller.update(
-                    (s) => s.copyWith(localProcessingOnly: v),
-                  ),
+                      'Detection, pose and shot measurement all run on this '
+                      'phone. There is no cloud path to turn on.',
+                  value: true,
+                  onChanged: null,
                 ),
-                _ConsentRow(
+                const _ConsentRow(
                   title: 'Back up sessions',
                   detail:
-                      'Encrypted copies of measurements and summaries. '
-                      'Video is never included in backups.',
-                  value: settings.cloudBackup,
-                  onChanged: (v) =>
-                      controller.update((s) => s.copyWith(cloudBackup: v)),
+                      'Copies of measurements and summaries held off the '
+                      'device. ${CloudFeatures.unavailableRowNote}',
+                  value: false,
+                  onChanged: null,
                 ),
-                _ConsentRow(
+                const _ConsentRow(
                   title: 'Help improve detection',
                   detail:
-                      'Shares corrected results, never video and never '
-                      'anything that identifies you. Off by default.',
-                  value: settings.modelTrainingConsent,
-                  onChanged: (v) => controller.update(
-                    (s) => s.copyWith(modelTrainingConsent: v),
-                  ),
+                      'Sharing corrected results to train better models. '
+                      '${CloudFeatures.unavailableRowNote}',
+                  value: false,
+                  onChanged: null,
                 ),
               ],
             ),
@@ -120,7 +117,7 @@ class PrivacyScreen extends ConsumerWidget {
         const SliverGutter(
           top: AvSpace.lg,
           child: AvSectionHeader(
-            title: 'How long recordings are kept',
+            title: 'What is kept',
             accent: AvColors.insight,
             padding: EdgeInsets.only(bottom: AvSpace.sm),
           ),
@@ -130,26 +127,13 @@ class PrivacyScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AvSegmented<RetentionWindow>(
-                  values: RetentionWindow.values,
-                  labels: [
-                    for (final window in RetentionWindow.values) window.label,
-                  ],
-                  selected: settings.retention,
-                  accent: AvColors.insight,
-                  onChanged: (value) =>
-                      controller.update((s) => s.copyWith(retention: value)),
-                  dense: true,
-                ),
-                const SizedBox(height: AvSpace.sm),
                 Text(
-                  settings.retention == RetentionWindow.untilDeleted
-                      ? 'Video stays on the device until you delete it. '
-                            'Measurements are always kept.'
-                      : 'Video is deleted automatically after '
-                            '${settings.retention.label.toLowerCase()}. '
-                            'Measurements and summaries are kept.',
-                  style: AvType.caption.muted,
+                  'Sessions are stored as measurements: shot positions, '
+                  'angles, timings and summaries. No video file is written, '
+                  'so there is nothing to expire and no retention window to '
+                  'choose. Frames are read from the camera, measured, and '
+                  'discarded within the same session.',
+                  style: AvType.bodySmall.muted,
                 ),
               ],
             ),
@@ -166,33 +150,34 @@ class PrivacyScreen extends ConsumerWidget {
           child: AvCard(
             child: Column(
               children: [
-                AvKeyValue(
+                const AvKeyValue(
                   label: 'Coach',
-                  value: profile.coachName,
-                  trailing: const AvPill(
-                    label: 'Summaries and clips you send',
-                    color: AvColors.court,
+                  value: 'Nothing shared',
+                  trailing: AvPill(
+                    label: 'Not built',
+                    color: AvColors.unavailable,
+                    dense: true,
+                  ),
+                ),
+                const AvKeyValue(
+                  label: 'Team',
+                  value: 'Nothing shared',
+                  trailing: AvPill(
+                    label: 'Not built',
+                    color: AvColors.unavailable,
                     dense: true,
                   ),
                 ),
                 if (profile.isMinor && profile.guardianName != null)
                   AvKeyValue(
-                    label: 'Guardian',
+                    label: 'Guardian on record',
                     value: profile.guardianName!,
-                    trailing: const AvPill(
-                      label: 'Full access',
-                      color: AvColors.made,
-                      dense: true,
-                    ),
                   ),
-                const AvKeyValue(
-                  label: 'Team',
-                  value: 'Nothing shared',
-                  trailing: AvPill(
-                    label: 'Off',
-                    color: AvColors.unavailable,
-                    dense: true,
-                  ),
+                const SizedBox(height: AvSpace.xs),
+                Text(
+                  'Sharing needs an account service this build does not '
+                  'include, so no path off this phone exists to switch on.',
+                  style: AvType.caption.faint,
                 ),
               ],
             ),
@@ -224,9 +209,9 @@ class PrivacyScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Cloud processing, team visibility and any purchase '
-                          'require guardian approval. Public sharing is not '
-                          'available at all.',
+                          'Team visibility and purchases would require '
+                          'guardian approval. Neither is available in this '
+                          'build, and public sharing never will be.',
                           style: AvType.caption.muted,
                         ),
                       ],
@@ -253,46 +238,51 @@ class PrivacyScreen extends ConsumerWidget {
                   variant: AvButtonVariant.outline,
                   icon: Icons.download_rounded,
                   expand: true,
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Preparing a full export of sessions and measurements',
-                      ),
-                    ),
-                  ),
+                  onPressed: () => _export(context, ref),
                 ),
                 const SizedBox(height: AvSpace.xs),
                 AvButton(
-                  label: 'Delete all video',
-                  variant: AvButtonVariant.outline,
-                  icon: Icons.videocam_off_rounded,
-                  expand: true,
-                  onPressed: () => _confirm(
-                    context,
-                    title: 'Delete all video',
-                    body:
-                        'Clips on this device are removed permanently. '
-                        'Measurements, sessions and trends are kept.',
-                    action: 'Delete video',
-                  ),
-                ),
-                const SizedBox(height: AvSpace.xs),
-                AvButton(
-                  label: 'Delete my account',
+                  label: 'Delete everything',
                   variant: AvButtonVariant.danger,
                   icon: Icons.delete_forever_rounded,
                   expand: true,
                   onPressed: () => _confirm(
                     context,
-                    title: 'Delete your account',
+                    title: 'Delete everything',
                     body:
-                        'Every session, measurement, clip and setting is '
-                        'erased from this device and from backup within '
-                        'thirty days. This cannot be undone.',
-                    action: 'Delete account',
+                        'Every session, shot, measurement, goal and setting '
+                        'is erased from this device. Nothing is kept '
+                        'anywhere else, so this cannot be undone.',
+                    action: 'Delete everything',
+                    onConfirm: () => _deleteEverything(context, ref),
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+        const SliverGutter(
+          top: AvSpace.lg,
+          child: AvSectionHeader(
+            title: 'Sample data',
+            accent: AvColors.caution,
+            padding: EdgeInsets.only(bottom: AvSpace.sm),
+          ),
+        ),
+        SliverGutter(
+          child: AvCard(
+            child: _ConsentRow(
+              title: 'Show a sample season',
+              detail: settings.demoDataEnabled
+                  ? 'A fabricated history is loaded so you can see how the '
+                        'charts behave. It is marked everywhere it appears '
+                        'and is never counted with your own shooting.'
+                  : 'Loads a fabricated history so you can explore the '
+                        'charts before you have shot anything. Clearly '
+                        'labelled, and kept apart from your real sessions.',
+              value: settings.demoDataEnabled,
+              onChanged: (value) =>
+                  ref.read(demoModeProvider).setEnabled(value),
             ),
           ),
         ),
@@ -301,7 +291,7 @@ class PrivacyScreen extends ConsumerWidget {
           child: AvTintCard(
             tint: AvColors.canvasSunken,
             child: Text(
-              'Measurements are estimates from video, not medical or clinical '
+              'Measurements are camera estimates, not medical or clinical '
               'data. They are never used to make decisions about you without '
               'a human in the loop, and they are never sold.',
               style: AvType.caption.muted,
@@ -317,6 +307,7 @@ class PrivacyScreen extends ConsumerWidget {
     required String title,
     required String body,
     required String action,
+    VoidCallback? onConfirm,
   }) {
     showDialog<void>(
       context: context,
@@ -329,12 +320,64 @@ class PrivacyScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              Navigator.of(context).pop();
+              onConfirm?.call();
+            },
             style: TextButton.styleFrom(foregroundColor: AvColors.critical),
             child: Text(action),
           ),
         ],
       ),
+    );
+  }
+
+  /// Hands the athlete a file containing everything the app holds on them.
+  ///
+  /// Written to a temporary file and passed to the system share sheet, so the
+  /// destination is their choice rather than ours — which is the whole point
+  /// of an export on a device that talks to no server.
+  Future<void> _export(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final now = DateTime.now();
+    final payload = DataExport.build(
+      sessions: ref.read(sessionStoreProvider),
+      profile: ref.read(profileStoreProvider),
+      goals: ref.read(goalStoreProvider),
+      highlights: ref.read(highlightStoreProvider),
+      exportedAt: now,
+    );
+
+    try {
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/${DataExport.fileName(now)}');
+      await file.writeAsString(payload);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/json')],
+          subject: 'ArcVanta AI export',
+        ),
+      );
+    } on Object catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not write the export: $error')),
+      );
+    }
+  }
+
+  Future<void> _deleteEverything(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await ref.read(repositoryProvider).deleteEverything();
+
+    ref.read(sessionStoreProvider.notifier).clear();
+    ref.read(goalStoreProvider.notifier).clear();
+    ref.read(highlightStoreProvider.notifier).clear();
+    ref.read(notificationStoreProvider.notifier).clear();
+    ref.read(profileStoreProvider.notifier).clear();
+    ref.read(appSettingsProvider.notifier).reset();
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Everything on this device was deleted')),
     );
   }
 }
@@ -350,7 +393,11 @@ class _ConsentRow extends StatelessWidget {
   final String title;
   final String detail;
   final bool value;
-  final ValueChanged<bool> onChanged;
+
+  /// A null handler means the setting is not a choice in this build. The row
+  /// still states where the app stands, but shows a fixed marker rather than a
+  /// switch, so nobody flips something that cannot move.
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +417,13 @@ class _ConsentRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AvSpace.sm),
-          Switch(value: value, onChanged: onChanged),
+          if (onChanged case final handler?)
+            Switch(value: value, onChanged: handler)
+          else
+            AvPill(
+              label: value ? 'Always on' : 'Not available',
+              color: value ? AvColors.made : AvColors.textMuted,
+            ),
         ],
       ),
     );

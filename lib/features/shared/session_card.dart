@@ -31,6 +31,13 @@ class SessionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Above the numbers rather than tucked in with the metadata chips
+          // below them: by the time you have read a 62% field goal, being told
+          // it was invented is a correction rather than a caveat.
+          if (session.isSimulated) ...[
+            const _NotMeasuredStrip(),
+            const SizedBox(height: AvSpace.sm),
+          ],
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -143,14 +150,46 @@ class SessionCard extends StatelessWidget {
                   label: '$uncertain to confirm',
                   color: AvColors.caution,
                 ),
-              _Meta(
-                icon: session.processedOnDevice
-                    ? Icons.smartphone_rounded
-                    : Icons.cloud_done_rounded,
-                label: session.processedOnDevice ? 'On device' : 'Cloud review',
+              const _Meta(
+                icon: Icons.smartphone_rounded,
+                label: 'On device',
                 color: AvColors.court,
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Marks a session that was run without the analysis models loaded.
+class _NotMeasuredStrip extends StatelessWidget {
+  const _NotMeasuredStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AvSpace.sm,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: AvColors.cautionSoft,
+        borderRadius: AvRadius.allSm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.science_outlined, size: 13, color: AvColors.caution),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Rehearsal \u00B7 nothing was measured, so these numbers do not '
+              'count towards your records',
+              style: AvType.caption.copyWith(color: AvColors.caution),
+            ),
           ),
         ],
       ),

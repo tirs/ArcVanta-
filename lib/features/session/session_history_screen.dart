@@ -72,7 +72,7 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
 
     return AvScaffold(
       title: 'Session history',
-      subtitle: '${all.length} sessions stored on this device',
+      subtitle: '${Fmt.count(all.length, 'session')} stored on this device',
       leading: const AvBackButton(),
       slivers: [
         SliverGutter(
@@ -100,7 +100,7 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
                     ),
                     _HistoryStat(
                       label: 'On court',
-                      value: '${totalTime.inHours}h',
+                      value: Fmt.spanShort(totalTime),
                     ),
                   ],
                 ),
@@ -170,8 +170,7 @@ class _SessionHistoryScreenState extends ConsumerState<SessionHistoryScreen> {
               icon: Icons.history_rounded,
               title: 'No sessions yet',
               message:
-                  'Sessions you record are stored here, on the device, '
-                  'until you choose to back them up.',
+                  'Sessions you record are stored here, on the device.',
               action: AvButton(
                 label: 'Browse drills',
                 onPressed: () => context.go(AppRoute.train),

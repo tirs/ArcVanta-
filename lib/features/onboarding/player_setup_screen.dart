@@ -14,6 +14,7 @@ import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/app_settings.dart';
+import '../../state/stores.dart';
 
 class PlayerSetupScreen extends ConsumerStatefulWidget {
   const PlayerSetupScreen({super.key});
@@ -23,18 +24,22 @@ class PlayerSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
-  final _name = TextEditingController(text: 'Nova Reyes');
-  String _ageBand = '16 to 17';
+  final _name = TextEditingController();
+
+  /// Null until the athlete picks one. Age drives the guardian-consent path,
+  /// so guessing it is not an option.
+  String? _ageBand;
+
   DominantHand _hand = DominantHand.right;
   PlayerPosition _position = PlayerPosition.shootingGuard;
-  SkillLevel _skill = SkillLevel.advanced;
-  double _height = 185;
-  double _wingspan = 191;
-  int _availability = 5;
-  final Set<String> _goals = {
-    'Raise three-point accuracy',
-    'Improve shot consistency',
-  };
+  SkillLevel _skill = SkillLevel.intermediate;
+  /// Null until the athlete sets one. A slider that opens on a plausible
+  /// number would write a body measurement nobody entered, and release height
+  /// estimates would then be scaled against a guess.
+  double? _height;
+  double? _wingspan;
+  int _availability = 3;
+  final Set<String> _goals = {};
 
   static const _ageBands = [
     'Under 12',
@@ -56,7 +61,11 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
     'Better landing balance',
   ];
 
-  bool get _isMinor => _ageBand != '18 to 22' && _ageBand != '23 and over';
+  bool get _isMinor =>
+      _ageBand != null && _ageBand != '18 to 22' && _ageBand != '23 and over';
+
+  bool get _canContinue =>
+      _name.text.trim().isNotEmpty && _ageBand != null;
 
   @override
   void dispose() {
@@ -126,7 +135,8 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'An alias is fine. Nothing is public by default.',
+                              'An alias is fine. This name never leaves the '
+                              'phone.',
                               style: AvType.caption.onInkMuted,
                             ),
                           ),
@@ -169,8 +179,9 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                         const SizedBox(width: AvSpace.xs),
                         Expanded(
                           child: Text(
-                            'A guardian will need to approve this account before '
-                            'coach access, cloud review or any sharing is enabled.',
+                            'A guardian needs to approve this account before '
+                            'any sharing is enabled. Recording and measuring '
+                            'on this phone work either way.',
                             style: AvType.bodySmall.onInk,
                           ),
                         ),
@@ -250,7 +261,7 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
                       const SizedBox(height: AvSpace.xs),
                       Text(
                         'Used to scale release height and jump estimates. '
-                        'Both are optional and can be edited later.',
+                        'Leave them unset and those two are simply left out.',
                         style: AvType.caption.onInkMuted,
                       ),
                     ],
@@ -323,19 +334,50 @@ class _PlayerSetupScreenState extends ConsumerState<PlayerSetupScreen> {
               size: AvButtonSize.large,
               expand: true,
               trailingIcon: Icons.arrow_forward_rounded,
-              onPressed: () {
-                if (_isMinor) {
-                  context.go(AppRoute.guardianConsent);
-                } else {
-                  ref.read(appSettingsProvider.notifier).completeOnboarding();
-                  context.go(AppRoute.home);
-                }
-              },
+              onPressed: _canContinue ? _finish : null,
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Writes the profile before leaving the screen.
+  ///
+  /// Everything the athlete just entered feeds targets, plan generation and
+  /// the age-appropriate defaults, so it has to reach storage. This screen
+  /// used to navigate away and drop all of it.
+  Future<void> _finish() async {
+    final name = _name.text.trim();
+    await ref
+        .read(profileStoreProvider.notifier)
+        .save(
+          PlayerProfile(
+            id: 'local-player',
+            displayName: name,
+            initials: _initials(name),
+            ageBand: _ageBand!,
+            heightCm: _height?.round() ?? 0,
+            wingspanCm: _wingspan?.round() ?? 0,
+            dominantHand: _hand,
+            position: _position,
+            skillLevel: _skill,
+            teamName: '',
+            coachName: '',
+            accentColor: AvColors.flare,
+            goals: _goals.toList(growable: false),
+            weeklyAvailability: _availability,
+            isMinor: _isMinor,
+          ),
+        );
+
+    if (!mounted) return;
+    if (_isMinor) {
+      context.go(AppRoute.guardianConsent);
+      return;
+    }
+    ref.read(appSettingsProvider.notifier).completeOnboarding();
+    context.go(AppRoute.home);
   }
 
   static String _initials(String name) {
@@ -376,6 +418,8 @@ class _Section extends StatelessWidget {
   }
 }
 
+/// A measurement that has not been given yet reads "Not set" and the track sits
+/// at the minimum, so nothing is recorded until the athlete moves it.
 class _SliderRow extends StatelessWidget {
   const _SliderRow({
     required this.label,
@@ -388,7 +432,7 @@ class _SliderRow extends StatelessWidget {
   });
 
   final String label;
-  final double value;
+  final double? value;
   final double min;
   final double max;
   final String suffix;
@@ -397,6 +441,8 @@ class _SliderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unset = value == null;
+
     return Row(
       children: [
         SizedBox(
@@ -405,9 +451,11 @@ class _SliderRow extends StatelessWidget {
         ),
         Expanded(
           child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(activeTrackColor: color),
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: unset ? Colors.transparent : color,
+            ),
             child: Slider(
-              value: value,
+              value: value ?? min,
               min: min,
               max: max,
               divisions: (max - min).round(),
@@ -418,9 +466,11 @@ class _SliderRow extends StatelessWidget {
         SizedBox(
           width: 62,
           child: Text(
-            '${value.round()} $suffix',
+            unset ? 'Not set' : '${value!.round()} $suffix',
             textAlign: TextAlign.right,
-            style: AvType.tabular(AvType.titleSmall).onInk,
+            style: unset
+                ? AvType.bodySmall.onInkMuted
+                : AvType.tabular(AvType.titleSmall).onInk,
           ),
         ),
       ],

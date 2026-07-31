@@ -12,9 +12,10 @@ import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_stats.dart';
 import '../../design/components/av_surface.dart';
-import '../../state/stores.dart';
+import '../../state/team.dart';
 
 enum _RosterSort { attention, name, accuracy, volume }
 
@@ -45,6 +46,8 @@ class _CoachHomeScreenState extends ConsumerState<CoachHomeScreen> {
     final roster = ref.watch(rosterProvider);
     final assignments = ref.watch(assignmentStoreProvider);
     final pending = roster.fold<int>(0, (sum, a) => sum + a.pendingReviews);
+
+    if (!TeamFeatures.isAvailable) return const _CoachUnavailable();
 
     final visible =
         roster
@@ -361,6 +364,45 @@ class _MiniMetric extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: AvType.caption.faint,
+        ),
+      ],
+    );
+  }
+}
+
+/// The roster with no server behind it.
+///
+/// A coach's roster is a list of other people's accounts. Without a backend
+/// there is nothing truthful to put here, so the screen explains what the
+/// feature needs and points at the part of the app that does work.
+class _CoachUnavailable extends StatelessWidget {
+  const _CoachUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return AvScaffold(
+      title: 'Roster',
+      subtitle: 'Not available in this build',
+      slivers: [
+        const SliverGutter(
+          child: AvUnavailableFeature(
+            icon: Icons.groups_2_outlined,
+            headline: TeamFeatures.unavailableHeadline,
+            body: TeamFeatures.unavailableBody,
+            footnote:
+                'Nothing about your own training depends on this. Sessions, '
+                'measurement, history and trends all run offline on this '
+                'device.',
+          ),
+        ),
+        SliverGutter(
+          top: AvSpace.md,
+          child: AvButton(
+            label: 'Go to my training',
+            icon: Icons.sports_basketball_rounded,
+            expand: true,
+            onPressed: () => context.go(AppRoute.home),
+          ),
         ),
       ],
     );

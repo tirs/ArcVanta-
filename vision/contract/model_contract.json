@@ -1,0 +1,180 @@
+{
+  "$comment": [
+    "The contract between the training-time pipeline and the app.",
+    "",
+    "This file is the source of truth. tool/vision/export_onnx.py writes graphs",
+    "that must satisfy it, tool/vision/verify_contract.py checks that they do,",
+    "and lib/data/capture/model_contract.dart mirrors it so the Dart side and",
+    "the native bridge agree on tensor names, shapes and class ids without",
+    "anyone re-deriving them from a blog post.",
+    "",
+    "The .onnx weights are not in git. They are large binaries produced by the",
+    "pinned recipe below and fetched by tool/vision/fetch_models.sh, which",
+    "checks them against the digests recorded here."
+  ],
+  "contractVersion": 1,
+  "generatedFrom": "vision/pins.lock",
+
+  "detector": {
+    "role": "Locates the shooter, the ball, the ring and the backboard.",
+    "family": "RTMDet",
+    "variant": "rtmdet-m",
+    "file": "arcvanta_rtmdet_m_640.onnx",
+    "sha256": "d7e6be8b5b86e4fc9ea7d4dabd67a530f7ac4e5173c8542fc7051d39edba5caa",
+    "opset": 17,
+    "input": {
+      "name": "images",
+      "shape": [1, 3, 640, 640],
+      "layout": "NCHW",
+      "dtype": "float32",
+      "colour": "BGR"
+    },
+    "preprocess": {
+      "resize": "letterbox",
+      "padValue": 114,
+      "mean": [103.53, 116.28, 123.675],
+      "std": [57.375, 57.12, 58.395],
+      "$comment": [
+        "BGR, and not by accident: the mmdet RTMDet config sets",
+        "bgr_to_rgb=False, so the network was trained on channels in the order",
+        "OpenCV loads them, and mean and std are listed in that same order.",
+        "The pose model is the opposite (bgr_to_rgb=True, RGB means), so the",
+        "two graphs genuinely disagree and a bridge cannot use one channel",
+        "order for both. Feeding this one RGB costs roughly twenty pixels of",
+        "box centre error, which is small enough to look like a working",
+        "detector and large enough to ruin the rim ellipse."
+      ]
+    },
+    "outputs": [
+      {
+        "name": "dets",
+        "shape": [1, 100, 5],
+        "dtype": "float32",
+        "$comment": "x1, y1, x2, y2, score in letterboxed input pixels, score descending."
+      },
+      {
+        "name": "labels",
+        "shape": [1, 100],
+        "dtype": "int64"
+      }
+    ],
+    "nms": {
+      "appliedInGraph": true,
+      "scoreThreshold": 0.05,
+      "iouThreshold": 0.6,
+      "maxDetections": 100
+    },
+    "classes": [
+      { "id": 0, "name": "person" },
+      { "id": 1, "name": "ball" },
+      { "id": 2, "name": "rim" },
+      { "id": 3, "name": "backboard" }
+    ],
+    "$classComment": [
+      "Four classes, not COCO's eighty. COCO has person and sports ball but no",
+      "rim and no backboard, and those two are exactly what the calibration",
+      "depends on, so the detector is a fine-tune rather than a stock",
+      "checkpoint. vision/configs/rtmdet_m_arcvanta.py carries the head change."
+    ]
+  },
+
+  "pose": {
+    "role": "Body landmarks for the tracked shooter, from the detector's person box.",
+    "family": "RTMPose",
+    "variant": "rtmpose-m",
+    "file": "arcvanta_rtmpose_m_256x192.onnx",
+    "sha256": "b1bbec70599a0632ba79798c3aa0e8918f563c297778d5c5bef5132f809da4bf",
+    "opset": 17,
+    "input": {
+      "name": "input",
+      "shape": [1, 3, 256, 192],
+      "layout": "NCHW",
+      "dtype": "float32",
+      "colour": "RGB"
+    },
+    "preprocess": {
+      "crop": "affine",
+      "paddingFactor": 1.25,
+      "mean": [123.675, 116.28, 103.53],
+      "std": [58.395, 57.12, 57.375],
+      "$comment": "Top-down: the person box is expanded to the 192x256 aspect ratio, then warped."
+    },
+    "outputs": [
+      {
+        "name": "simcc_x",
+        "shape": [1, 17, 384],
+        "dtype": "float32",
+        "$comment": "192 input columns times splitRatio."
+      },
+      {
+        "name": "simcc_y",
+        "shape": [1, 17, 512],
+        "dtype": "float32",
+        "$comment": "256 input rows times splitRatio."
+      }
+    ],
+    "decode": {
+      "method": "simcc",
+      "splitRatio": 2.0,
+      "$comment": "argmax each axis independently, divide by splitRatio for the coordinate in input space, and take the product of the two peak values as the landmark score."
+    },
+    "keypointSet": "coco17",
+    "keypoints": [
+      "nose",
+      "left_eye",
+      "right_eye",
+      "left_ear",
+      "right_ear",
+      "left_shoulder",
+      "right_shoulder",
+      "left_elbow",
+      "right_elbow",
+      "left_wrist",
+      "right_wrist",
+      "left_hip",
+      "right_hip",
+      "left_knee",
+      "right_knee",
+      "left_ankle",
+      "right_ankle"
+    ]
+  },
+
+  "jointMapping": {
+    "$comment": [
+      "PoseJoint in lib/data/models/pose.dart is a 14-joint subset. Everything",
+      "the product measures is an angle or a displacement between these, so the",
+      "face keypoints are dropped at the bridge rather than carried up.",
+      "'midpoint' entries are derived, not predicted: COCO has no neck."
+    ],
+    "head": { "from": "nose" },
+    "neck": { "midpoint": ["left_shoulder", "right_shoulder"] },
+    "leftShoulder": { "from": "left_shoulder" },
+    "rightShoulder": { "from": "right_shoulder" },
+    "leftElbow": { "from": "left_elbow" },
+    "rightElbow": { "from": "right_elbow" },
+    "leftWrist": { "from": "left_wrist" },
+    "rightWrist": { "from": "right_wrist" },
+    "leftHip": { "from": "left_hip" },
+    "rightHip": { "from": "right_hip" },
+    "leftKnee": { "from": "left_knee" },
+    "rightKnee": { "from": "right_knee" },
+    "leftAnkle": { "from": "left_ankle" },
+    "rightAnkle": { "from": "right_ankle" }
+  },
+
+  "runtime": {
+    "onnxruntime": "1.22.0",
+    "executionProviders": {
+      "android": ["NNAPI", "XNNPACK", "CPU"],
+      "ios": ["CoreML", "XNNPACK", "CPU"]
+    },
+    "$comment": [
+      "Providers are tried in order and the first that loads wins. Both NNAPI",
+      "and Core ML silently fall back per-node, so the bridge records which one",
+      "actually took the graph and reports it with the session, and a run that",
+      "landed on CPU is expected to hold a lower frame rate rather than a",
+      "different answer."
+    ]
+  }
+}

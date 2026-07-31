@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/platform/device_identity.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
-import '../../design/components/av_button.dart';
+import '../../core/utils/formatters.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
+import '../../data/capture/native_capture_source.dart';
 import '../../state/app_settings.dart';
+import '../../state/capture_pipeline.dart';
+import '../../state/bootstrap.dart';
 import '../../state/stores.dart';
 
 /// Capture and storage controls. Real-time vision work is the most demanding
@@ -17,16 +21,26 @@ import '../../state/stores.dart';
 class DeviceSettingsScreen extends ConsumerWidget {
   const DeviceSettingsScreen({super.key});
 
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final controller = ref.read(appSettingsProvider.notifier);
     final sessions = ref.watch(sessionStoreProvider);
-
-    final usedGb = sessions.length * 0.62;
-    final usedFraction = (usedGb / settings.storageBudgetGb)
-        .clamp(0.0, 1.0)
-        .toDouble();
+    final storedBytes = ref.watch(storageBytesProvider);
+    final pipeline = ref.watch(pipelineStatusProvider).valueOrNull;
+    final live = pipeline?.isLive ?? false;
+    final lastRate = sessions.isEmpty
+        ? null
+        : sessions.first.calibration.frameRate;
 
     return AvScaffold(
       title: 'Device and capture',
@@ -51,20 +65,19 @@ class DeviceSettingsScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'iPhone 17 Pro',
+                            DeviceIdentity.name,
                             style: AvType.titleMedium.primary,
                           ),
                           Text(
-                            'Neural engine capture profile \u00B7 60 fps '
-                            'supported',
+                            pipeline?.explanation ?? 'Checking the pipeline',
                             style: AvType.caption.faint,
                           ),
                         ],
                       ),
                     ),
-                    const AvPill(
-                      label: 'Full support',
-                      color: AvColors.made,
+                    AvPill(
+                      label: live ? 'Measuring' : 'Simulated',
+                      color: live ? AvColors.made : AvColors.caution,
                       dense: true,
                     ),
                   ],
@@ -72,12 +85,41 @@ class DeviceSettingsScreen extends ConsumerWidget {
                 const SizedBox(height: AvSpace.md),
                 const AvSeparator(),
                 const SizedBox(height: AvSpace.sm),
-                const AvKeyValue(label: 'Detection model', value: 'det-1.4.2'),
-                const AvKeyValue(label: 'Pose model', value: 'pose-2.1.0'),
-                const AvKeyValue(label: 'Event model', value: 'event-3.0.1'),
-                const AvKeyValue(
-                  label: 'Typical processing',
-                  value: '28 to 31 fps',
+                AvKeyValue(
+                  label: 'Analysis models',
+                  value: pipeline?.runtime?.signature ?? 'Not installed',
+                ),
+                AvKeyValue(
+                  label: 'Last capture rate',
+                  value: lastRate == null ? 'No sessions yet' : '$lastRate fps',
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SliverGutter(
+          top: AvSpace.lg,
+          child: AvSectionHeader(
+            title: 'Court',
+            accent: AvColors.court,
+            padding: EdgeInsets.only(bottom: AvSpace.sm),
+          ),
+        ),
+        SliverGutter(
+          child: AvCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _CourtNameField(
+                  initial: settings.courtName,
+                  onChanged: (value) =>
+                      controller.update((s) => s.copyWith(courtName: value)),
+                ),
+                const SizedBox(height: AvSpace.xs),
+                Text(
+                  'Stamped on every session recorded here, so results from the '
+                  'gym and the driveway stay tellable apart.',
+                  style: AvType.caption.faint,
                 ),
               ],
             ),
@@ -98,8 +140,8 @@ class DeviceSettingsScreen extends ConsumerWidget {
                 _SettingSwitch(
                   title: 'High frame rate capture',
                   detail:
-                      'Records at 60 fps. Sharper release timing and '
-                      'better arc, at roughly twice the storage and more heat.',
+                      'Measures at 60 fps. Sharper release timing and better '
+                      'arc, at twice the work per second and more heat.',
                   value: settings.highFrameRateCapture,
                   onChanged: (v) => controller.update(
                     (s) => s.copyWith(highFrameRateCapture: v),
@@ -164,80 +206,34 @@ class DeviceSettingsScreen extends ConsumerWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      usedGb.toStringAsFixed(1),
-                      style: AvType.tabular(
-                        AvType.metricLarge,
-                      ).copyWith(fontSize: 30, color: AvColors.insight),
+                    Flexible(
+                      child: FittedBox(
+                        child: Text(
+                          switch (storedBytes) {
+                            AsyncData(:final value) => _formatBytes(value),
+                            AsyncError() => '—',
+                            _ => '…',
+                          },
+                          style: AvType.tabular(
+                            AvType.metricLarge,
+                          ).copyWith(fontSize: 30, color: AvColors.insight),
+                        ),
+                      ),
                     ),
-                    Text(' GB used', style: AvType.caption.muted),
                     const Spacer(),
                     Text(
-                      'of ${settings.storageBudgetGb} GB budget',
+                      '${Fmt.count(sessions.length, 'session')}, '
+                      '${Fmt.count(sessions.fold(0, (n, s) => n + s.shots.length), 'shot')}',
                       style: AvType.tabular(AvType.caption).faint,
                     ),
                   ],
                 ),
-                const SizedBox(height: AvSpace.sm),
-                AvMeter(
-                  value: usedFraction,
-                  color: usedFraction > 0.85
-                      ? AvColors.caution
-                      : AvColors.insight,
-                ),
-                const SizedBox(height: AvSpace.md),
-                const AvOverline('Budget'),
-                Slider(
-                  value: settings.storageBudgetGb.toDouble(),
-                  min: 2,
-                  max: 64,
-                  divisions: 31,
-                  label: '${settings.storageBudgetGb} GB',
-                  onChanged: (value) => controller.update(
-                    (s) => s.copyWith(storageBudgetGb: value.round()),
-                  ),
-                ),
+                const SizedBox(height: AvSpace.xs),
                 Text(
-                  'When the budget is reached, the oldest video is removed '
-                  'first. Measurements are never deleted to free space.',
+                  'Measurements and summaries are stored as structured data, '
+                  'not video, which is why a full season takes so little '
+                  'room. Removing it all is under Privacy and data.',
                   style: AvType.caption.faint,
-                ),
-                const SizedBox(height: AvSpace.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AvButton(
-                        label: 'Clear cache',
-                        variant: AvButtonVariant.outline,
-                        size: AvButtonSize.small,
-                        expand: true,
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Temporary analysis files removed',
-                                ),
-                              ),
-                            ),
-                      ),
-                    ),
-                    const SizedBox(width: AvSpace.xs),
-                    Expanded(
-                      child: AvButton(
-                        label: 'Free up video',
-                        variant: AvButtonVariant.tonal,
-                        size: AvButtonSize.small,
-                        expand: true,
-                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Removing clips older than your retention window',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -253,43 +249,90 @@ class DeviceSettingsScreen extends ConsumerWidget {
         SliverGutter(
           child: AvCard(
             child: Column(
-              children: const [
+              children: [
                 _PermissionRow(
                   icon: Icons.videocam_rounded,
                   label: 'Camera',
-                  state: 'Allowed',
+                  state: switch (pipeline?.fallbackReason) {
+                    null => live ? 'Allowed' : 'Checking',
+                    CaptureUnavailableReason.cameraPermissionDenied => 'Denied',
+                    _ => 'Allowed',
+                  },
                   detail: 'Required. Without it nothing can be measured.',
-                  granted: true,
+                  granted:
+                      pipeline?.fallbackReason !=
+                      CaptureUnavailableReason.cameraPermissionDenied,
                 ),
-                AvSeparator(inset: 34),
-                _PermissionRow(
+                const AvSeparator(inset: 34),
+                const _PermissionRow(
                   icon: Icons.mic_rounded,
                   label: 'Microphone',
                   state: 'Not used',
                   detail: 'Audio is never recorded with your sessions.',
                   granted: false,
                 ),
-                AvSeparator(inset: 34),
-                _PermissionRow(
+                const AvSeparator(inset: 34),
+                const _PermissionRow(
                   icon: Icons.photo_library_rounded,
                   label: 'Photo library',
-                  state: 'Ask each time',
-                  detail: 'Only used when you export a highlight.',
-                  granted: true,
+                  state: 'Not used',
+                  detail: 'No video or image is written to your library.',
+                  granted: false,
                 ),
-                AvSeparator(inset: 34),
-                _PermissionRow(
+                const AvSeparator(inset: 34),
+                const _PermissionRow(
                   icon: Icons.notifications_rounded,
-                  label: 'Notifications',
-                  state: 'Allowed',
-                  detail: 'Reminders and coach assignments.',
-                  granted: true,
+                  label: 'System notifications',
+                  state: 'Not used',
+                  detail:
+                      'Alerts appear inside the app only. Nothing is scheduled '
+                      'against the system tray.',
+                  granted: false,
                 ),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Names the venue, writing through on every keystroke.
+///
+/// Stateful only to own the controller: rebuilding the field from settings on
+/// each change would move the caret to the end mid-word.
+class _CourtNameField extends StatefulWidget {
+  const _CourtNameField({required this.initial, required this.onChanged});
+
+  final String initial;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_CourtNameField> createState() => _CourtNameFieldState();
+}
+
+class _CourtNameFieldState extends State<_CourtNameField> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      textCapitalization: TextCapitalization.words,
+      onChanged: widget.onChanged,
+      decoration: const InputDecoration(
+        labelText: 'Where you shoot',
+        hintText: 'Main gym, driveway, park court',
+      ),
     );
   }
 }

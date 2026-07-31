@@ -6,6 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../../core/utils/formatters.dart';
 import '../../data/models/session.dart';
 import '../../design/charts/av_court_map.dart';
 import '../../design/components/av_button.dart';
@@ -263,7 +264,7 @@ class DrillDetailScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: AvSectionHeader(
               title: 'Your history',
-              subtitle: '${sessions.length} recorded sessions',
+              subtitle: Fmt.count(sessions.length, 'recorded session'),
               accent: AvColors.made,
             ),
           ),
@@ -301,9 +302,10 @@ class DrillDetailScreen extends ConsumerWidget {
                     AvKeyValue(
                       label:
                           '${session.startedAt.day}/${session.startedAt.month} '
-                          '\u00B7 ${session.attemptCount} attempts',
+                          '\u00B7 ${Fmt.count(session.attemptCount, 'attempt')}',
                       value:
-                          '${session.makeCount} makes \u00B7 ${session.percentage.toStringAsFixed(0)}%',
+                          '${Fmt.count(session.makeCount, 'make')} \u00B7 '
+                          '${session.percentage.toStringAsFixed(0)}%',
                       trailing: AvIconButton(
                         icon: Icons.chevron_right_rounded,
                         size: 28,

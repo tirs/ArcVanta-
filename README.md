@@ -73,11 +73,20 @@ event timing.
 
 ```
 lib/
-  core/        theme tokens, colours, typography, router, formatters
-  data/        models, metric catalog, repositories, seeded data
-  design/      the component library: surfaces, buttons, charts, painters
-  features/    one folder per area of the product
-  state/       Riverpod stores and app settings
+  core/                theme tokens, colours, typography, router, formatters
+  data/
+    calibration/       camera model, conics, rim pose, court frame, solver
+    capture/           the CaptureSource seam, model contract, native bridge
+    analysis/          shot segmentation and measurement from detections
+    models/            the domain types, metric catalog, seeded data
+  design/              the component library: surfaces, buttons, charts, painters
+  features/            one folder per area of the product
+  state/               Riverpod stores and app settings
+
+android/app/src/main/kotlin/.../vision/   CameraX plus ONNX Runtime
+ios/Runner/Vision/                        AVFoundation plus ONNX Runtime
+vision/                                   the training-time recipe and contract
+tool/vision/                              setup, export, verify, install
 ```
 
 `lib/data/metrics/metric_catalog.dart` is the single definition of every
@@ -86,13 +95,46 @@ support it and how it is presented. Screens read from it rather than formatting
 metrics themselves, so a shot detail, a session summary and a coach review all
 describe the same measurement identically.
 
+## How a measurement is made
+
+The camera work is native and the reasoning is not. Each platform runs its own
+camera and its own ONNX Runtime session, and reports only what it saw: boxes,
+landmarks, the rim ellipse, the lens intrinsics, gravity. Everything after that
+is one implementation in Dart.
+
+```
+CameraX / AVFoundation
+  -> RTMDet + RTMPose via NNAPI or Core ML       native, per platform
+  -> DetectionFrame over a platform channel      lib/data/capture/capture_protocol.dart
+  -> CalibrationSolver  -> CourtFrame            lib/data/calibration/
+  -> ShotTracker -> ShotMeasurer -> Shot         lib/data/analysis/
+```
+
+That split is the point. Deciding when a shot began, whether it went in, and
+what the release angle was are the parts that are hard to get right and easy to
+get subtly wrong, so they live where they can be tested without a camera and
+where there is one answer rather than one per platform.
+
+Both sides meet at `lib/data/capture/capture_source.dart`. A build with no
+models, or no camera permission, resolves that interface to the simulation
+instead and says so on screen. The geometry is still solved for real against a
+generated scene, so the solver and the tracker are exercised on every run.
+
+Details of the models, the pinned training pipeline and the contract they must
+satisfy are in [vision/README.md](vision/README.md).
+
 ## Decisions
 
-Architecture decisions live in `docs/adr`. The capture pipeline is simulated in
-this repository, but the models behind it are already chosen:
-[the vision model stack](docs/adr/0001-vision-model-stack.md) is RTMDet for
-detection with MediaPipe Pose first and basketball-trained RTMPose second, all
-Apache 2.0, so nothing in the analysis path constrains how the app is licensed.
+Architecture decisions live in `docs/adr`.
+[The vision model stack](docs/adr/0001-vision-model-stack.md) is RTMDet for
+detection and basketball-trained RTMPose for landmarks, both Apache 2.0, so
+nothing in the analysis path constrains how the app is licensed. That document
+also records why the OpenMMLab tools are vendored at pinned commits and why
+ONNX rather than the training stack is what the app depends on.
+
+[docs/verification.md](docs/verification.md) records what has actually been run
+and what has only been written. The iOS bridge and every ONNX code path are in
+the second category.
 
 ## Testing
 
@@ -100,18 +142,26 @@ Apache 2.0, so nothing in the analysis path constrains how the app is licensed.
 flutter test
 ```
 
-Three suites run:
-
 - `widget_test.dart` boots the app and checks it reaches onboarding.
-- `screen_smoke_test.dart` mounts every screen at five viewport
-  configurations (three phone widths, 1.3x text scale and landscape). Layout
-  overflow and paint errors fail the test, which is how the interface is kept
-  correct on small screens and at accessibility text sizes without a device.
+- `screen_smoke_test.dart` mounts every screen at seven viewport
+  configurations, from a 320 pt phone to landscape, at text scales up to 1.6.
+  Layout overflow and paint errors fail the test, which is how the interface is
+  kept correct on small screens and at accessibility text sizes without a
+  device.
 - `ui_preview_test.dart` renders the key surfaces to PNG in `test/previews`
-  using the real bundled fonts. Refresh them with:
+  using the real bundled fonts. Refresh them with
+  `flutter test test/ui_preview_test.dart --update-goldens`.
+- The geometry and analysis suites — `rim_pose_test.dart`,
+  `court_frame_test.dart`, `calibration_solver_test.dart`,
+  `shot_tracker_test.dart`, `calibration_controller_test.dart` — work on
+  synthetic scenes with known answers, so a regression in the maths fails long
+  before anyone finds a tripod.
+
+The contract verifier has its own tests, outside the Dart suite because it
+needs `onnx`:
 
 ```bash
-flutter test test/ui_preview_test.dart --update-goldens
+python tool/vision/test_verify_contract.py
 ```
 
 ## Building
@@ -119,6 +169,17 @@ flutter test test/ui_preview_test.dart --update-goldens
 ```bash
 flutter build apk --release
 flutter build ipa --release
+```
+
+The Android build carries ONNX Runtime 1.22, which is a floor rather than a
+preference: 1.20 ships native libraries that are not 16 KB page aligned, and
+Play rejects those. If the version moves, move iOS with it — two runtimes
+decoding the same graph differently is the hardest class of bug to notice.
+
+Neither store build includes the models. They are installed separately:
+
+```bash
+tool/vision/fetch_models.sh --from build/vision --android
 ```
 
 ## What the product does not claim

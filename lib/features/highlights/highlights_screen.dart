@@ -16,9 +16,12 @@ import '../../design/components/av_layout.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/stores.dart';
 
-/// Clip library. Sharing is deliberately explicit: every reel shows exactly who
-/// can see it, and changing that is a two-tap decision with the consequence
-/// spelled out.
+/// Saved moments from past sessions.
+///
+/// A highlight marks a stretch of a session worth returning to; it is a
+/// bookmark into recorded measurements, not a rendered video, because this
+/// build does not write video files. Visibility is still shown on every card,
+/// so the rule stays visible for when sharing does exist.
 class HighlightsScreen extends ConsumerWidget {
   const HighlightsScreen({super.key});
 
@@ -28,18 +31,18 @@ class HighlightsScreen extends ConsumerWidget {
 
     return AvScaffold(
       title: 'Highlights',
-      subtitle: '${highlights.length} reels stored on this device',
+      subtitle: '${highlights.length} saved on this device',
       leading: const AvBackButton(),
       slivers: [
         if (highlights.isEmpty)
           const SliverGutter(
             top: AvSpace.xl,
             child: AvEmptyState(
-              icon: Icons.movie_creation_rounded,
-              title: 'No reels yet',
+              icon: Icons.bookmark_added_rounded,
+              title: 'Nothing saved yet',
               message:
-                  'Save a highlight from any session summary and it will '
-                  'appear here.',
+                  'Mark a moment from any session summary and it will wait '
+                  'for you here.',
             ),
           )
         else
@@ -50,9 +53,6 @@ class HighlightsScreen extends ConsumerWidget {
                 highlight: highlight,
                 onOpenSession: () =>
                     context.push(AppRoute.session(highlight.sessionId)),
-                onVisibility: (visibility) => ref
-                    .read(highlightStoreProvider.notifier)
-                    .setVisibility(highlight.id, visibility),
                 onDelete: () => ref
                     .read(highlightStoreProvider.notifier)
                     .remove(highlight.id),
@@ -83,9 +83,10 @@ class HighlightsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Clips stay on the device until you share them. For '
-                        'accounts under sixteen, team visibility also '
-                        'requires guardian approval.',
+                        'A highlight is a bookmark into a session, not a video '
+                        'clip. It stays on this device, and sending one to a '
+                        'coach needs an account service this build does not '
+                        'include.',
                         style: AvType.caption.muted,
                       ),
                     ],
@@ -104,13 +105,11 @@ class _HighlightCard extends StatelessWidget {
   const _HighlightCard({
     required this.highlight,
     required this.onOpenSession,
-    required this.onVisibility,
     required this.onDelete,
   });
 
   final Highlight highlight;
   final VoidCallback onOpenSession;
-  final ValueChanged<HighlightVisibility> onVisibility;
   final VoidCallback onDelete;
 
   @override
@@ -121,78 +120,75 @@ class _HighlightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CustomPaint(
-                  painter: _ReelBackdrop(
-                    accent: highlight.accent,
-                    seed: highlight.id.hashCode,
+          AvPressable(
+            onTap: onOpenSession,
+            semanticLabel: 'Open the session behind ${highlight.title}',
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CustomPaint(
+                    painter: _HighlightBackdrop(
+                      accent: highlight.accent,
+                      seed: highlight.id.hashCode,
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: AvSpace.md,
-                  top: AvSpace.md,
-                  child: Row(
-                    children: [
-                      AvPill(
-                        label: highlight.kind.label,
-                        color: highlight.accent,
-                        icon: highlight.kind.icon,
-                        filled: true,
-                        dense: true,
-                      ),
-                      if (highlight.metricsBurnedIn) ...[
-                        const SizedBox(width: AvSpace.xxs),
-                        const AvPill(
-                          label: 'Metrics on clip',
-                          color: Colors.white,
+                  Positioned(
+                    left: AvSpace.md,
+                    top: AvSpace.md,
+                    child: Row(
+                      children: [
+                        AvPill(
+                          label: highlight.kind.label,
+                          color: highlight.accent,
+                          icon: highlight.kind.icon,
+                          filled: true,
                           dense: true,
                         ),
                       ],
-                    ],
-                  ),
-                ),
-                Center(
-                  child: Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      shape: BoxShape.circle,
-                      boxShadow: AvShadow.level2,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      size: 32,
-                      color: AvColors.ink,
                     ),
                   ),
-                ),
-                Positioned(
-                  right: AvSpace.md,
-                  bottom: AvSpace.md,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AvColors.scrimStrong,
-                      borderRadius: AvRadius.allXs,
-                    ),
-                    child: Text(
-                      '${highlight.clipCount} clips \u00B7 '
-                      '${Fmt.duration(highlight.duration)}',
-                      style: AvType.tabular(
-                        AvType.caption,
-                      ).copyWith(color: Colors.white),
+                  Center(
+                    child: Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        shape: BoxShape.circle,
+                        boxShadow: AvShadow.level2,
+                      ),
+                      // Opens the session behind the highlight. It is not a
+                      // player: this build stores measurements, not footage.
+                      child: const Icon(
+                        Icons.insights_rounded,
+                        size: 30,
+                        color: AvColors.ink,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    right: AvSpace.md,
+                    bottom: AvSpace.md,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AvColors.scrimStrong,
+                        borderRadius: AvRadius.allXs,
+                      ),
+                      child: Text(
+                        Fmt.count(highlight.shotCount, 'shot'),
+                        style: AvType.tabular(
+                          AvType.caption,
+                        ).copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Padding(
@@ -210,7 +206,7 @@ class _HighlightCard extends StatelessWidget {
                     ),
                     AvIconButton(
                       icon: Icons.delete_outline_rounded,
-                      tooltip: 'Delete reel',
+                      tooltip: 'Delete highlight',
                       size: 32,
                       onPressed: onDelete,
                     ),
@@ -224,23 +220,22 @@ class _HighlightCard extends StatelessWidget {
                 const SizedBox(height: AvSpace.md),
                 const AvOverline('Who can see this'),
                 const SizedBox(height: AvSpace.xs),
-                Wrap(
-                  spacing: AvSpace.xs,
-                  runSpacing: AvSpace.xs,
+                Row(
                   children: [
-                    for (final visibility in HighlightVisibility.values)
-                      AvChip(
-                        label: visibility.label,
-                        icon: visibility.icon,
-                        selected: highlight.visibility == visibility,
-                        accent: switch (visibility) {
-                          HighlightVisibility.privateOnly => AvColors.court,
-                          HighlightVisibility.coachAndGuardian =>
-                            AvColors.insight,
-                          HighlightVisibility.team => AvColors.flare,
-                        },
-                        onTap: () => onVisibility(visibility),
+                    const AvPill(
+                      label: 'Only you',
+                      color: AvColors.court,
+                      icon: Icons.lock_rounded,
+                      dense: true,
+                    ),
+                    const SizedBox(width: AvSpace.xs),
+                    Expanded(
+                      child: Text(
+                        'Sharing a highlight with anyone else needs an account '
+                        'service this build does not include.',
+                        style: AvType.caption.faint,
                       ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: AvSpace.md),
@@ -255,24 +250,6 @@ class _HighlightCard extends StatelessWidget {
                         onPressed: onOpenSession,
                       ),
                     ),
-                    const SizedBox(width: AvSpace.xs),
-                    Expanded(
-                      child: AvButton(
-                        label: 'Export',
-                        variant: AvButtonVariant.tonal,
-                        size: AvButtonSize.small,
-                        icon: Icons.download_rounded,
-                        expand: true,
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Rendering reel to your camera roll',
-                                ),
-                              ),
-                            ),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -284,10 +261,10 @@ class _HighlightCard extends StatelessWidget {
   }
 }
 
-/// Poster frame for a reel. Drawn from the clip identity so each card is
+/// Card artwork, drawn from the highlight's own identity so each one is
 /// distinct without shipping stock imagery.
-class _ReelBackdrop extends CustomPainter {
-  const _ReelBackdrop({required this.accent, required this.seed});
+class _HighlightBackdrop extends CustomPainter {
+  const _HighlightBackdrop({required this.accent, required this.seed});
 
   final Color accent;
   final int seed;
@@ -349,6 +326,6 @@ class _ReelBackdrop extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ReelBackdrop oldDelegate) =>
+  bool shouldRepaint(_HighlightBackdrop oldDelegate) =>
       oldDelegate.accent != accent || oldDelegate.seed != seed;
 }

@@ -3,7 +3,7 @@ import 'package:arcvanta/core/utils/formatters.dart';
 import 'package:arcvanta/data/capture/simulated_capture_source.dart';
 import 'package:arcvanta/data/models/confidence.dart';
 import 'package:arcvanta/data/seed/drill_catalog.dart';
-import 'package:arcvanta/data/seed/seed_data.dart';
+import 'package:arcvanta/data/demo/demo_data.dart';
 import 'package:arcvanta/features/auth/auth_screen.dart';
 import 'package:arcvanta/features/coach/assignment_creator_screen.dart';
 import 'package:arcvanta/features/coach/athlete_detail_screen.dart';
@@ -21,6 +21,8 @@ import 'package:arcvanta/features/onboarding/guardian_consent_screen.dart';
 import 'package:arcvanta/features/onboarding/onboarding_screen.dart';
 import 'package:arcvanta/features/onboarding/player_setup_screen.dart';
 import 'package:arcvanta/features/onboarding/role_screen.dart';
+import 'package:arcvanta/features/legal/legal_documents.dart';
+import 'package:arcvanta/features/legal/legal_screen.dart';
 import 'package:arcvanta/features/plan/goals_screen.dart';
 import 'package:arcvanta/features/plan/training_plan_screen.dart';
 import 'package:arcvanta/features/profile/device_settings_screen.dart';
@@ -37,19 +39,23 @@ import 'package:arcvanta/features/session/session_summary_screen.dart';
 import 'package:arcvanta/features/session/shot_detail_screen.dart';
 import 'package:arcvanta/features/session/shot_timeline_screen.dart';
 import 'package:arcvanta/features/subscription/subscription_screen.dart';
-import 'package:arcvanta/state/live_session.dart';
+import 'package:arcvanta/state/capture_pipeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/test_harness.dart';
 
 /// Mounts every screen at a handful of realistic viewport sizes. Layout
 /// overflow and paint errors are reported as test failures, which is the only
 /// way to catch them without a device in the loop.
 void main() {
-  final session = SeedData.sessions.first;
+  TestHarness.initialiseSqlite();
+
+  final session = DemoData.sessions.first;
   final shot = session.shots.first;
   final drill = DrillCatalog.all.first;
-  final athlete = SeedData.roster.first;
+  final athlete = DemoData.roster.first;
 
   final screens = <String, Widget>{
     'onboarding': const OnboardingScreen(),
@@ -91,6 +97,8 @@ void main() {
     'privacy': const PrivacyScreen(),
     'device settings': const DeviceSettingsScreen(),
     'help': const HelpScreen(),
+    'terms': const LegalScreen(document: termsOfService),
+    'privacy policy': const LegalScreen(document: privacyPolicy),
   };
 
   // The smallest and largest phones still sold, plus the text scales the
@@ -106,55 +114,103 @@ void main() {
     'landscape': (size: Size(852, 393), textScale: 1),
   };
 
+  // Both states every screen actually ships in. The empty one is not a
+  // degenerate case to skip: it is what every user sees on their first launch,
+  // and its copy is longer than the populated layout it replaces, so it is at
+  // least as likely to overflow.
+  const dataStates = <String, bool>{'with history': true, 'first run': false};
+
   for (final viewport in viewports.entries) {
     group(viewport.key, () {
-      for (final entry in screens.entries) {
-        testWidgets('${entry.key} renders', (tester) async {
-          tester.view
-            ..physicalSize = viewport.value.size * 3
-            ..devicePixelRatio = 3;
-          addTearDown(tester.view.reset);
-
-          // Every screen is mounted against a pipeline the test owns, so none
-          // of them depend on a running clock.
-          final capture = ScriptedCaptureSource();
-          Fmt.currentTime = () => SeedData.today.add(const Duration(hours: 8));
-          addTearDown(() {
-            Fmt.currentTime = DateTime.now;
-            return capture.dispose();
+      for (final dataState in dataStates.entries) {
+        group(dataState.key, () {
+          // Opening the database has to happen out here. A widget test body
+          // runs inside a fake-async zone, and sqflite's real I/O never
+          // completes there; `setUp` runs on the real clock.
+          late List<Override> storage;
+          setUp(() async {
+            storage = dataState.value
+                ? await TestHarness.withDemoData()
+                : await TestHarness.empty();
           });
 
-          await tester.pumpWidget(
-            ProviderScope(
-              overrides: [captureSourceProvider.overrideWithValue(capture)],
-              child: MaterialApp(
-                theme: AvTheme.build(),
-                builder: (context, child) => MediaQuery.withClampedTextScaling(
-                  minScaleFactor: viewport.value.textScale,
-                  maxScaleFactor: viewport.value.textScale,
-                  child: child!,
+          for (final entry in screens.entries) {
+            testWidgets('${entry.key} renders', (tester) async {
+              tester.view
+                ..physicalSize = viewport.value.size * 3
+                ..devicePixelRatio = 3;
+              addTearDown(tester.view.reset);
+
+              // Every screen is mounted against a pipeline the test owns, so none
+              // of them depend on a running clock.
+              final capture = ScriptedCaptureSource();
+              Fmt.currentTime = () =>
+                  DemoData.today.add(const Duration(hours: 8));
+              addTearDown(() {
+                Fmt.currentTime = DateTime.now;
+                return capture.dispose();
+              });
+
+              await tester.pumpWidget(
+                ProviderScope(
+                  overrides: [
+                    ...storage,
+                    captureSourceProvider.overrideWithValue(capture),
+                  ],
+                  child: MaterialApp(
+                    theme: AvTheme.build(),
+                    builder: (context, child) =>
+                        MediaQuery.withClampedTextScaling(
+                          minScaleFactor: viewport.value.textScale,
+                          maxScaleFactor: viewport.value.textScale,
+                          child: child!,
+                        ),
+                    home: entry.value,
+                  ),
                 ),
-                home: entry.value,
-              ),
-            ),
-          );
-          await tester.pump(const Duration(milliseconds: 500));
+              );
+              await tester.pump(const Duration(milliseconds: 500));
 
-          // Push the capture screens through a full shot so their live states
-          // are laid out too, not just their empty ones.
-          await tester.pump(const Duration(seconds: 4));
-          for (final ms in const [600, 1800, 2600, 2900, 3600, 4400]) {
-            capture.emitFrame(ScriptedCaptureSource.frameAt(ms));
-            await tester.pump(const Duration(milliseconds: 16));
+              // Push the capture screens through a full shot so their live states
+              // are laid out too, not just their empty ones.
+              await tester.pump(const Duration(seconds: 4));
+              for (final ms in const [600, 1800, 2600, 2900, 3600, 4400]) {
+                capture.emitFrame(ScriptedCaptureSource.frameAt(ms));
+                await tester.pump(const Duration(milliseconds: 16));
+              }
+              capture.emitShot(session.shots.first);
+              await tester.pump(const Duration(milliseconds: 16));
+              await tester.pump(const Duration(seconds: 2));
+
+              // The calibration screen's dense half only exists once it has
+              // solved, so it is driven all the way there rather than measured
+              // empty. The quality report is the part most likely to overflow.
+              if (entry.key == 'calibration') {
+                await tester.tap(
+                  find.text('Calibrate court'),
+                  warnIfMissed: false,
+                );
+                await tester.pump();
+                for (var i = 0; i < 30; i++) {
+                  capture.emitSolvableScene(frame: i);
+                  await tester.pump();
+                }
+                await tester.pump(const Duration(milliseconds: 400));
+                // The report sits below the fold on a short viewport, and content
+                // that is never laid out is content that is never checked.
+                await tester.drag(
+                  find.byType(CustomScrollView).first,
+                  const Offset(0, -600),
+                );
+                await tester.pump();
+              }
+
+              // Tearing the tree down before the frame is reported would strip the
+              // widget creator from any layout error, so settle first.
+              await tester.pump();
+              addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+            });
           }
-          capture.emitShot(session.shots.first);
-          await tester.pump(const Duration(milliseconds: 16));
-          await tester.pump(const Duration(seconds: 2));
-
-          // Tearing the tree down before the frame is reported would strip the
-          // widget creator from any layout error, so settle first.
-          await tester.pump();
-          addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
         });
       }
     });

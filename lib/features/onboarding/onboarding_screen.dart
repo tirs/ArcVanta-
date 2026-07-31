@@ -55,11 +55,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
     _Page(
       eyebrow: 'Private by default',
-      title: 'Video stays on the phone\nunless you send it',
+      title: 'Video stays on the phone,\nfull stop',
       body:
-          'Live analysis runs on device and works with no connection. Cloud '
-          'review, coach sharing and model-training consent are separate '
-          'choices you make, and can withdraw.',
+          'Detection, pose and every measured angle are computed here and '
+          'work with no connection at all. Nothing is uploaded, because this '
+          'build has nowhere to upload it to.',
       accent: AvColors.made,
       art: _ArtKind.privacy,
     ),
@@ -152,7 +152,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 const SizedBox(height: AvSpace.lg),
                 AvButton(
                   label: _page == _pages.length - 1
-                      ? 'Create your account'
+                      ? 'Set up your profile'
                       : 'Continue',
                   onPressed: _next,
                   size: AvButtonSize.large,
@@ -265,7 +265,7 @@ class _CountingArt extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('LIVE COUNT', style: AvType.overline.onInkMuted),
+              Text('EXAMPLE COUNT', style: AvType.overline.onInkMuted),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
@@ -351,7 +351,7 @@ class _MechanicsArt extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('MEASURED THIS ATTEMPT', style: AvType.overline.onInkMuted),
+        Text('EXAMPLE MEASUREMENTS', style: AvType.overline.onInkMuted),
         for (final row in _rows)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 3),
@@ -479,15 +479,15 @@ class _PrivacyArt extends StatelessWidget {
           value: 'Always',
           on: true,
         ),
-        _PrivacyRow(label: 'Encrypted cloud backup', value: 'Off', on: false),
+        _PrivacyRow(label: 'Backup off the device', value: 'None', on: false),
         _PrivacyRow(
           label: 'Share clips with your coach',
-          value: 'Ask each time',
+          value: 'Not built',
           on: false,
         ),
         _PrivacyRow(
           label: 'Contribute video to model training',
-          value: 'Off',
+          value: 'Never',
           on: false,
         ),
         const SizedBox(height: 2),

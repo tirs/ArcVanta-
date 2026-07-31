@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
@@ -9,6 +13,7 @@ import '../../core/theme/av_typography.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/metrics/metric_catalog.dart';
 import '../../data/models/program.dart';
+import '../../data/store/export.dart';
 import '../../data/models/session.dart';
 import '../../data/models/shot.dart';
 import '../../design/charts/av_court_map.dart';
@@ -17,6 +22,7 @@ import '../../design/charts/av_shot_graphics.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_stats.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/stores.dart';
@@ -32,6 +38,7 @@ class SessionSummaryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionByIdProvider(sessionId));
+    final history = ref.watch(sessionStoreProvider);
 
     if (session == null) {
       return AvScaffold(
@@ -57,6 +64,7 @@ class SessionSummaryScreen extends ConsumerWidget {
 
     final metrics = MetricCatalog.forSession(session);
     final angle = session.calibration.angle;
+    final radar = _radarAxes(session, history);
 
     return AvScaffold(
       title: session.drillName,
@@ -95,6 +103,8 @@ class SessionSummaryScreen extends ConsumerWidget {
         ],
       ),
       slivers: [
+        if (session.isSimulated)
+          const SliverGutter(child: AvRehearsalBanner()),
         SliverGutter(child: _HeroPanel(session: session)),
         SliverGutter(
           top: AvSpace.sm,
@@ -127,7 +137,9 @@ class SessionSummaryScreen extends ConsumerWidget {
                 label: 'Swish rate',
                 value: session.swishRate.toStringAsFixed(0),
                 unit: '%',
-                caption: '${session.swishCount} of ${session.makeCount} makes',
+                caption:
+                    '${session.swishCount} of '
+                    '${Fmt.count(session.makeCount, 'make')}',
                 accent: AvColors.made,
                 icon: Icons.sports_basketball_rounded,
               ),
@@ -193,20 +205,22 @@ class SessionSummaryScreen extends ConsumerWidget {
             ),
           ),
         ),
-        const SliverGutter(
+        SliverGutter(
           top: AvSpace.lg,
           child: AvSectionHeader(
             title: 'Mechanics profile',
-            subtitle: 'Session average against your personal baseline',
+            subtitle: radar.any((a) => a.baseline != null)
+                ? 'Session average against your own baseline'
+                : 'Session average. A baseline appears once you have history',
             accent: AvColors.insight,
-            padding: EdgeInsets.only(bottom: AvSpace.sm),
+            padding: const EdgeInsets.only(bottom: AvSpace.sm),
           ),
         ),
         SliverGutter(
           child: AvCard(
             child: Column(
               children: [
-                AvRadarChart(axes: _radarAxes(session)),
+                AvRadarChart(axes: radar),
                 const SizedBox(height: AvSpace.md),
                 const AvSeparator(),
                 const SizedBox(height: AvSpace.xs),
@@ -321,14 +335,39 @@ class SessionSummaryScreen extends ConsumerWidget {
     );
   }
 
-  List<RadarAxis> _radarAxes(TrainingSession session) {
+  /// Shots the baseline ring is drawn from.
+  ///
+  /// Only sessions that came before this one, so re-opening an old session
+  /// shows what the athlete's form looked like at the time rather than
+  /// comparing it against work they had not done yet.
+  static List<Shot> _priorShots(
+    List<TrainingSession> history,
+    TrainingSession session,
+  ) => [
+    for (final past in history)
+      if (past.id != session.id && past.startedAt.isBefore(session.startedAt))
+        ...past.attempts.where((s) => s.confidence.isAuthoritative),
+  ];
+
+  /// The minimum history the baseline ring is allowed to be drawn from. Below
+  /// this it is one warm-up's worth of shots, and a ring the athlete reads as
+  /// "normal for me" should not be a single afternoon.
+  static const int _minimumBaselineShots = 25;
+
+  List<RadarAxis> _radarAxes(
+    TrainingSession session,
+    List<TrainingSession> history,
+  ) {
     final graded = session.attempts
         .where((s) => s.confidence.isAuthoritative)
         .toList(growable: false);
     if (graded.isEmpty) return const [];
 
-    double mean(double Function(Shot) selector) =>
-        graded.map(selector).reduce((a, b) => a + b) / graded.length;
+    final prior = _priorShots(history, session);
+    final hasBaseline = prior.length >= _minimumBaselineShots;
+
+    double mean(List<Shot> shots, double Function(Shot) selector) =>
+        shots.map(selector).reduce((a, b) => a + b) / shots.length;
 
     double band(double value, double low, double high) {
       final centre = (low + high) / 2;
@@ -336,37 +375,27 @@ class SessionSummaryScreen extends ConsumerWidget {
       return (1 - (value - centre).abs() / (span * 2.4)).clamp(0.0, 1.0);
     }
 
+    RadarAxis axis(
+      String label,
+      double Function(Shot) selector,
+      double Function(double) score,
+    ) => RadarAxis(
+      label: label,
+      value: score(mean(graded, selector)),
+      baseline: hasBaseline ? score(mean(prior, selector)) : null,
+    );
+
     return [
-      RadarAxis(
-        label: 'Arc',
-        value: band(mean((s) => s.entryAngle), 43, 50),
-        baseline: 0.72,
+      axis('Arc', (s) => s.entryAngle, (v) => band(v, 43, 50)),
+      axis('Depth', (s) => s.depthCm, (v) => band(v, 0, 11)),
+      axis('Alignment', (s) => s.lateralDeviationCm, (v) => band(v, -5, 5)),
+      axis('Legs', (s) => s.kneeFlexion, (v) => band(v, 118, 138)),
+      axis(
+        'Release',
+        (s) => s.releaseTimeMs / 1000,
+        (v) => band(v, 0.42, 0.68),
       ),
-      RadarAxis(
-        label: 'Depth',
-        value: band(mean((s) => s.depthCm), 0, 11),
-        baseline: 0.66,
-      ),
-      RadarAxis(
-        label: 'Alignment',
-        value: band(mean((s) => s.lateralDeviationCm), -5, 5),
-        baseline: 0.58,
-      ),
-      RadarAxis(
-        label: 'Legs',
-        value: band(mean((s) => s.kneeFlexion), 118, 138),
-        baseline: 0.70,
-      ),
-      RadarAxis(
-        label: 'Release',
-        value: band(mean((s) => s.releaseTimeMs / 1000), 0.42, 0.68),
-        baseline: 0.74,
-      ),
-      RadarAxis(
-        label: 'Balance',
-        value: (mean((s) => s.balanceScore) / 100).clamp(0.0, 1.0),
-        baseline: 0.80,
-      ),
+      axis('Balance', (s) => s.balanceScore, (v) => (v / 100).clamp(0.0, 1.0)),
     ];
   }
 
@@ -392,16 +421,14 @@ class SessionSummaryScreen extends ConsumerWidget {
             title: '${session.bestStreak} straight \u00B7 ${session.drillName}',
             kind: HighlightKind.bestMakes,
             createdAt: DateTime.now(),
-            duration: Duration(seconds: 6 * session.bestStreak.clamp(1, 8)),
-            clipCount: session.bestStreak.clamp(1, 8),
+            shotCount: session.bestStreak,
             sessionId: session.id,
             visibility: HighlightVisibility.privateOnly,
             accent: AvColors.flare,
-            metricsBurnedIn: true,
           ),
         );
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Highlight saved to your library')),
+      const SnackBar(content: Text('Saved to your highlights')),
     );
   }
 }
@@ -527,12 +554,14 @@ class _ProvenanceCard extends StatelessWidget {
           AvKeyValue(label: 'Device', value: session.deviceName),
           AvKeyValue(
             label: 'Processing',
-            value: session.processedOnDevice ? 'On device' : 'Cloud assisted',
+            value: 'On device',
           ),
           if (session.uncertainCount > 0) ...[
             const SizedBox(height: AvSpace.sm),
             AvUnavailableNotice(
-              metric: '${session.uncertainCount} attempts were not classified',
+              metric: session.uncertainCount == 1
+                  ? '1 attempt was not classified'
+                  : '${session.uncertainCount} attempts were not classified',
               reason:
                   'The ball left the tracked area or was blocked from the '
                   'camera. These attempts are counted but excluded from '
@@ -557,11 +586,51 @@ class _ShareSheet extends StatefulWidget {
 class _ShareSheetState extends State<_ShareSheet> {
   bool _includeMechanics = true;
   bool _includeCourtMap = true;
-  bool _includeVideo = false;
+  bool _busy = false;
+
+  String get _summary {
+    final session = widget.session;
+    return '${session.drillName} \u2014 ${session.makeCount} of '
+        '${session.attemptCount} '
+        '(${session.percentage.toStringAsFixed(0)}%), '
+        '${Fmt.fullDate(session.startedAt)}. '
+        'Measured on device with ArcVanta.';
+  }
+
+  Future<void> _shareSummary() async {
+    await SharePlus.instance.share(ShareParams(text: _summary));
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _shareFile() async {
+    setState(() => _busy = true);
+    try {
+      final json = DataExport.session(
+        widget.session,
+        includeMechanics: _includeMechanics,
+        includeShotLocations: _includeCourtMap,
+        exportedAt: DateTime.now(),
+      );
+
+      final directory = await getTemporaryDirectory();
+      final file = File(
+        '${directory.path}/${DataExport.sessionFileName(widget.session)}',
+      );
+      await file.writeAsString(json);
+
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: _summary),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+        Navigator.of(context).pop();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final session = widget.session;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AvSpace.lg),
@@ -572,59 +641,46 @@ class _ShareSheetState extends State<_ShareSheet> {
             Text('Share this session', style: AvType.headingSmall.primary),
             const SizedBox(height: AvSpace.xs),
             Text(
-              'Choose what leaves this device. Nothing is uploaded until you '
-              'confirm.',
+              'Nothing is uploaded. The file is written here and handed to '
+              'whichever app you pick next.',
               style: AvType.bodySmall.muted,
             ),
             const SizedBox(height: AvSpace.lg),
             _ShareToggle(
               label: 'Mechanics breakdown',
-              detail: 'Joint angles, timing and balance scores',
+              detail: 'Joint angles, timing and balance, shot by shot',
               value: _includeMechanics,
               onChanged: (v) => setState(() => _includeMechanics = v),
             ),
             _ShareToggle(
-              label: 'Court map',
-              detail: 'Shot locations and zone accuracy',
+              label: 'Shot locations',
+              detail: 'Where each attempt was taken from, and how far it missed',
               value: _includeCourtMap,
               onChanged: (v) => setState(() => _includeCourtMap = v),
-            ),
-            _ShareToggle(
-              label: 'Video clips',
-              detail:
-                  'Raw footage of each attempt. Largest file, most '
-                  'sensitive.',
-              value: _includeVideo,
-              onChanged: (v) => setState(() => _includeVideo = v),
             ),
             const SizedBox(height: AvSpace.md),
             AvTintCard(
               tint: AvColors.canvasSunken,
-              child: Text(
-                '${session.drillName} \u00B7 ${session.makeCount} of '
-                '${session.attemptCount} \u00B7 '
-                '${session.percentage.toStringAsFixed(0)} per cent \u00B7 '
-                '${Fmt.fullDate(session.startedAt)}',
-                style: AvType.caption.muted,
-              ),
+              child: Text(_summary, style: AvType.caption.muted),
             ),
             const SizedBox(height: AvSpace.lg),
             Row(
               children: [
                 Expanded(
                   child: AvButton(
-                    label: 'Send to coach',
+                    label: 'Summary only',
                     variant: AvButtonVariant.outline,
                     expand: true,
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _busy ? null : _shareSummary,
                   ),
                 ),
                 const SizedBox(width: AvSpace.sm),
                 Expanded(
                   child: AvButton(
-                    label: 'Export',
+                    label: 'Share file',
+                    icon: Icons.ios_share_rounded,
                     expand: true,
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _busy ? null : _shareFile,
                   ),
                 ),
               ],

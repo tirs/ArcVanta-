@@ -6,6 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/av_colors.dart';
 import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
+import '../../core/utils/formatters.dart';
 import '../../data/models/drill.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_indicators.dart';
@@ -45,7 +46,9 @@ class _DrillLibraryScreenState extends ConsumerState<DrillLibraryScreen> {
 
     return AvScaffold(
       title: 'Train',
-      subtitle: '${drills.length} drills, each with its own capture rules',
+      subtitle:
+          '${Fmt.count(drills.length, 'drill')}, each with its own capture '
+          'rules',
       actions: [
         AvIconButton(
           icon: Icons.add_rounded,

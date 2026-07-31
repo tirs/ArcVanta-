@@ -4,27 +4,20 @@ import 'dart:ui' show Offset, Rect;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/platform/device_identity.dart';
+import '../data/calibration/court_dimensions.dart';
 import '../data/capture/capture_source.dart';
-import '../data/capture/simulated_capture_source.dart';
 import '../data/models/confidence.dart';
 import '../data/models/drill.dart';
 import '../data/models/pose.dart';
 import '../data/models/session.dart';
 import '../data/models/shot.dart';
 import '../data/seed/drill_catalog.dart';
+import 'app_settings.dart';
+import 'capture_pipeline.dart';
+import 'coaching_voice.dart';
 
 enum LiveStatus { setup, countdown, running, paused, ended }
-
-/// The analysis pipeline attached to the live session.
-///
-/// The simulated source is the default so the app is complete without a camera.
-/// The inference bridge replaces it by overriding this provider at the root,
-/// and nothing else in the app changes.
-final captureSourceProvider = Provider<CaptureSource>((ref) {
-  final source = SimulatedCaptureSource();
-  ref.onDispose(source.dispose);
-  return source;
-});
 
 /// Everything the live interface needs, folded from the capture stream.
 class LiveSessionState {
@@ -66,9 +59,9 @@ class LiveSessionState {
       ballTrail: const [],
       rim: null,
       backboard: null,
-      calibrationQuality: 0.91,
-      trackingConfidence: 0.94,
-      processedFps: 28,
+      calibrationQuality: 0,
+      trackingConfidence: null,
+      processedFps: null,
       thermalHeadroom: 1.0,
       activeCue: null,
       lastResultFlash: null,
@@ -94,9 +87,15 @@ class LiveSessionState {
   final Rect? rim;
   final Rect? backboard;
 
+  /// How far the accepted solve was trusted, 0 to 1. Zero until the athlete
+  /// commits a calibration, which is also how the session records that it was
+  /// started without one.
   final double calibrationQuality;
-  final double trackingConfidence;
-  final int processedFps;
+
+  /// Null until the first frame arrives. The HUD shows a dash rather than a
+  /// plausible number nothing has measured yet.
+  final double? trackingConfidence;
+  final int? processedFps;
   final double thermalHeadroom;
   final CoachingCue? activeCue;
   final Shot? lastResultFlash;
@@ -236,7 +235,14 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   void configure(Drill drill, CameraAngle angle) {
     _teardown();
     _elapsed.reset();
-    state = LiveSessionState.initial(drill, angle);
+    _shotsSinceCue = 1 << 20;
+    ref.read(coachingVoiceProvider).reset();
+    state = LiveSessionState.initial(drill, angle).copyWith(
+      // The session inherits the grade the athlete saw and accepted on the
+      // calibration screen, so the number stored with the shots is the number
+      // they were shown before taking them.
+      calibrationQuality: ref.read(committedCalibrationProvider)?.solution.overall ?? 0,
+    );
   }
 
   void startCountdown() {
@@ -270,11 +276,15 @@ class LiveSessionController extends Notifier<LiveSessionState> {
       elapsed: Duration.zero,
     );
 
+    final settings = ref.read(appSettingsProvider);
     await source.start(
       CaptureRequest(
         drill: state.drill,
         angle: state.angle,
         calibrationQuality: state.calibrationQuality,
+        highFrameRate: settings.highFrameRateCapture,
+        thermalGuard: settings.thermalGuard,
+        tripod: ref.read(tripodDeclaredProvider),
       ),
     );
   }
@@ -309,6 +319,7 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   void _onShot(Shot shot) {
     final placed = shot.copyWith(offsetFromStart: _elapsed.elapsed);
     final shots = [...state.shots, placed];
+    final cue = _cueFor(shots);
 
     state = state.copyWith(
       shots: shots,
@@ -317,13 +328,30 @@ class LiveSessionController extends Notifier<LiveSessionState> {
           ? placed
           : null,
       clearPending: placed.result != ShotResult.uncertain,
-      activeCue: _cueFor(shots),
+      activeCue: cue,
+      clearCue: cue == null,
     );
+
+    final voice = ref.read(coachingVoiceProvider);
+    if (cue != null) {
+      _shotsSinceCue = 0;
+      unawaited(voice.announce(cue));
+    } else if (placed.isMake) {
+      unawaited(voice.confirmMake());
+    }
   }
+
+  /// Attempts recorded since the last cue was raised, which is what the
+  /// feedback frequency setting throttles against.
+  int _shotsSinceCue = 1 << 20;
 
   /// One prioritised cue at a time, never issued from low-confidence evidence
   /// and never repeated inside the shooting motion.
   CoachingCue? _cueFor(List<Shot> shots) {
+    _shotsSinceCue++;
+    final frequency = ref.read(appSettingsProvider).feedbackFrequency;
+    if (_shotsSinceCue < frequency.attemptsBetweenCues) return null;
+
     final graded = shots
         .where((s) => s.confidence.isAuthoritative)
         .toList(growable: false);
@@ -356,20 +384,28 @@ class LiveSessionController extends Notifier<LiveSessionState> {
       );
     }
     if (knee < 122) {
+      final opening = _openingKneeFlexion(graded);
       return CoachingCue(
         id: 'live-knee-${shots.length}',
         headline: 'Legs are getting short',
-        detail: 'Sink into the load the way you did on your first ten.',
+        detail: opening == null
+            ? 'Sink further into the load before you go up.'
+            : 'You were bending to ${opening.round()} degrees earlier. Sink '
+                  'back into that load.',
         source: CueSource.measurement,
         priority: CuePriority.primary,
         confidence: ConfidenceLevel.medium,
       );
     }
     if (follow < 560) {
+      final onMakes = _averageFollowThroughOnMakes(graded);
       return CoachingCue(
         id: 'live-follow-${shots.length}',
         headline: 'Hold your follow-through slightly longer',
-        detail: 'Your makes average 690 milliseconds of hold.',
+        detail: onMakes == null
+            ? 'The last five held ${follow.round()} milliseconds.'
+            : 'Your makes hold ${onMakes.round()} milliseconds; these five '
+                  'held ${follow.round()}.',
         source: CueSource.measurement,
         priority: CuePriority.primary,
         confidence: ConfidenceLevel.high,
@@ -379,13 +415,31 @@ class LiveSessionController extends Notifier<LiveSessionState> {
       return CoachingCue(
         id: 'live-good-${shots.length}',
         headline: 'That is your best rhythm today',
-        detail: 'Release timing and knee drive are both on baseline.',
+        detail:
+            '${(madeRate * recent.length).round()} of ${recent.length} down '
+            'with the release holding steady.',
         source: CueSource.measurement,
         priority: CuePriority.reinforcement,
         confidence: ConfidenceLevel.high,
       );
     }
     return null;
+  }
+
+  /// Knee flexion over the opening shots of the session, which is what the
+  /// athlete is being asked to get back to. Null before there are enough of
+  /// them for the average to mean anything.
+  double? _openingKneeFlexion(List<Shot> graded) {
+    if (graded.length < 8) return null;
+    final opening = graded.take(5);
+    return opening.map((s) => s.kneeFlexion).reduce((a, b) => a + b) / 5;
+  }
+
+  double? _averageFollowThroughOnMakes(List<Shot> graded) {
+    final makes = graded.where((s) => s.isMake).toList(growable: false);
+    if (makes.length < 3) return null;
+    return makes.map((s) => s.followThroughMs).reduce((a, b) => a + b) /
+        makes.length;
   }
 
   void confirmPending(ShotResult result) {
@@ -440,8 +494,16 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   }
 
   /// Freezes the live run into a stored session record.
+  ///
+  /// Everything describing how the session was measured is read back from what
+  /// actually measured it: the accepted solve, the pipeline that ran, the phone
+  /// it ran on. A session that cannot say where its numbers came from is worse
+  /// than no session at all.
   TrainingSession finalise() {
     final drill = state.drill;
+    final calibration = ref.read(committedCalibrationProvider);
+    final pipeline = ref.read(pipelineStatusProvider).valueOrNull;
+
     return TrainingSession(
       id: 'session-live-${DateTime.now().millisecondsSinceEpoch}',
       drillId: drill.id,
@@ -452,18 +514,23 @@ class LiveSessionController extends Notifier<LiveSessionState> {
       calibration: CalibrationRecord(
         angle: state.angle,
         qualityScore: state.calibrationQuality,
-        courtProfile: 'Northgate Prep — Main Gym',
-        rimHeightM: 3.05,
-        lightingScore: 0.9,
-        stabilityScore: 0.94,
-        framingScore: 0.9,
-        frameRate: 60,
-        notes: const ['Court plane locked from three visible lines.'],
+        courtProfile: ref.read(courtNameProvider),
+        rimHeightM: CourtDimensions.rimHeightM,
+        lightingScore: calibration?.lighting ?? 0,
+        stabilityScore: calibration?.stability ?? 0,
+        framingScore: calibration?.framing ?? 0,
+        frameRate:
+            calibration?.conditions.frameRate ?? state.processedFps ?? 0,
+        notes: calibration?.notes ?? const ['Started without a solved court.'],
       ),
       cues: [if (state.activeCue != null) state.activeCue!],
-      modelVersion: 'det-1.4.2 / pose-2.1.0 / event-3.0.1',
-      deviceName: 'iPhone 17 Pro',
+      modelVersion: pipeline?.signature ?? 'simulated',
+      deviceName: DeviceIdentity.name,
       processedOnDevice: true,
+      // Decided from the pipeline that produced the frames, not from a flag
+      // passed down by the screen, so a session can never be filed as
+      // measured because some caller forgot to say otherwise.
+      isSimulated: !(pipeline?.isLive ?? false),
     );
   }
 }

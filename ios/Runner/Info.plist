@@ -6,7 +6,11 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
+		<key>NSCameraUsageDescription</key>
+	<string>ArcVanta measures your shot from the camera. Frames are analysed on this device and are never recorded or uploaded.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>ArcVanta reads the phone's tilt so it knows which way is down when it solves the court geometry.</string>
+<key>CFBundleDisplayName</key>
 	<string>ArcVanta AI</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>

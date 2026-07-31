@@ -1,0 +1,18 @@
+# Copy to android/key.properties and fill in. That file is git-ignored.
+#
+# Create the keystore once, and keep the .jks and these passwords somewhere you
+# will still have them in five years. Losing them means you can never publish an
+# update to the same listing again:
+#
+#   keytool -genkeypair -v \
+#     -keystore ~/keys/arcvanta-upload.jks \
+#     -keyalg RSA -keysize 4096 -validity 10000 \
+#     -alias arcvanta
+#
+# storeFile is resolved relative to android/app, so an absolute path outside the
+# repository is the safest thing to put here.
+
+storeFile=/absolute/path/to/arcvanta-upload.jks
+storePassword=
+keyAlias=arcvanta
+keyPassword=

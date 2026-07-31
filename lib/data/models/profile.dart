@@ -22,7 +22,7 @@ enum AccountRole {
     AccountRole.guardian =>
       'Manage a minor account, approve access and review progress.',
     AccountRole.trainer =>
-      'Work with multiple athletes, assign drills and review clips.',
+      'Work with multiple athletes, assign drills and review sessions.',
     AccountRole.coach =>
       'Build rosters, assign programs and follow team development.',
     AccountRole.organizationAdmin =>
@@ -44,6 +44,15 @@ enum AccountRole {
     AccountRole.coach => AvColors.made,
     AccountRole.organizationAdmin => AvColors.caution,
   };
+
+  /// Whether this role has a working workspace in this build.
+  ///
+  /// Everything past the player and guardian roles is a view onto other
+  /// people's accounts, which needs a server. Offering them as equal choices
+  /// and then landing the user on a wall of "not available" wastes their time,
+  /// so the picker says so up front.
+  bool get isAvailable =>
+      this == AccountRole.player || this == AccountRole.guardian;
 }
 
 enum DominantHand {
@@ -109,6 +118,7 @@ class PlayerProfile {
     required this.weeklyAvailability,
     this.isMinor = false,
     this.guardianName,
+    this.guardianEmail,
   });
 
   final String id;
@@ -127,6 +137,73 @@ class PlayerProfile {
   final int weeklyAvailability;
   final bool isMinor;
   final String? guardianName;
+
+  /// Kept only so the record of who approved the account is complete. No mail
+  /// is sent to it: there is no service in this build that could.
+  final String? guardianEmail;
+
+  /// Stands in for the moment between first launch and finishing setup.
+  ///
+  /// Every field is deliberately neutral. Nothing here should ever read as a
+  /// measurement or an achievement, because it is not one.
+  static const PlayerProfile placeholder = PlayerProfile(
+    id: 'unset',
+    displayName: 'Player',
+    initials: 'P',
+    ageBand: 'Not set',
+    heightCm: 0,
+    wingspanCm: 0,
+    dominantHand: DominantHand.right,
+    position: PlayerPosition.shootingGuard,
+    skillLevel: SkillLevel.beginner,
+    teamName: '',
+    coachName: '',
+    accentColor: AvColors.court,
+    goals: [],
+    weeklyAvailability: 0,
+  );
+
+  PlayerProfile copyWith({
+    String? displayName,
+    String? initials,
+    String? ageBand,
+    int? heightCm,
+    int? wingspanCm,
+    DominantHand? dominantHand,
+    PlayerPosition? position,
+    SkillLevel? skillLevel,
+    String? teamName,
+    String? coachName,
+    Color? accentColor,
+    List<String>? goals,
+    int? weeklyAvailability,
+    bool? isMinor,
+    String? guardianName,
+    String? guardianEmail,
+  }) {
+    return PlayerProfile(
+      id: id,
+      displayName: displayName ?? this.displayName,
+      initials: initials ?? this.initials,
+      ageBand: ageBand ?? this.ageBand,
+      heightCm: heightCm ?? this.heightCm,
+      wingspanCm: wingspanCm ?? this.wingspanCm,
+      dominantHand: dominantHand ?? this.dominantHand,
+      position: position ?? this.position,
+      skillLevel: skillLevel ?? this.skillLevel,
+      teamName: teamName ?? this.teamName,
+      coachName: coachName ?? this.coachName,
+      accentColor: accentColor ?? this.accentColor,
+      goals: goals ?? this.goals,
+      weeklyAvailability: weeklyAvailability ?? this.weeklyAvailability,
+      isMinor: isMinor ?? this.isMinor,
+      guardianName: guardianName ?? this.guardianName,
+      guardianEmail: guardianEmail ?? this.guardianEmail,
+    );
+  }
+
+  /// Whether setup has produced a real profile rather than the placeholder.
+  bool get isConfigured => id != placeholder.id;
 
   String get heightLabel {
     final totalInches = heightCm / 2.54;

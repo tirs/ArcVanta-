@@ -7,6 +7,7 @@ import '../../core/theme/av_tokens.dart';
 import '../../core/theme/av_typography.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/app_settings.dart';
+import '../../state/team.dart';
 import '../../state/stores.dart';
 
 class AppShell extends ConsumerWidget {
@@ -19,33 +20,43 @@ class AppShell extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final unread = ref.watch(unreadNotificationCountProvider);
 
+    // The roster branch is only worth a permanent seat in the bar once there
+    // is a service behind it. Until then the tab is dropped rather than left
+    // as a door onto an apology, and its branch stays routable so the screens
+    // light up unchanged when the backend lands.
     final destinations = <_Destination>[
       const _Destination(
+        branch: 0,
         label: 'Home',
         icon: Icons.home_outlined,
         activeIcon: Icons.home_rounded,
         accent: AvColors.flare,
       ),
       const _Destination(
+        branch: 1,
         label: 'Train',
         icon: Icons.sports_basketball_outlined,
         activeIcon: Icons.sports_basketball_rounded,
         accent: AvColors.court,
       ),
       const _Destination(
+        branch: 2,
         label: 'Progress',
         icon: Icons.insights_outlined,
         activeIcon: Icons.insights_rounded,
         accent: AvColors.insight,
       ),
-      _Destination(
-        label: settings.isCoachRole ? 'Roster' : 'Coach',
-        icon: Icons.groups_outlined,
-        activeIcon: Icons.groups_rounded,
-        accent: AvColors.made,
-        badge: settings.isCoachRole ? unread : 0,
-      ),
+      if (TeamFeatures.isAvailable)
+        _Destination(
+          branch: 3,
+          label: settings.isCoachRole ? 'Roster' : 'Coach',
+          icon: Icons.groups_outlined,
+          activeIcon: Icons.groups_rounded,
+          accent: AvColors.made,
+          badge: settings.isCoachRole ? unread : 0,
+        ),
       const _Destination(
+        branch: 4,
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
@@ -59,9 +70,11 @@ class AppShell extends ConsumerWidget {
       body: shell,
       bottomNavigationBar: _NavBar(
         destinations: destinations,
-        currentIndex: shell.currentIndex,
-        onSelect: (index) =>
-            shell.goBranch(index, initialLocation: index == shell.currentIndex),
+        currentBranch: shell.currentIndex,
+        onSelect: (branch) => shell.goBranch(
+          branch,
+          initialLocation: branch == shell.currentIndex,
+        ),
       ),
     );
   }
@@ -69,6 +82,7 @@ class AppShell extends ConsumerWidget {
 
 class _Destination {
   const _Destination({
+    required this.branch,
     required this.label,
     required this.icon,
     required this.activeIcon,
@@ -76,6 +90,9 @@ class _Destination {
     this.badge = 0,
   });
 
+  /// Index of the shell branch this tab drives, which is not the same as the
+  /// tab's position once a branch is hidden.
+  final int branch;
   final String label;
   final IconData icon;
   final IconData activeIcon;
@@ -88,12 +105,12 @@ class _Destination {
 class _NavBar extends StatelessWidget {
   const _NavBar({
     required this.destinations,
-    required this.currentIndex,
+    required this.currentBranch,
     required this.onSelect,
   });
 
   final List<_Destination> destinations;
-  final int currentIndex;
+  final int currentBranch;
   final ValueChanged<int> onSelect;
 
   @override
@@ -118,12 +135,12 @@ class _NavBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            for (var i = 0; i < destinations.length; i++)
+            for (final destination in destinations)
               Expanded(
                 child: _NavItem(
-                  destination: destinations[i],
-                  selected: i == currentIndex,
-                  onTap: () => onSelect(i),
+                  destination: destination,
+                  selected: destination.branch == currentBranch,
+                  onTap: () => onSelect(destination.branch),
                 ),
               ),
           ],

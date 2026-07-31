@@ -19,6 +19,8 @@ import '../../features/onboarding/guardian_consent_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/onboarding/player_setup_screen.dart';
 import '../../features/onboarding/role_screen.dart';
+import '../../features/legal/legal_documents.dart';
+import '../../features/legal/legal_screen.dart';
 import '../../features/plan/goals_screen.dart';
 import '../../features/plan/training_plan_screen.dart';
 import '../../features/profile/device_settings_screen.dart';
@@ -66,6 +68,8 @@ abstract final class AppRoute {
   static const privacy = '/privacy';
   static const device = '/device';
   static const help = '/help';
+  static const terms = '/legal/terms';
+  static const privacyPolicy = '/legal/privacy';
   static const reviewQueue = '/coach/reviews';
   static const team = '/coach/team';
   static const assign = '/coach/assign';
@@ -250,6 +254,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoute.terms,
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) => const LegalScreen(document: termsOfService),
+      ),
+      GoRoute(
+        path: AppRoute.privacyPolicy,
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) => const LegalScreen(document: privacyPolicy),
       ),
       GoRoute(
         path: AppRoute.heatmap,

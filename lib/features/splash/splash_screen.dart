@@ -9,9 +9,15 @@ import '../../core/theme/av_typography.dart';
 import '../../design/components/av_brand.dart';
 import '../../design/components/av_brand_scaffold.dart';
 import '../../state/app_settings.dart';
+import '../../state/capture_pipeline.dart';
 
-/// Launch screen. Runs the startup checks the product performs before the first
-/// frame of content: entitlement refresh, model manifest and local store.
+/// Launch screen.
+///
+/// The two lines it shows are the two things that genuinely have to finish
+/// before the app is usable: the stored history is read off disk, and the
+/// platform is asked whether it can run the analysis models. Both are real
+/// futures, so the screen leaves as soon as they land rather than sitting
+/// through a scripted delay.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -21,15 +27,14 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
-  static const _steps = [
-    'Restoring local session store',
-    'Verifying entitlement',
-    'Loading model manifest',
-    'Preparing camera pipeline',
-  ];
+  /// The logo draw. Nothing waits on it, but leaving before it finishes looks
+  /// like a crash, so it is the floor on how long the screen stays up.
+  static const _minimumVisible = Duration(milliseconds: 1100);
 
   late final AnimationController _controller;
-  int _step = 0;
+
+  bool _storeReady = false;
+  bool _pipelineChecked = false;
 
   @override
   void initState() {
@@ -42,13 +47,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _advance() async {
-    for (var i = 0; i < _steps.length; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 380));
-      if (!mounted) return;
-      setState(() => _step = i + 1);
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 320));
+    final floor = Future<void>.delayed(_minimumVisible);
+
+    // The store is already open by the time the first frame runs: main() waits
+    // for it so no screen has to render over a loading state. Reading it here
+    // is what confirms that, rather than asserting it.
+    ref.read(appSettingsProvider);
+    if (mounted) setState(() => _storeReady = true);
+
+    await ref.read(pipelineStatusProvider.future);
+    if (mounted) setState(() => _pipelineChecked = true);
+
+    await floor;
     if (!mounted) return;
+
     final settings = ref.read(appSettingsProvider);
     context.go(
       settings.onboardingComplete ? AppRoute.home : AppRoute.onboarding,
@@ -85,12 +97,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               style: AvType.body.onInkMuted,
             ),
             const Spacer(),
-            for (var i = 0; i < _steps.length; i++)
-              _StepRow(label: _steps[i], done: _step > i),
+            _StepRow(label: 'Reading your history', done: _storeReady),
+            _StepRow(
+              label: 'Checking the analysis pipeline',
+              done: _pipelineChecked,
+            ),
             const SizedBox(height: AvSpace.xl),
             Text(
-              'Live analysis runs on this device. Video leaves the phone '
-              'only when you ask for cloud review.',
+              'Live analysis runs on this device. Nothing you record is '
+              'sent anywhere.',
               style: AvType.caption.copyWith(
                 color: AvColors.textOnInkMuted,
                 height: 1.5,

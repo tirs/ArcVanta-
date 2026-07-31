@@ -10,8 +10,10 @@ import '../../data/models/program.dart';
 import '../../design/components/av_brand.dart';
 import '../../design/components/av_button.dart';
 import '../../design/components/av_layout.dart';
+import '../../design/components/av_states.dart';
 import '../../design/components/av_surface.dart';
 import '../../state/stores.dart';
+import '../../state/team.dart';
 
 /// Assign a drill to one athlete or the whole roster, with the target and note
 /// the athlete will actually see before they start.
@@ -89,6 +91,8 @@ class _AssignmentCreatorScreenState
   Widget build(BuildContext context) {
     final roster = ref.watch(rosterProvider);
     final drills = ref.watch(drillStoreProvider);
+
+    if (!TeamFeatures.isAvailable) return const _AssignUnavailable();
 
     return AvScaffold(
       title: 'New assignment',
@@ -397,6 +401,30 @@ class _DrillPick extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Creating an assignment requires somebody to send it to. Until accounts exist the form would only ever write a note to yourself.
+class _AssignUnavailable extends StatelessWidget {
+  const _AssignUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AvScaffold(
+      title: 'New assignment',
+      subtitle: 'Not available in this build',
+      leading: AvBackButton(),
+      slivers: [
+        SliverGutter(
+          child: AvUnavailableFeature(
+            icon: Icons.add_task_outlined,
+            headline: TeamFeatures.unavailableHeadline,
+            body: TeamFeatures.unavailableBody,
+            footnote: 'An assignment is a message to somebody else\'s device.',
+          ),
+        ),
+      ],
     );
   }
 }
