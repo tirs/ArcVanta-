@@ -260,13 +260,14 @@ final class CaptureBridge: NSObject {
         }
 
         if let connection = output.connection(with: .video) {
-            // Asking for the per-frame intrinsics is what makes every metric
-            // the app reports trustworthy rather than assumed.
             if connection.isCameraIntrinsicMatrixDeliverySupported {
                 connection.isCameraIntrinsicMatrixDeliveryEnabled = true
             }
             if connection.isVideoOrientationSupported {
-                connection.videoOrientation = .landscapeRight
+                connection.videoOrientation = .portrait
+            }
+            if useFrontCamera && connection.isVideoMirroringSupported {
+                connection.isVideoMirrored = true
             }
         }
 
