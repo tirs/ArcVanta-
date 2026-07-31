@@ -11,15 +11,29 @@ class SceneDelegate: FlutterSceneDelegate {
   ) {
     super.scene(scene, willConnectTo: session, options: connectionOptions)
 
-    guard let windowScene = scene as? UIWindowScene,
-          let controller = windowScene.windows.first?.rootViewController as? FlutterViewController else {
-      return
+    DispatchQueue.main.async { [weak self] in
+      self?.wireCaptureBridge(scene)
+    }
+  }
+
+  private func wireCaptureBridge(_ scene: UIScene) {
+    guard capture == nil,
+          let windowScene = scene as? UIWindowScene else { return }
+
+    let controller: FlutterViewController?
+    if #available(iOS 15.0, *) {
+      controller = windowScene.keyWindow?.rootViewController as? FlutterViewController
+    } else {
+      controller = windowScene.windows.first?.rootViewController as? FlutterViewController
     }
 
-    let engine = controller.engine
+    guard let flutterVC = controller else { return }
+
+    let engine = flutterVC.engine
+    let registrar = engine.registrar(forPlugin: "ArcVantaVision")
     capture = CaptureBridge(
       messenger: engine.binaryMessenger,
-      textures: engine.registrar(forPlugin: "ArcVantaVision")!.textures()
+      textures: registrar!.textures()
     )
   }
 
