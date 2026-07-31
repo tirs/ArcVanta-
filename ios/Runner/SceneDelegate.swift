@@ -12,11 +12,11 @@ class SceneDelegate: FlutterSceneDelegate {
     super.scene(scene, willConnectTo: session, options: connectionOptions)
 
     guard let windowScene = scene as? UIWindowScene,
-          let controller = windowScene.windows.first?.rootViewController as? FlutterViewController,
-          let engine = controller.engine else {
+          let controller = windowScene.windows.first?.rootViewController as? FlutterViewController else {
       return
     }
 
+    let engine = controller.engine!
     capture = CaptureBridge(
       messenger: engine.binaryMessenger,
       textures: engine.registrar(forPlugin: "ArcVantaVision")!.textures()
