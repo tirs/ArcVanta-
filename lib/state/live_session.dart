@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/platform/device_identity.dart';
 import '../data/calibration/court_dimensions.dart';
 import '../data/capture/capture_source.dart';
+import '../data/capture/shot_clip.dart';
 import '../data/models/confidence.dart';
 import '../data/models/drill.dart';
 import '../data/models/pose.dart';
@@ -213,6 +214,11 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   StreamSubscription<Shot>? _shotSub;
   Timer? _countdown;
   final Stopwatch _elapsed = Stopwatch();
+  final ClipRecorder _clipRecorder = ClipRecorder();
+  final List<ShotClip> _clips = [];
+
+  /// All shot clips recorded during this session.
+  List<ShotClip> get clips => List.unmodifiable(_clips);
 
   CaptureSource get _source => ref.read(captureSourceProvider);
 
@@ -230,6 +236,7 @@ class LiveSessionController extends Notifier<LiveSessionState> {
     _frameSub?.cancel();
     _shotSub?.cancel();
     _elapsed.stop();
+    _clipRecorder.reset();
   }
 
   void configure(Drill drill, CameraAngle angle) {
@@ -293,6 +300,17 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   void _onFrame(CaptureFrame frame) {
     if (state.status != LiveStatus.running) return;
 
+    _clipRecorder.pushFrame(ClipFrame(
+      timestampMs: _elapsed.elapsedMilliseconds,
+      pose: frame.pose,
+      ball: frame.ball,
+      rim: frame.rim,
+      trackingConfidence: frame.trackingConfidence,
+    ));
+
+    final completed = _clipRecorder.takeClip();
+    if (completed != null) _clips.add(completed);
+
     // A new cycle restarts the trail; otherwise it grows while the ball flies.
     final restarted = frame.cycleProgress < state.cycleProgress;
     final trail = restarted ? <Offset>[] : [...state.ballTrail];
@@ -320,6 +338,11 @@ class LiveSessionController extends Notifier<LiveSessionState> {
   void _onShot(Shot shot) {
     final placed = shot.copyWith(offsetFromStart: _elapsed.elapsed);
     final shots = [...state.shots, placed];
+
+    _clipRecorder.onShotDetected(
+      shotIndex: shots.length - 1,
+      made: placed.isMake,
+    );
     final cue = _cueFor(shots);
 
     state = state.copyWith(

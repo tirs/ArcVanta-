@@ -17,7 +17,9 @@ import '../../design/components/av_indicators.dart';
 import '../../design/components/av_layout.dart';
 import '../../design/components/av_stats.dart';
 import '../../design/components/av_surface.dart';
+import '../../state/live_session.dart';
 import '../../state/stores.dart';
+import 'shot_replay.dart';
 
 /// One attempt in full: the arc, the phase breakdown, every eligible
 /// measurement and the reasoning behind the result the system recorded.
@@ -110,6 +112,7 @@ class ShotDetailScreen extends ConsumerWidget {
         SliverGutter(
           child: _OutcomePanel(shot: shot, session: session),
         ),
+        _ShotReplayCard(shotIndex: index),
         SliverGutter(
           top: AvSpace.sm,
           child: AvCard(
@@ -494,6 +497,51 @@ class _CorrectionCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ShotReplayCard extends ConsumerWidget {
+  const _ShotReplayCard({required this.shotIndex});
+
+  final int shotIndex;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final clips = ref.read(liveSessionProvider.notifier).clips;
+    final clip = clips
+        .where((c) => c.shotIndex == shotIndex)
+        .firstOrNull;
+
+    if (clip == null || clip.frames.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverGutter(
+      top: AvSpace.sm,
+      child: AvCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('Shot Replay', style: AvType.titleMedium.primary),
+                const Spacer(),
+                const AvPill(
+                  label: 'AI tracked',
+                  color: AvColors.insight,
+                  dense: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: AvSpace.sm),
+            SizedBox(
+              height: 280,
+              child: ShotReplay(clip: clip),
+            ),
+          ],
+        ),
       ),
     );
   }

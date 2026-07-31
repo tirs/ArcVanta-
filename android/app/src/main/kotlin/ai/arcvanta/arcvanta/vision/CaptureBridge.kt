@@ -446,11 +446,16 @@ class CaptureBridge(
         val manager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         var focalPixels: Double? = null
 
+        val wantFacing = if (useFrontCamera)
+            CameraCharacteristics.LENS_FACING_FRONT
+        else
+            CameraCharacteristics.LENS_FACING_BACK
+
         try {
             for (id in manager.cameraIdList) {
                 val characteristics = manager.getCameraCharacteristics(id)
                 val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (facing != CameraCharacteristics.LENS_FACING_BACK) continue
+                if (facing != wantFacing) continue
 
                 val focalMm = characteristics
                     .get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
