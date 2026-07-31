@@ -145,6 +145,19 @@ class TripodStore extends Notifier<bool> {
   void set(bool value) => state = value;
 }
 
+/// Whether the athlete chose the front (selfie) camera so they can see the
+/// tracking overlay while shooting. Declared on the placement step.
+final frontCameraProvider = NotifierProvider<FrontCameraStore, bool>(
+  FrontCameraStore.new,
+);
+
+class FrontCameraStore extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
 /// The same object, seen through the calibration interface.
 final calibrationSourceProvider = Provider<CalibrationSource>((ref) {
   final source = ref.watch(captureSourceProvider);

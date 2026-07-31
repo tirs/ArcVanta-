@@ -38,6 +38,7 @@ final class CaptureBridge: NSObject {
     private var hasTripod = true
     private var highFrameRate = true
     private var thermalGuard = true
+    private var useFrontCamera = false
 
     private var intrinsics: (fx: Double, fy: Double, cx: Double, cy: Double, fromDevice: Bool)?
     private var gravity: [Double]?
@@ -78,8 +79,10 @@ final class CaptureBridge: NSObject {
         case "requestCameraPermission":
             requestCameraPermission(result)
         case "startPreview":
+            let arguments = call.arguments as? [String: Any]
             poseEnabled = false
-            hasTripod = (call.arguments as? [String: Any])?["tripod"] as? Bool ?? true
+            hasTripod = arguments?["tripod"] as? Bool ?? true
+            useFrontCamera = arguments?["frontCamera"] as? Bool ?? false
             start(result)
         case "stopPreview":
             stopCamera()
@@ -90,6 +93,7 @@ final class CaptureBridge: NSObject {
             highFrameRate = arguments?["highFrameRate"] as? Bool ?? true
             thermalGuard = arguments?["thermalGuard"] as? Bool ?? true
             hasTripod = arguments?["tripod"] as? Bool ?? true
+            useFrontCamera = arguments?["frontCamera"] as? Bool ?? false
             start(result)
         case "pause":
             running = false
@@ -225,17 +229,18 @@ final class CaptureBridge: NSObject {
         session.beginConfiguration()
         session.sessionPreset = .hd1280x720
 
+        let position: AVCaptureDevice.Position = useFrontCamera ? .front : .back
         guard
             let device = AVCaptureDevice.default(
                 .builtInWideAngleCamera,
                 for: .video,
-                position: .back
+                position: position
             ),
             let input = try? AVCaptureDeviceInput(device: device),
             session.canAddInput(input)
         else {
             session.commitConfiguration()
-            throw VisionError.inference("no usable back camera")
+            throw VisionError.inference("no usable \(useFrontCamera ? "front" : "back") camera")
         }
 
         session.inputs.forEach(session.removeInput)

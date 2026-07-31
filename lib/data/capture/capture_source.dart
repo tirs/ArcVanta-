@@ -60,6 +60,7 @@ class CaptureRequest {
     this.highFrameRate = true,
     this.thermalGuard = true,
     this.tripod = true,
+    this.frontCamera = false,
   });
 
   final Drill drill;
@@ -77,6 +78,10 @@ class CaptureRequest {
   /// Whether the athlete said the phone is mounted. Caps the stability grade
   /// rather than being trusted outright.
   final bool tripod;
+
+  /// Use the front (selfie) camera so the athlete can see the tracking
+  /// overlay while shooting.
+  final bool frontCamera;
 }
 
 /// The analysis pipeline as the product layer sees it.

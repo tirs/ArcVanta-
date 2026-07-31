@@ -56,7 +56,7 @@ class SimulatedCaptureSource implements CaptureSource, CalibrationSource {
   static final ValueNotifier<int?> _noTexture = ValueNotifier<int?>(null);
 
   @override
-  Future<void> startPreview({bool tripod = true}) async {
+  Future<void> startPreview({bool tripod = true, bool frontCamera = false}) async {
     _previewFrame = 0;
     _preview?.cancel();
     // The ring takes a beat to appear, the way it does while the athlete is
@@ -235,7 +235,7 @@ class ScriptedCaptureSource implements CaptureSource, CalibrationSource {
       _observations.add(SimulatedScene.observation(frame: frame));
 
   @override
-  Future<void> startPreview({bool tripod = true}) async => previewing = true;
+  Future<void> startPreview({bool tripod = true, bool frontCamera = false}) async => previewing = true;
 
   @override
   Future<void> stopPreview() async => previewing = false;

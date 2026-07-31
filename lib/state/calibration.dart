@@ -129,7 +129,10 @@ class CalibrationController extends AutoDisposeNotifier<CalibrationState> {
     _subscription = source.observations.listen(_accept, onError: _onError);
 
     try {
-      await source.startPreview(tripod: ref.read(tripodDeclaredProvider));
+      await source.startPreview(
+        tripod: ref.read(tripodDeclaredProvider),
+        frontCamera: ref.read(frontCameraProvider),
+      );
     } catch (error) {
       _onError(error);
     }

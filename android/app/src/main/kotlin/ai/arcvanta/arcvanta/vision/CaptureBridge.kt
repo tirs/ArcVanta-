@@ -97,6 +97,7 @@ class CaptureBridge(
     private var hasTripod = true
     private var highFrameRate = true
     private var thermalGuard = true
+    private var useFrontCamera = false
 
     private var frameCount = 0
     private var fpsWindowStart = 0L
@@ -153,6 +154,7 @@ class CaptureBridge(
             "startPreview" -> {
                 poseEnabled.set(false)
                 hasTripod = call.argument<Boolean>("tripod") ?: true
+                useFrontCamera = call.argument<Boolean>("frontCamera") ?: false
                 start(result)
             }
             "stopPreview" -> {
@@ -164,6 +166,7 @@ class CaptureBridge(
                 highFrameRate = call.argument<Boolean>("highFrameRate") ?: true
                 thermalGuard = call.argument<Boolean>("thermalGuard") ?: true
                 hasTripod = call.argument<Boolean>("tripod") ?: true
+                useFrontCamera = call.argument<Boolean>("frontCamera") ?: false
                 start(result)
             }
             "pause" -> {
@@ -330,7 +333,8 @@ class CaptureBridge(
         provider = cameraProvider
         cameraProvider.unbindAll()
 
-        val selector = CameraSelector.DEFAULT_BACK_CAMERA
+        val selector = if (useFrontCamera) CameraSelector.DEFAULT_FRONT_CAMERA
+            else CameraSelector.DEFAULT_BACK_CAMERA
         readIntrinsics()
 
         val targetFps = if (highFrameRate) 60 else 30

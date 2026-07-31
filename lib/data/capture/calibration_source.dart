@@ -50,7 +50,7 @@ abstract interface class CalibrationSource {
   /// not measured, and it is not treated as fact: it caps the stability score
   /// so a handheld setup cannot be graded as though it were mounted, while a
   /// mount that is actually drifting is still caught by the observed jitter.
-  Future<void> startPreview({bool tripod = true});
+  Future<void> startPreview({bool tripod = true, bool frontCamera = false});
 
   Future<void> stopPreview();
 }

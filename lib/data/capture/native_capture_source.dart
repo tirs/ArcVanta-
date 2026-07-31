@@ -189,11 +189,12 @@ class NativeCaptureSource implements CaptureSource, CalibrationSource {
   }
 
   @override
-  Future<void> startPreview({bool tripod = true}) async {
+  Future<void> startPreview({bool tripod = true, bool frontCamera = false}) async {
     await _listen();
     _adoptTexture(
       await _methods.invokeMapMethod<Object?, Object?>('startPreview', {
         'tripod': tripod,
+        'frontCamera': frontCamera,
       }),
     );
   }
@@ -230,7 +231,7 @@ class NativeCaptureSource implements CaptureSource, CalibrationSource {
       'tripod': request.tripod,
       'highFrameRate': request.highFrameRate,
       'thermalGuard': request.thermalGuard,
-      // Pose estimation is the expensive half, so it only runs for a session.
+      'frontCamera': request.frontCamera,
       'pose': true,
     }));
   }

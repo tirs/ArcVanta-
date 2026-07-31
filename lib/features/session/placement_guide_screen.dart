@@ -36,6 +36,7 @@ class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
   late Drill _drill;
   late CameraAngle _angle;
   late bool _stabilised = ref.read(tripodDeclaredProvider);
+  late bool _frontCamera = ref.read(frontCameraProvider);
 
   @override
   void initState() {
@@ -169,6 +170,45 @@ class _PlacementGuideScreenState extends ConsumerState<PlacementGuideScreen> {
                   onChanged: (value) {
                     setState(() => _stabilised = value);
                     ref.read(tripodDeclaredProvider.notifier).set(value);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        SliverGutter(
+          top: AvSpace.sm,
+          child: AvCard(
+            padding: const EdgeInsets.all(AvSpace.md),
+            child: Row(
+              children: [
+                const AvGlyph(
+                  icon: Icons.flip_camera_ios_rounded,
+                  color: AvColors.court,
+                ),
+                const SizedBox(width: AvSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Front camera',
+                        style: AvType.titleMedium.primary,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'See yourself and the tracking overlay on screen '
+                        'while you shoot.',
+                        style: AvType.caption.muted,
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _frontCamera,
+                  onChanged: (value) {
+                    setState(() => _frontCamera = value);
+                    ref.read(frontCameraProvider.notifier).set(value);
                   },
                 ),
               ],

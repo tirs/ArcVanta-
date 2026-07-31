@@ -285,6 +285,7 @@ class LiveSessionController extends Notifier<LiveSessionState> {
         highFrameRate: settings.highFrameRateCapture,
         thermalGuard: settings.thermalGuard,
         tripod: ref.read(tripodDeclaredProvider),
+        frontCamera: ref.read(frontCameraProvider),
       ),
     );
   }
