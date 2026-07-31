@@ -16,7 +16,7 @@ class SceneDelegate: FlutterSceneDelegate {
       return
     }
 
-    let engine = controller.engine!
+    let engine = controller.engine
     capture = CaptureBridge(
       messenger: engine.binaryMessenger,
       textures: engine.registrar(forPlugin: "ArcVantaVision")!.textures()
