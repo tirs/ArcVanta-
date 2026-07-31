@@ -42,6 +42,10 @@ object ModelContract {
     const val CLASS_RIM = 2
     const val CLASS_BACKBOARD = 3
 
-    /** Below this a detection is not worth forwarding. */
-    const val SCORE_THRESHOLD = 0.35f
+    /**
+     * Below this a detection is not worth forwarding. Kept low because the
+     * detector was trained on broadcast footage and scores lower on close-range
+     * phone frames. The calibration solver grades the quality separately.
+     */
+    const val SCORE_THRESHOLD = 0.15f
 }

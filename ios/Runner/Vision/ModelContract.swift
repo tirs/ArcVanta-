@@ -36,6 +36,8 @@ enum ModelContract {
     static let classRim = 2
     static let classBackboard = 3
 
-    /// Below this a detection is not worth forwarding.
-    static let scoreThreshold: Float = 0.35
+    /// Below this a detection is not worth forwarding. Kept low because the
+    /// detector was trained on broadcast footage and scores lower on close-range
+    /// phone frames. The calibration solver grades the quality separately.
+    static let scoreThreshold: Float = 0.15
 }
